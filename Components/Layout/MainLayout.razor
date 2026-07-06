@@ -1,23 +1,39 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<div class="app-shell">
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+    <NavMenu />
+
+    <main class="main-content">
+        @Body
+    </main>
+
+    <footer class="site-footer">
+
+        <div class="footer-brand">
+
+            <h3>AeroResponse</h3>
+
+            <p>
+                Aircraft Emergency Response Training Simulator
+            </p>
+
         </div>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+        <div class="footer-copy">
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+            © @DateTime.Now.Year AeroResponse. All Rights Reserved.
+
+            <br />
+
+            Developed by Kim Brown • Jayce Brown• Nathaniel Stokes
+
+            <br />
+
+            BYU–Idaho Software Engineering Capstone Project
+
+        </div>
+
+    </footer>
+
 </div>

@@ -1,9 +1,10 @@
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using AeroResponse.Components;
 using AeroResponse.Components.Account;
 using AeroResponse.Data;
+using AeroResponse.Hubs;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,5 +63,8 @@ app.MapRazorComponents<App>()
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
+
+// SignalR Cockpit Simulation Hub
+app.MapHub<CockpitHub>("/cockpithub");
 
 app.Run();

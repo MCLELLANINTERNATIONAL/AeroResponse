@@ -34,7 +34,7 @@ Video Coming Soon
 
 ## Team
 - Kim Kathleen Brown
-- Jayce Odin Nephi 
+- Jayce Odin Nephi Brown 
 - Nathaniel Cole Stokes
 
 ## Project Milestones

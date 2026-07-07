@@ -35,7 +35,7 @@ Video Coming Soon
 ## Team
 - Kim Kathleen Brown
 - Jayce Odin Nephi 
-- Nathaniel
+- Nathaniel Cole Stokes
 
 ## Project Milestones
 - Week 1: Landing Page, Simulation Page Layout (AirCrafts) | App Layout

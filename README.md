@@ -237,8 +237,8 @@ Potential future enhancements include:
 - Multiplayer training sessions
 - Machine learning performance analysis
 - Virtual reality cockpit integration
+- Commercial subscription model
+- FAA/EASA training scenario expansion
 
 # Favorite Quotes!
 - Nathan's : "It's not the pursuit of happiness, it's the happiness in the pursuit." - Jimmy Carr
-- Commercial subscription model
-- FAA/EASA training scenario expansion

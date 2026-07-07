@@ -7,6 +7,12 @@ AeroResponse is a web-based Aircraft Emergency Response Training Simulator desig
 ## Project Overview
 Modern aviation relies heavily on simulation-based training to prepare pilots for emergency situations where rapid decision-making, situational awareness, and procedural accuracy are critical. Commercial pilot training simulators cost millions of dollars and are used extensively by airlines and aviation training organizations worldwide.
 
+### Trello Board
+https://trello.com/b/B0G3uHpe/aeroresponse
+
+### Demo Video
+Video Coming Soon
+
 ### Purpose of AeroResponse is to develop an accessible, web-based emergency response simulator that allows users to:
 - Select an aircraft type
 - Select an emergency scenario
@@ -30,6 +36,12 @@ Modern aviation relies heavily on simulation-based training to prepare pilots fo
 - Kim Kathleen Brown
 - Jayce Odin Nephi 
 - Nathaniel
+
+## Project Milestones
+- Week 1: Landing Page, Simulation Page Layout (AirCrafts) | App Layout
+- Week 2: Membership Tier Implementation and Payment Forms, Emergency Scenarios
+- Week 3: Security Authentication and Full Simulation Finalization, Results Dashboard
+- Week 4: Stretch Features Finalization, Production Deployment and Demo Recording
 
 ## Core Features
 

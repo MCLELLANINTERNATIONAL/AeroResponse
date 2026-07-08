@@ -242,3 +242,5 @@ Potential future enhancements include:
 
 # Favorite Quotes!
 - Nathan's : "It's not the pursuit of happiness, it's the happiness in the pursuit." - Jimmy Carr
+
+- Kim's : "It always seems impossible until it's done." - Nelson Mandela

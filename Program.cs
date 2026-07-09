@@ -2,6 +2,7 @@ using AeroResponse.Components;
 using AeroResponse.Components.Account;
 using AeroResponse.Data;
 using AeroResponse.Hubs;
+using AeroResponse.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,9 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     .AddDefaultTokenProviders();
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+
+// Register AeroResponse Services
+builder.Services.AddScoped<SimulationService>();
 
 var app = builder.Build();
 

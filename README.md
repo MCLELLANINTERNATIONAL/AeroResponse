@@ -244,3 +244,5 @@ Potential future enhancements include:
 - Nathan's : "It's not the pursuit of happiness, it's the happiness in the pursuit." - Jimmy Carr
 
 - Kim's : "It always seems impossible until it's done." - Nelson Mandela
+
+- Nephi's : "Believe you can and you're halfway there." — Theodore Roosevelt

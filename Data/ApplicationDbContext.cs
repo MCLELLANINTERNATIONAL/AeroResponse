@@ -18,4 +18,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<FlightLog> FlightLogs { get; set; }
 
     public DbSet<PerformanceResult> PerformanceResults { get; set; }
+
+    public DbSet<ScenarioRun> ScenarioRuns { get; set; }
+
+    public DbSet<PilotAction> PilotActions { get; set; }
+
+    public DbSet<ScenarioProcedureStep> ScenarioProcedureSteps { get; set; }
+
+    public DbSet<SimulationReport> SimulationReports { get; set; }
 }

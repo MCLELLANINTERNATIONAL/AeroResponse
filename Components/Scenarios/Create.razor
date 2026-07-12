@@ -1,0 +1,86 @@
+@page "/scenarios/create"
+@rendermode InteractiveServer
+
+@using AeroResponse.Models
+@using AeroResponse.Services
+@inject ScenarioService ScenarioService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create Scenario | AeroResponse</PageTitle>
+
+<section class="scenario-page scenario-form-page">
+
+    <header class="scenario-header">
+        <div>
+            <span class="scenario-eyebrow">
+                Scenario management
+            </span>
+
+            <h1>Create Emergency Scenario</h1>
+
+            <p>
+                Add a scenario that can be selected and run
+                through the AeroResponse simulation engine.
+            </p>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
+    <div class="scenario-form-card">
+
+        <ScenarioForm Scenario="scenario"
+                      FormName="create-scenario"
+                      SubmitText="Create scenario"
+                      IsSaving="isSaving"
+                      OnValidSubmit="CreateScenarioAsync" />
+
+    </div>
+
+</section>
+
+@code {
+    private readonly EmergencyScenario scenario = new()
+    {
+        Difficulty = "Beginner",
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow
+    };
+
+    private bool isSaving;
+    private string? errorMessage;
+
+    private async Task CreateScenarioAsync()
+    {
+        if (isSaving)
+        {
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            errorMessage = null;
+
+            scenario.CreatedAt = DateTime.UtcNow;
+
+            await ScenarioService.CreateAsync(scenario);
+
+            NavigationManager.NavigateTo("/scenarios");
+        }
+        catch (Exception)
+        {
+            errorMessage =
+                "The emergency scenario could not be created.";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

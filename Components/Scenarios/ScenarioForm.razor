@@ -1,0 +1,174 @@
+@using AeroResponse.Models
+
+<EditForm Model="Scenario"
+          FormName="@FormName"
+          OnValidSubmit="SubmitFormAsync">
+
+    <DataAnnotationsValidator />
+
+    <ValidationSummary class="text-danger mb-4" />
+
+    <div class="scenario-form-grid">
+
+        <div class="form-field">
+            <label for="scenario-title">Scenario title</label>
+
+            <InputText id="scenario-title"
+                       class="form-control"
+                       @bind-Value="Scenario.Title" />
+
+            <ValidationMessage For="@(() => Scenario.Title)" />
+        </div>
+
+        <div class="form-field">
+            <label for="emergency-type">Emergency type</label>
+
+            <InputSelect id="emergency-type"
+                         class="form-select"
+                         @bind-Value="Scenario.EmergencyType">
+
+                <option value="">Select emergency type</option>
+
+                @foreach (var emergencyType in EmergencyTypes)
+                {
+                    <option value="@emergencyType">
+                        @emergencyType
+                    </option>
+                }
+
+            </InputSelect>
+
+            <ValidationMessage For="@(() => Scenario.EmergencyType)" />
+        </div>
+
+        <div class="form-field form-field-full">
+            <label for="description">Description</label>
+
+            <InputTextArea id="description"
+                           class="form-control"
+                           rows="4"
+                           @bind-Value="Scenario.Description" />
+
+            <ValidationMessage For="@(() => Scenario.Description)" />
+        </div>
+
+        <div class="form-field">
+            <label for="difficulty">Difficulty</label>
+
+            <InputSelect id="difficulty"
+                         class="form-select"
+                         @bind-Value="Scenario.Difficulty">
+
+                @foreach (var difficulty in DifficultyLevels)
+                {
+                    <option value="@difficulty">
+                        @difficulty
+                    </option>
+                }
+
+            </InputSelect>
+
+            <ValidationMessage For="@(() => Scenario.Difficulty)" />
+        </div>
+
+        <div class="form-field active-field">
+            <label class="checkbox-label">
+                <InputCheckbox @bind-Value="Scenario.IsActive" />
+                <span>Scenario is active</span>
+            </label>
+
+            <small>
+                Active scenarios can be selected from the simulator.
+            </small>
+        </div>
+
+        <div class="form-field form-field-full">
+            <label for="trigger-condition">Trigger condition</label>
+
+            <InputTextArea id="trigger-condition"
+                           class="form-control"
+                           rows="3"
+                           @bind-Value="Scenario.TriggerCondition" />
+
+            <ValidationMessage For="@(() => Scenario.TriggerCondition)" />
+        </div>
+
+        <div class="form-field form-field-full">
+            <label for="expected-procedure">Expected procedure</label>
+
+            <InputTextArea id="expected-procedure"
+                           class="form-control"
+                           rows="7"
+                           @bind-Value="Scenario.ExpectedProcedure" />
+
+            <ValidationMessage For="@(() => Scenario.ExpectedProcedure)" />
+
+            <small>
+                Describe the expected response. Detailed interactive steps
+                are controlled by the simulation scenario classes.
+            </small>
+        </div>
+
+    </div>
+
+    <div class="scenario-form-actions">
+
+        <button type="submit"
+                class="btn btn-primary"
+                disabled="@IsSaving">
+
+            @(IsSaving ? "Saving..." : SubmitText)
+
+        </button>
+
+        <a href="/scenarios" class="btn btn-outline-light">
+            Cancel
+        </a>
+
+    </div>
+
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public EmergencyScenario Scenario { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public EventCallback OnValidSubmit { get; set; }
+
+    [Parameter]
+    public string SubmitText { get; set; } = "Save scenario";
+
+    [Parameter]
+    public string FormName { get; set; } = "scenario-form";
+
+    [Parameter]
+    public bool IsSaving { get; set; }
+
+    private static readonly string[] EmergencyTypes =
+    [
+        "Engine Fire",
+        "Engine Failure",
+        "Bird Strike",
+        "Cabin Depressurization",
+        "Hydraulic Failure",
+        "Electrical Failure",
+        "Fuel Leak",
+        "Landing Gear Malfunction",
+        "Smoke or Fire",
+        "Wind Shear"
+    ];
+
+    private static readonly string[] DifficultyLevels =
+    [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Expert"
+    ];
+
+    private Task SubmitFormAsync()
+    {
+        return OnValidSubmit.InvokeAsync();
+    }
+}

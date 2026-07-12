@@ -1,0 +1,158 @@
+@page "/scenarios/delete/{Id:int}"
+@rendermode InteractiveServer
+
+@using AeroResponse.Models
+@using AeroResponse.Services
+@inject ScenarioService ScenarioService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Delete Scenario | AeroResponse</PageTitle>
+
+<section class="scenario-page scenario-form-page">
+
+    @if (isLoading)
+    {
+        <div class="scenario-message">
+            Loading emergency scenario...
+        </div>
+    }
+    else if (scenario is null)
+    {
+        <div class="scenario-empty">
+            <h1>Scenario not found</h1>
+
+            <p>
+                The requested emergency scenario could not be found.
+            </p>
+
+            <a href="/scenarios" class="btn btn-primary">
+                Return to scenarios
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="delete-card">
+
+            <span class="scenario-eyebrow delete-eyebrow">
+                Permanent action
+            </span>
+
+            <h1>Delete Emergency Scenario?</h1>
+
+            <p>
+                You are about to permanently delete
+                <strong>@scenario.Title</strong>.
+                This action cannot be undone.
+            </p>
+
+            <dl class="delete-summary">
+
+                <div>
+                    <dt>Emergency type</dt>
+                    <dd>@scenario.EmergencyType</dd>
+                </div>
+
+                <div>
+                    <dt>Difficulty</dt>
+                    <dd>@scenario.Difficulty</dd>
+                </div>
+
+                <div>
+                    <dt>Status</dt>
+                    <dd>
+                        @(scenario.IsActive ? "Active" : "Inactive")
+                    </dd>
+                </div>
+
+            </dl>
+
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div class="alert alert-danger">
+                    @errorMessage
+                </div>
+            }
+
+            <div class="scenario-form-actions">
+
+                <button type="button"
+                        class="btn btn-danger"
+                        disabled="@isDeleting"
+                        @onclick="DeleteScenarioAsync">
+
+                    @(isDeleting
+                        ? "Deleting..."
+                        : "Delete scenario")
+
+                </button>
+
+                <a href="@($"/scenarios/{scenario.Id}")"
+                   class="btn btn-outline-light">
+                    Cancel
+                </a>
+
+            </div>
+
+        </div>
+    }
+
+</section>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private EmergencyScenario? scenario;
+    private bool isLoading = true;
+    private bool isDeleting;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            scenario = await ScenarioService.GetByIdAsync(Id);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task DeleteScenarioAsync()
+    {
+        if (scenario is null || isDeleting)
+        {
+            return;
+        }
+
+        try
+        {
+            isDeleting = true;
+            errorMessage = null;
+
+            var deleted =
+                await ScenarioService.DeleteAsync(scenario.Id);
+
+            if (!deleted)
+            {
+                errorMessage =
+                    "The emergency scenario was not found.";
+
+                return;
+            }
+
+            NavigationManager.NavigateTo("/scenarios");
+        }
+        catch (Exception)
+        {
+            errorMessage =
+                "The emergency scenario could not be deleted.";
+        }
+        finally
+        {
+            isDeleting = false;
+        }
+    }
+}

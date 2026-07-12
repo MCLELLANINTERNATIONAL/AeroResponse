@@ -1,0 +1,123 @@
+@page "/scenarios/edit/{Id:int}"
+@rendermode InteractiveServer
+
+@using AeroResponse.Models
+@using AeroResponse.Services
+@inject ScenarioService ScenarioService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit Scenario | AeroResponse</PageTitle>
+
+<section class="scenario-page scenario-form-page">
+
+    @if (isLoading)
+    {
+        <div class="scenario-message">
+            Loading emergency scenario...
+        </div>
+    }
+    else if (scenario is null)
+    {
+        <div class="scenario-empty">
+            <h1>Scenario not found</h1>
+
+            <p>
+                The requested emergency scenario could not be found.
+            </p>
+
+            <a href="/scenarios" class="btn btn-primary">
+                Return to scenarios
+            </a>
+        </div>
+    }
+    else
+    {
+        <header class="scenario-header">
+            <div>
+                <span class="scenario-eyebrow">
+                    Scenario management
+                </span>
+
+                <h1>Edit Emergency Scenario</h1>
+
+                <p>
+                    Update the scenario information, trigger conditions
+                    and expected procedure.
+                </p>
+            </div>
+        </header>
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-danger">
+                @errorMessage
+            </div>
+        }
+
+        <div class="scenario-form-card">
+
+            <ScenarioForm Scenario="scenario"
+                          FormName="edit-scenario"
+                          SubmitText="Save changes"
+                          IsSaving="isSaving"
+                          OnValidSubmit="UpdateScenarioAsync" />
+
+        </div>
+    }
+
+</section>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private EmergencyScenario? scenario;
+    private bool isLoading = true;
+    private bool isSaving;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            scenario = await ScenarioService.GetByIdAsync(Id);
+        }
+        catch (Exception)
+        {
+            errorMessage =
+                "The emergency scenario could not be loaded.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task UpdateScenarioAsync()
+    {
+        if (scenario is null || isSaving)
+        {
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            errorMessage = null;
+
+            await ScenarioService.UpdateAsync(scenario);
+
+            NavigationManager.NavigateTo(
+                $"/scenarios/{scenario.Id}");
+        }
+        catch (Exception)
+        {
+            errorMessage =
+                "The emergency scenario could not be updated.";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

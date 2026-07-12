@@ -8,64 +8,128 @@
     </div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+<input type="checkbox"
+    title="Navigation menu"
+    class="navbar-toggler" />
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+<div class="nav-scrollable"
+    onclick="document.querySelector('.navbar-toggler').click()">
+
     <nav class="nav flex-column">
+
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            <NavLink class="nav-link"
+                    href=""
+                    Match="NavLinkMatch.All">
+
+                <span class="bi bi-house-door-fill-nav-menu"
+                    aria-hidden="true"></span>
+
+                Home
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+
+                <span class="bi bi-plus-square-fill-nav-menu"
+                    aria-hidden="true"></span>
+
+                Counter
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="simulation">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Simulation
+
+                <span class="bi bi-list-nested-nav-menu"
+                    aria-hidden="true"></span>
+
+                Simulation
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="auth">
-                <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Auth Required
+
+                <span class="bi bi-lock-nav-menu"
+                    aria-hidden="true"></span>
+
+                Auth Required
             </NavLink>
         </div>
 
+        <!-- Only Admin and Instructor users can see scenario management. -->
+        <AuthorizeView Roles="Admin,Instructor">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="scenarios">
+
+                        <span class="bi bi-exclamation-triangle-fill"
+                            aria-hidden="true"></span>
+
+                        Scenarios
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
+        <!-- Account controls for every authenticated user. -->
         <AuthorizeView>
             <Authorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Account/Manage">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
+
+                        <span class="bi bi-person-fill-nav-menu"
+                            aria-hidden="true"></span>
+
+                        @context.User.Identity?.Name
                     </NavLink>
                 </div>
+
                 <div class="nav-item px-3">
                     <form action="Account/Logout" method="post">
+
                         <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+
+                        <input type="hidden"
+                            name="ReturnUrl"
+                            value="@currentUrl" />
+
                         <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+
+                            <span class="bi bi-arrow-bar-left-nav-menu"
+                                aria-hidden="true"></span>
+
+                            Logout
                         </button>
                     </form>
                 </div>
             </Authorized>
+
             <NotAuthorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Account/Register">
-                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
+
+                        <span class="bi bi-person-nav-menu"
+                            aria-hidden="true"></span>
+
+                        Register
                     </NavLink>
                 </div>
+
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Account/Login">
-                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
+
+                        <span class="bi bi-person-badge-nav-menu"
+                            aria-hidden="true"></span>
+
+                        Login
                     </NavLink>
                 </div>
             </NotAuthorized>
         </AuthorizeView>
+
     </nav>
 </div>
 
@@ -74,13 +138,20 @@
 
     protected override void OnInitialized()
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        currentUrl =
+            NavigationManager.ToBaseRelativePath(
+                NavigationManager.Uri);
+
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    private void OnLocationChanged(
+        object? sender,
+        LocationChangedEventArgs e)
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        currentUrl =
+            NavigationManager.ToBaseRelativePath(e.Location);
+
         StateHasChanged();
     }
 
@@ -89,4 +160,3 @@
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
-

@@ -1,0 +1,245 @@
+@page "/scenarios"
+@rendermode InteractiveServer
+
+@using AeroResponse.Models
+@using AeroResponse.Services
+@inject ScenarioService ScenarioService
+
+<PageTitle>Emergency Scenarios | AeroResponse</PageTitle>
+
+<section class="scenario-page">
+
+    <header class="scenario-header">
+
+        <div>
+            <span class="scenario-eyebrow">
+                Scenario management
+            </span>
+
+            <h1>Emergency Scenarios</h1>
+
+            <p>
+                Manage the aviation emergencies available within
+                the AeroResponse training simulator.
+            </p>
+        </div>
+
+        <a href="/scenarios/create" class="btn btn-primary">
+            Add scenario
+        </a>
+
+    </header>
+
+    <div class="scenario-toolbar">
+
+        <div>
+            <label for="scenario-search">Search</label>
+
+            <input id="scenario-search"
+                class="form-control"
+                placeholder="Search scenarios..."
+                @bind="searchText"
+                @bind:event="oninput" />
+        </div>
+
+        <div>
+            <label for="status-filter">Status</label>
+
+            <select id="status-filter"
+                    class="form-select"
+                    @bind="statusFilter">
+
+                <option value="All">All</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+
+            </select>
+        </div>
+
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="scenario-message">
+            Loading emergency scenarios...
+        </div>
+    }
+    else if (!FilteredScenarios.Any())
+    {
+        <div class="scenario-empty">
+            <h2>No emergency scenarios found</h2>
+
+            <p>
+                Create a scenario or change the current search filters.
+            </p>
+
+            <a href="/scenarios/create" class="btn btn-primary">
+                Create scenario
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="scenario-table-wrapper">
+
+            <table class="scenario-table">
+
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Emergency type</th>
+                        <th>Difficulty</th>
+                        <th>Status</th>
+                        <th>Trigger</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @foreach (var scenario in FilteredScenarios)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@scenario.Title</strong>
+
+                                <span class="scenario-description">
+                                    @Shorten(scenario.Description, 90)
+                                </span>
+                            </td>
+
+                            <td>@scenario.EmergencyType</td>
+
+                            <td>
+                                <span class="difficulty-badge
+                                            @GetDifficultyClass(scenario.Difficulty)">
+                                    @scenario.Difficulty
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="status-badge
+                                            @(scenario.IsActive
+                                                ? "status-active"
+                                                : "status-inactive")">
+
+                                    @(scenario.IsActive ? "Active" : "Inactive")
+
+                                </span>
+                            </td>
+
+                            <td>
+                                @Shorten(scenario.TriggerCondition, 70)
+                            </td>
+
+                            <td>
+                                <div class="scenario-actions">
+
+                                    <a href="@($"/scenarios/{scenario.Id}")">
+                                        View
+                                    </a>
+
+                                    <a href="@($"/scenarios/edit/{scenario.Id}")">
+                                        Edit
+                                    </a>
+
+                                    <a class="delete-link"
+                                       href="@($"/scenarios/delete/{scenario.Id}")">
+                                        Delete
+                                    </a>
+
+                                </div>
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+    }
+
+</section>
+
+@code {
+    private List<EmergencyScenario> scenarios = [];
+    private string searchText = string.Empty;
+    private string statusFilter = "All";
+    private bool isLoading = true;
+
+    private IEnumerable<EmergencyScenario> FilteredScenarios
+    {
+        get
+        {
+            IEnumerable<EmergencyScenario> result = scenarios;
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                result = result.Where(scenario =>
+                    ContainsText(scenario.Title, searchText) ||
+                    ContainsText(scenario.EmergencyType, searchText) ||
+                    ContainsText(scenario.Difficulty, searchText) ||
+                    ContainsText(scenario.Description, searchText) ||
+                    ContainsText(scenario.TriggerCondition, searchText));
+            }
+
+            result = statusFilter switch
+            {
+                "Active" => result.Where(scenario => scenario.IsActive),
+                "Inactive" => result.Where(scenario => !scenario.IsActive),
+                _ => result
+            };
+
+            return result
+                .OrderBy(scenario => scenario.EmergencyType)
+                .ThenBy(scenario => scenario.Title);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            scenarios =
+            [
+                .. await ScenarioService.GetAllAsync()
+            ];
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private static bool ContainsText(string? value, string search)
+    {
+        return value?.Contains(
+            search,
+            StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    private static string Shorten(string? value, int maximumLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "—";
+        }
+
+        return value.Length <= maximumLength
+            ? value
+            : $"{value[..maximumLength]}…";
+    }
+
+    private static string GetDifficultyClass(string difficulty)
+    {
+        return difficulty.ToLowerInvariant() switch
+        {
+            "beginner" => "difficulty-beginner",
+            "intermediate" => "difficulty-intermediate",
+            "advanced" => "difficulty-advanced",
+            "expert" => "difficulty-expert",
+            _ => string.Empty
+        };
+    }
+}

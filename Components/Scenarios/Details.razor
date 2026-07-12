@@ -1,0 +1,137 @@
+@page "/scenarios/{Id:int}"
+@rendermode InteractiveServer
+
+@using AeroResponse.Models
+@using AeroResponse.Services
+@inject ScenarioService ScenarioService
+
+<PageTitle>Scenario Details | AeroResponse</PageTitle>
+
+<section class="scenario-page">
+
+    @if (isLoading)
+    {
+        <div class="scenario-message">
+            Loading emergency scenario...
+        </div>
+    }
+    else if (scenario is null)
+    {
+        <div class="scenario-empty">
+            <h1>Scenario not found</h1>
+
+            <p>
+                The requested emergency scenario could not be found.
+            </p>
+
+            <a href="/scenarios" class="btn btn-primary">
+                Return to scenarios
+            </a>
+        </div>
+    }
+    else
+    {
+        <header class="scenario-header">
+
+            <div>
+                <span class="scenario-eyebrow">
+                    @scenario.EmergencyType
+                </span>
+
+                <h1>@scenario.Title</h1>
+
+                <p>@scenario.Description</p>
+            </div>
+
+            <div class="scenario-header-actions">
+
+                <a href="@($"/scenarios/edit/{scenario.Id}")"
+                   class="btn btn-primary">
+                    Edit
+                </a>
+
+                <a href="@($"/scenarios/delete/{scenario.Id}")"
+                   class="btn btn-outline-danger">
+                    Delete
+                </a>
+
+            </div>
+
+        </header>
+
+        <div class="scenario-details-grid">
+
+            <article class="scenario-detail-card">
+                <span>Emergency type</span>
+                <strong>@scenario.EmergencyType</strong>
+            </article>
+
+            <article class="scenario-detail-card">
+                <span>Difficulty</span>
+                <strong>@scenario.Difficulty</strong>
+            </article>
+
+            <article class="scenario-detail-card">
+                <span>Status</span>
+                <strong>
+                    @(scenario.IsActive ? "Active" : "Inactive")
+                </strong>
+            </article>
+
+            <article class="scenario-detail-card">
+                <span>Created</span>
+                <strong>
+                    @scenario.CreatedAt
+                        .ToLocalTime()
+                        .ToString("dd MMM yyyy")
+                </strong>
+            </article>
+
+        </div>
+
+        <div class="scenario-content-grid">
+
+            <article class="scenario-content-card">
+                <h2>Trigger condition</h2>
+
+                <p>@scenario.TriggerCondition</p>
+            </article>
+
+            <article class="scenario-content-card">
+                <h2>Expected procedure</h2>
+
+                <p class="preserve-lines">
+                    @scenario.ExpectedProcedure
+                </p>
+            </article>
+
+        </div>
+
+        <div class="scenario-bottom-actions">
+            <a href="/scenarios" class="btn btn-outline-light">
+                Back to scenarios
+            </a>
+        </div>
+    }
+
+</section>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private EmergencyScenario? scenario;
+    private bool isLoading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            scenario = await ScenarioService.GetByIdAsync(Id);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

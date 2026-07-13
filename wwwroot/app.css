@@ -60,6 +60,49 @@ h1:focus {
 }
 
 /* ======================================================
+   Cockpit 
+====================================================== */
+
+.simulation-test-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: min(100%, 500px);
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border: 1px solid #666;
+    border-radius: 0.5rem;
+}
+
+.simulation-test-panel input[type="range"] {
+    width: 100%;
+}
+
+.instrument {
+
+    border: 2px solid #666;
+    border-radius: 12px;
+    background: #1e1e1e;
+    color: white;
+
+    padding: 1rem;
+
+    width: 180px;
+    height: 180px;
+
+}
+#altimeter svg {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 1;
+}
+.instrument-label { color:#F5F5F5 }
+/* .instrument-value {  }
+.instrument-warning { ... } */
+
+
+/* ======================================================
    Emergency Scenario CRUD
 ====================================================== */
 

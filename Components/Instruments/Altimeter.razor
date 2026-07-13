@@ -1,0 +1,37 @@
+<div class="instrument" id="altimeter">
+    <div class="altimeter-label">ALTIMETER</div>
+    <div class="altimeter-reading">@Altitude.ToString("N0") FT</div>
+    <svg
+        viewBox="0 0 300 300">
+
+        <circle cx="150"
+                cy="150"
+                r="145"
+                fill="#111"
+                stroke="#888"
+                stroke-width="8" />
+
+        <line x1="150"
+            y1="150"
+            x2="150"
+            y2="45"
+            stroke="white"
+            stroke-width="6"
+            stroke-linecap="round"
+            transform="@($"rotate({NeedleAngle.ToString(System.Globalization.CultureInfo.InvariantCulture)} 150 150)")" />
+
+        <circle cx="150"
+                cy="150"
+                r="10"
+                fill="white" />
+
+    </svg>
+</div>
+
+@code {
+    [Parameter]
+    public int Altitude { get; set; }
+
+    private double NeedleAngle =>
+        (Altitude % 1000) / 1000.0 * 360.0;
+}

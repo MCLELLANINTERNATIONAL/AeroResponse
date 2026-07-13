@@ -1,10 +1,30 @@
 ﻿@page "/simulation"
-@attribute [StreamRendering]
+@rendermode InteractiveServer
+
+@using AeroResponse.Components.Cockpit
+@using AeroResponse.Simulation
 
 <PageTitle>Cockpit</PageTitle>
 
 <h1>Cockpit</h1>
 
-<p></p>
+<div class="simulation-test-panel">
+    <label for="altitude-control">
+        Test altitude:
+        <strong>@cockpitState.Altitude.ToString("N0") ft</strong>
+    </label>
 
+    <input id="altitude-control"
+           type="range"
+           min="0"
+           max="20000"
+           step="100"
+           @bind="cockpitState.Altitude"
+           @bind:event="oninput" />
+</div>
 
+<CockpitLayout State="@cockpitState" />
+
+@code {
+    private readonly CockpitState cockpitState = new();
+}

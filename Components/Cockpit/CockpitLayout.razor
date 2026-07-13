@@ -1,0 +1,9 @@
+<div class="cockpit-layout">
+    <Altimeter Altitude="@State.Altitude" />
+</div>
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public CockpitState State { get; set; } = new();
+}

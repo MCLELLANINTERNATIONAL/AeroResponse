@@ -1,8 +1,10 @@
-html, body {
+html,
+body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-a, .btn-link {
+a,
+.btn-link {
     color: #006bb7;
 }
 
@@ -12,7 +14,11 @@ a, .btn-link {
     border-color: #1861ac;
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
     box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
@@ -42,25 +48,27 @@ h1:focus {
     color: white;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+.form-floating>.form-control-plaintext::placeholder,
+.form-floating>.form-control::placeholder {
     color: var(--bs-secondary-color);
     text-align: end;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+.form-floating>.form-control-plaintext:focus::placeholder,
+.form-floating>.form-control:focus::placeholder {
     text-align: start;
 }
 
 /* ======================================================
-   Emergency Scenario CRUD
+    Emergency Scenario CRUD
 ====================================================== */
 
 .scenario-page {
@@ -346,7 +354,7 @@ h1:focus {
     margin: 2rem auto;
 }
 
-.delete-card > p {
+.delete-card>p {
     color: #cbd5e1;
     line-height: 1.7;
 }
@@ -423,7 +431,7 @@ h1:focus {
 }
 
 /* ======================================================
-   AeroResponse homepage with four-image hero carousel
+    AeroResponse homepage with four-image hero carousel
 ====================================================== */
 
 * {
@@ -436,7 +444,7 @@ h1:focus {
 }
 
 /* ======================================================
-   Hero
+    Hero
 ====================================================== */
 
 .hero {
@@ -448,7 +456,7 @@ h1:focus {
 }
 
 /* ======================================================
-   Carousel backgrounds
+    Carousel backgrounds
 ====================================================== */
 
 .hero-carousel {
@@ -541,18 +549,14 @@ h1:focus {
     pointer-events: none;
 
     background:
-        linear-gradient(
-            90deg,
+        linear-gradient(90deg,
             rgba(1, 9, 18, 0.98) 0%,
             rgba(1, 9, 18, 0.92) 27%,
             rgba(1, 9, 18, 0.54) 52%,
-            rgba(1, 9, 18, 0.1) 78%
-        ),
-        linear-gradient(
-            0deg,
+            rgba(1, 9, 18, 0.1) 78%),
+        linear-gradient(0deg,
             rgba(1, 8, 17, 0.8) 0%,
-            transparent 42%
-        );
+            transparent 42%);
 }
 
 /* Hero text content */
@@ -678,7 +682,7 @@ h1:focus {
 }
 
 /* ======================================================
-   Carousel indicators
+    Carousel indicators
 ====================================================== */
 
 .carousel-indicators {
@@ -751,7 +755,7 @@ h1:focus {
 }
 
 /* ======================================================
-   Statistics
+    Statistics
 ====================================================== */
 
 .stats-wrap {
@@ -771,11 +775,9 @@ h1:focus {
     border-radius: 10px;
 
     background:
-        linear-gradient(
-            100deg,
+        linear-gradient(100deg,
             #07182b 0%,
-            #0a2848 100%
-        );
+            #0a2848 100%);
 
     box-shadow: 0 16px 35px rgba(3, 17, 34, 0.22);
 }
@@ -823,19 +825,17 @@ h1:focus {
 }
 
 /* ======================================================
-   Features
+    Features
 ====================================================== */
 
 .features-section {
     padding: 3.35rem 0 0.6rem;
 
     background:
-        radial-gradient(
-            circle at 50% 0%,
+        radial-gradient(circle at 50% 0%,
             #ffffff 0%,
             #f5f8fd 53%,
-            #eef4fb 100%
-        );
+            #eef4fb 100%);
 }
 
 .section-heading {
@@ -953,7 +953,7 @@ h1:focus {
 }
 
 /* ======================================================
-   Call to action
+    Call to action
 ====================================================== */
 
 .cta-strip {
@@ -971,11 +971,9 @@ h1:focus {
     border-radius: 8px;
 
     background:
-        linear-gradient(
-            100deg,
+        linear-gradient(100deg,
             #06182e 0%,
-            #062b52 100%
-        );
+            #062b52 100%);
 }
 
 .cta-message {
@@ -1029,7 +1027,7 @@ h1:focus {
 }
 
 /* ======================================================
-   Responsive layout
+    Responsive layout
 ====================================================== */
 
 @media (max-width: 1200px) {
@@ -1073,16 +1071,12 @@ h1:focus {
 
     .hero-overlay {
         background:
-            linear-gradient(
-                90deg,
+            linear-gradient(90deg,
                 rgba(1, 9, 18, 0.98),
-                rgba(1, 9, 18, 0.76)
-            ),
-            linear-gradient(
-                0deg,
+                rgba(1, 9, 18, 0.76)),
+            linear-gradient(0deg,
                 rgba(1, 9, 18, 0.95),
-                transparent
-            );
+                transparent);
     }
 
     .hero-content {
@@ -1170,7 +1164,7 @@ h1:focus {
 }
 
 /* ======================================================
-   Footer
+    Footer
 ====================================================== */
 
 .site-footer {
@@ -1261,7 +1255,7 @@ h1:focus {
 }
 
 /* ======================================================
-   Footer responsive layout
+    Footer responsive layout
 ====================================================== */
 
 @media (max-width: 1200px) {

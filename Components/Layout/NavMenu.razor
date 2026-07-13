@@ -1,162 +1,59 @@
-﻿@implements IDisposable
+﻿<header class="site-header">
+    <div class="nav-container">
 
-@inject NavigationManager NavigationManager
+        <!-- Logo -->
+        <NavLink class="brand"
+                 href=""
+                 Match="NavLinkMatch.All"
+                 aria-label="AeroResponse home">
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">AeroResponse</a>
-    </div>
-</div>
+            <img src="/images/logo2.png"
+                 alt="AeroResponse"
+                 class="brand-logo" />
+        </NavLink>
 
-<input type="checkbox"
-    title="Navigation menu"
-    class="navbar-toggler" />
+        <!-- Mobile menu control -->
+        <input id="nav-toggle"
+               class="nav-toggle"
+               type="checkbox"
+               aria-label="Toggle navigation" />
 
-<div class="nav-scrollable"
-    onclick="document.querySelector('.navbar-toggler').click()">
+        <label class="nav-toggle-label"
+               for="nav-toggle"
+               aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+        </label>
 
-    <nav class="nav flex-column">
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link"
-                    href=""
-                    Match="NavLinkMatch.All">
-
-                <span class="bi bi-house-door-fill-nav-menu"
-                    aria-hidden="true"></span>
-
+        <!-- Center navigation -->
+        <nav class="primary-nav" aria-label="Primary navigation">
+            <NavLink href="" Match="NavLinkMatch.All">
                 Home
             </NavLink>
-        </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-
-                <span class="bi bi-plus-square-fill-nav-menu"
-                    aria-hidden="true"></span>
-
-                Counter
+            <NavLink href="membership">
+                Membership
             </NavLink>
-        </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="simulation">
-
-                <span class="bi bi-list-nested-nav-menu"
-                    aria-hidden="true"></span>
-
-                Simulation
+            <NavLink href="dashboard">
+                Dashboard
             </NavLink>
-        </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="auth">
-
-                <span class="bi bi-lock-nav-menu"
-                    aria-hidden="true"></span>
-
-                Auth Required
+            <NavLink href="scenarios">
+                Scenarios
             </NavLink>
+        </nav>
+
+        <!-- Right-side account buttons -->
+        <div class="account-actions">
+            <a class="login-button" href="/login">
+                Login
+            </a>
+
+            <a class="signup-button" href="/signup">
+                Sign Up
+            </a>
         </div>
-
-        <!-- Only Admin and Instructor users can see scenario management. -->
-        <AuthorizeView Roles="Admin,Instructor">
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="scenarios">
-
-                        <span class="bi bi-exclamation-triangle-fill"
-                            aria-hidden="true"></span>
-
-                        Scenarios
-                    </NavLink>
-                </div>
-            </Authorized>
-        </AuthorizeView>
-
-        <!-- Account controls for every authenticated user. -->
-        <AuthorizeView>
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Manage">
-
-                        <span class="bi bi-person-fill-nav-menu"
-                            aria-hidden="true"></span>
-
-                        @context.User.Identity?.Name
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <form action="Account/Logout" method="post">
-
-                        <AntiforgeryToken />
-
-                        <input type="hidden"
-                            name="ReturnUrl"
-                            value="@currentUrl" />
-
-                        <button type="submit" class="nav-link">
-
-                            <span class="bi bi-arrow-bar-left-nav-menu"
-                                aria-hidden="true"></span>
-
-                            Logout
-                        </button>
-                    </form>
-                </div>
-            </Authorized>
-
-            <NotAuthorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Register">
-
-                        <span class="bi bi-person-nav-menu"
-                            aria-hidden="true"></span>
-
-                        Register
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Login">
-
-                        <span class="bi bi-person-badge-nav-menu"
-                            aria-hidden="true"></span>
-
-                        Login
-                    </NavLink>
-                </div>
-            </NotAuthorized>
-        </AuthorizeView>
-
-    </nav>
-</div>
-
-@code {
-    private string? currentUrl;
-
-    protected override void OnInitialized()
-    {
-        currentUrl =
-            NavigationManager.ToBaseRelativePath(
-                NavigationManager.Uri);
-
-        NavigationManager.LocationChanged += OnLocationChanged;
-    }
-
-    private void OnLocationChanged(
-        object? sender,
-        LocationChangedEventArgs e)
-    {
-        currentUrl =
-            NavigationManager.ToBaseRelativePath(e.Location);
-
-        StateHasChanged();
-    }
-
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
-}
+    </div>
+</header>

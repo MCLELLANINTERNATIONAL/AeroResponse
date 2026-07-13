@@ -1,23 +1,103 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<div class="site-shell">
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+    <NavMenu />
 
-        <article class="content px-4">
-            @Body
-        </article>
+    <main class="site-main">
+        @Body
     </main>
+
+    <footer class="site-footer">
+        <div class="home-container footer-inner">
+
+            <div class="footer-brand">
+                <img src="/images/logo1.png"
+                     alt="AeroResponse"
+                     class="footer-logo" />
+            </div>
+
+            <div class="footer-column">
+                <strong>Platform</strong>
+
+                <a href="/membership">Membership</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/scenarios">Scenarios</a>
+            </div>
+
+            <div class="footer-column">
+                <strong>Company</strong>
+
+                <a href="#">About Us</a>
+                <a href="#">Contact</a>
+                <a href="#">Blog</a>
+                <a href="#">Careers</a>
+            </div>
+
+            <div class="footer-column">
+                <strong>Support</strong>
+
+                <a href="#">Help Center</a>
+                <a href="#">FAQ</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+            </div>
+
+            <div class="footer-column footer-social">
+                <strong>Follow Us</strong>
+                
+                <div class="social-links">
+
+                    <a href="https://www.facebook.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Facebook">
+
+                        <i class="fa-brands fa-facebook-f"></i>
+
+                    </a>
+
+                    <a href="https://www.x.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="X">
+
+                        <i class="fa-brands fa-x-twitter"></i>
+
+                    </a>
+
+                    <a href="https://www.instagram.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram">
+
+                        <i class="fa-brands fa-instagram"></i>
+
+                    </a>
+
+                    <a href="https://www.youtube.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="YouTube">
+
+                        <i class="fa-brands fa-youtube"></i>
+
+                    </a>
+
+                </div>
+            </div>
+
+            <div class="footer-copyright">
+                © 2026 AeroResponse. All rights reserved.
+            </div>
+
+        </div>
+    </footer>
+
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    <a href=".">Reload</a>
     <span class="dismiss">🗙</span>
 </div>

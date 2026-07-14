@@ -108,8 +108,8 @@ h1:focus {
 }
 
 .scenario-eyebrow {
-    color: #38bdf8;
-    font-size: 0.78rem;
+    color: #32b8f1;
+    font-size: 1rem;
     font-weight: 800;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -157,7 +157,8 @@ h1:focus {
 .scenario-toolbar .form-select {
     min-height: 44px;
 
-    color: #ffffff;
+    color: #38bdf8;
+    font-weight: 800;
     background: #0c3966;
 
     border: 1px solid rgba(56, 142, 224, 0.65);
@@ -181,7 +182,8 @@ h1:focus {
 .form-field .form-select:focus,
 .scenario-toolbar .form-control:focus,
 .scenario-toolbar .form-select:focus {
-    color: #ffffff;
+    color: #38bdf8;
+    font-weight: 800;
     background: #125a98;
 
     border-color: #168cff;
@@ -193,13 +195,13 @@ h1:focus {
 
 .form-field .form-control::placeholder,
 .scenario-toolbar .form-control::placeholder {
-    color: #bdcadd;
+    color: #bfcada;
     opacity: 0.88;
 }
 
 .form-field .form-select option,
 .scenario-toolbar .form-select option {
-    color: #ffffff;
+    color: #1690e8;
     font-weight: 800;
     background: #0a2848;
 }
@@ -209,12 +211,18 @@ h1:focus {
     resize: vertical;
 }
 
-.form-field medium {
+.form-field small {
     display: block;
     margin-top: 0.45rem;
 
-    color: white;
+    color: #b4b7b8;
+    font-size: 0.88rem;
+    font-weight: 800;
     line-height: 1.45;
+}
+
+.form-field p {
+    color: #C8E8FF;
 }
 
 /* ======================================================
@@ -382,6 +390,17 @@ h1:focus {
     border-radius: 10px;
 }
 
+/* ==========================================
+    Clickable elements
+========================================== */
+
+.scenario-page a,
+.scenario-page button,
+.scenario-page .btn,
+.scenario-page input[type="checkbox"] {
+    cursor: pointer;
+}
+
 /* ======================================================
     Create and edit forms
 ====================================================== */
@@ -408,8 +427,6 @@ h1:focus {
 .checkbox-label input {
     width: 1.1rem;
     height: 1.1rem;
-    color: #26b050;
-
 
     accent-color: #087cf0;
 }
@@ -578,6 +595,31 @@ h1:focus {
 
 .scenario-bottom-actions {
     margin-top: 1.5rem;
+}
+
+/* ==========================================
+    Details Page Buttons
+========================================== */
+
+.scenario-header-actions .btn {
+    min-width: 150px;
+    min-height: 60px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.scenario-header-actions .btn-primary {
+    font-weight: 800;
+}
+
+.scenario-header-actions .btn-outline-danger {
+    font-weight: 800;
 }
 
 /* ======================================================

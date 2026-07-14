@@ -26,7 +26,7 @@
             </p>
 
             <a href="/scenarios" class="btn btn-primary">
-                Return to scenarios
+                Return to Scenarios
             </a>
         </div>
     }
@@ -49,7 +49,7 @@
             <dl class="delete-summary">
 
                 <div>
-                    <dt>Emergency type</dt>
+                    <dt>Emergency Type</dt>
                     <dd>@scenario.EmergencyType</dd>
                 </div>
 
@@ -77,25 +77,25 @@
             <div class="scenario-form-actions">
 
                 <button type="button"
-                        class="btn btn-danger"
-                        disabled="@isDeleting"
-                        @onclick="DeleteScenarioAsync">
+                class="btn btn-danger"
+                disabled="@isDeleting"
+                @onclick="DeleteScenarioAsync">
 
-                    @(isDeleting
-                        ? "Deleting..."
-                        : "Delete scenario")
+                @(isDeleting
+                ? "Deleting..."
+                : "Delete Scenario")
 
-                </button>
+            </button>
 
-                <a href="@($"/scenarios/{scenario.Id}")"
-                   class="btn btn-outline-light">
-                    Cancel
-                </a>
+            <a href="@($"/scenarios/{scenario.Id}")"
+            class="btn btn-outline-light">
+            Cancel
+        </a>
 
-            </div>
+    </div>
 
-        </div>
-    }
+</div>
+}
 
 </section>
 

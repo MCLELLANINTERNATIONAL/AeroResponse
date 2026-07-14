@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using AeroResponse.Models;
 
 namespace AeroResponse.Simulation.Layouts.Aircraft;
@@ -27,6 +28,34 @@ public static class Cessna172CockpitLayout
                     Type = InstrumentType.Altimeter,
                     GridRow = 1,
                     GridColumn = 3
+                },
+
+                new()
+                {
+                    Type = InstrumentType.ArtificialHorizon,
+                    GridRow = 1,
+                    GridColumn = 2
+                },
+
+                new()
+                {
+                    Type = InstrumentType.TurnCoordinator,
+                    GridRow = 2,
+                    GridColumn = 1
+                },
+
+                new()
+                {
+                    Type = InstrumentType.HeadingIndicator,
+                    GridRow = 2,
+                    GridColumn = 2
+                },
+
+                new()
+                {
+                    Type = InstrumentType.VerticalSpeedIndicator,
+                    GridRow = 2,
+                    GridColumn = 3
                 }
             ],
 
@@ -48,6 +77,36 @@ public static class Cessna172CockpitLayout
                 YellowArcEnd = 163,
 
                 NeverExceedSpeed = 163
+            },
+
+            ArtificialHorizon = new()
+            {
+                MinimumPitch = -30, 
+                MaximumPitch = 30,
+
+                MinimumBank = -100,
+                MaximumBank = 100
+            },
+
+            VSI = new()
+            {
+                MinimumVerticalSpeed = -2000, // Feet Per Minute
+                MaximumVerticalSpeed = 2000,
+
+                LagSeconds = 6,
+
+                CalibrationPoints =
+                [
+                    new(-2000, -235), // Where the Numbers sit on the VSI Instrument
+                    new(-1500, -200),
+                    new(-1000, -160),
+                    new(-500, -125),
+                    new(0, -90),
+                    new(500, -55),
+                    new(1000, -20),
+                    new(1500, 20),
+                    new(2000, 55)
+                ]
             },
 
             EngineCount = 1

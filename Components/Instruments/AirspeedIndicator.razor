@@ -1,5 +1,6 @@
 @using AeroResponse.Simulation.Instruments.AirspeedIndicator
 @using AeroResponse.Simulation.Layouts
+@using AeroResponse.Simulation.Instruments
 
 <InstrumentBase Label="AIRSPEED"
                 AriaLabel="@($"Airspeed indicator showing {Airspeed} knots")">
@@ -38,14 +39,14 @@
             var redLineAngle = GetSpeedAngle(
                 Config.Airspeed.NeverExceedSpeed);
 
-            var redLineOuter = GetDialPoint(136, redLineAngle);
-            var redLineInner = GetDialPoint(116, redLineAngle);
+            var redLineOuter = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 136, redLineAngle);
+            var redLineInner = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 116, redLineAngle);
         }
 
-        <line x1="@Format(redLineInner.X)"
-              y1="@Format(redLineInner.Y)"
-              x2="@Format(redLineOuter.X)"
-              y2="@Format(redLineOuter.Y)"
+        <line x1="@InstrumentGeometry.Format(redLineInner.X)"
+              y1="@InstrumentGeometry.Format(redLineInner.Y)"
+              x2="@InstrumentGeometry.Format(redLineOuter.X)"
+              y2="@InstrumentGeometry.Format(redLineOuter.Y)"
               class="never-exceed-line" />
 
         <!-- Tick marks -->
@@ -56,15 +57,17 @@
             var angle = GetSpeedAngle(speed);
             var isMajorTick = speed % 20 == 0;
 
-            var outerPoint = GetDialPoint(132, angle);
-            var innerPoint = GetDialPoint(
+            var outerPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 132, angle);
+            var innerPoint = InstrumentGeometry.GetDialPoint(
+                CenterX,
+                CenterY,
                 isMajorTick ? 111 : 121,
                 angle);
 
-            <line x1="@Format(innerPoint.X)"
-                  y1="@Format(innerPoint.Y)"
-                  x2="@Format(outerPoint.X)"
-                  y2="@Format(outerPoint.Y)"
+            <line x1="@InstrumentGeometry.Format(innerPoint.X)"
+                  y1="@InstrumentGeometry.Format(innerPoint.Y)"
+                  x2="@InstrumentGeometry.Format(outerPoint.X)"
+                  y2="@InstrumentGeometry.Format(outerPoint.Y)"
                   class="@(isMajorTick
                       ? "dial-tick major-tick"
                       : "dial-tick minor-tick")" />
@@ -76,10 +79,10 @@
               speed += 20)
         {
             var angle = GetSpeedAngle(speed);
-            var numberPoint = GetDialPoint(94, angle);
+            var numberPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 94, angle);
 
-            <svg:text x="@Format(numberPoint.X)"
-                      y="@Format(numberPoint.Y)"
+            <svg:text x="@InstrumentGeometry.Format(numberPoint.X)"
+                      y="@InstrumentGeometry.Format(numberPoint.Y)"
                       class="dial-number"
                       dominant-baseline="middle"
                       text-anchor="middle">
@@ -167,8 +170,8 @@
         var startAngle = GetSpeedAngle(startSpeed);
         var endAngle = GetSpeedAngle(endSpeed);
 
-        var startPoint = GetDialPoint(radius, startAngle);
-        var endPoint = GetDialPoint(radius, endAngle);
+        var startPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, radius, startAngle);
+        var endPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, radius, endAngle);
 
         var sweep = endAngle - startAngle;
         var largeArcFlag = Math.Abs(sweep) > 180 ? 1 : 0;
@@ -178,23 +181,4 @@
             $"M {startPoint.X:0.###} {startPoint.Y:0.###} A {radius:0.###} {radius:0.###} 0 {largeArcFlag} {sweepFlag} {endPoint.X:0.###} {endPoint.Y:0.###}");
     }
 
-    private static DialPoint GetDialPoint(
-        double radius,
-        double angle)
-    {
-        var radians = angle * Math.PI / 180.0;
-
-        return new DialPoint(
-            CenterX + radius * Math.Sin(radians),
-            CenterY - radius * Math.Cos(radians));
-    }
-
-    private static string Format(double value) =>
-        value.ToString(
-            "0.###",
-            System.Globalization.CultureInfo.InvariantCulture);
-
-    private readonly record struct DialPoint(
-        double X,
-        double Y);
 }

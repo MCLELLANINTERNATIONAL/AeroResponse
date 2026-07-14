@@ -1,0 +1,194 @@
+@using AeroResponse.Simulation.Instruments.HeadingIndicator
+@using AeroResponse.Simulation.Instruments
+
+<InstrumentBase Label="HEADING"
+                AriaLabel="@($"Heading indicator showing {Reading.Heading:0} degrees")">
+
+    <svg class="heading-indicator-svg"
+         viewBox="0 0 300 300"
+         aria-hidden="true">
+
+        <!-- Dial face -->
+        <circle cx="150"
+                cy="150"
+                r="140"
+                class="dial-face" />
+
+        <!-- Rotating compass card -->
+        <g transform="@CompassCardTransform"
+           class="compass-card">
+
+            <!-- Tick marks -->
+            @for (var heading = 0; heading < 360; heading += 5)
+            {
+                var isCardinal = heading % 90 == 0;
+                var isMajor = heading % 30 == 0;
+
+                var outer = InstrumentGeometry.GetDialPoint(
+                    CenterX,
+                    CenterY,
+                    132,
+                    heading);
+
+                var innerRadius = isCardinal
+                    ? 105
+                    : isMajor
+                        ? 112
+                        : 122;
+
+                var inner = InstrumentGeometry.GetDialPoint(
+                    CenterX,
+                    CenterY,
+                    innerRadius,
+                    heading);
+
+                <line x1="@InstrumentGeometry.Format(inner.X)"
+                      y1="@InstrumentGeometry.Format(inner.Y)"
+                      x2="@InstrumentGeometry.Format(outer.X)"
+                      y2="@InstrumentGeometry.Format(outer.Y)"
+                      class="@(isCardinal
+                          ? "heading-tick cardinal-tick"
+                          : isMajor
+                              ? "heading-tick major-heading-tick"
+                              : "heading-tick minor-heading-tick")" />
+            }
+
+            <!-- Cardinal directions -->
+            @foreach (var label in CardinalLabels)
+            {
+                var point = InstrumentGeometry.GetDialPoint(
+                    CenterX,
+                    CenterY,
+                    90,
+                    label.Angle);
+
+                <svg:text x="@InstrumentGeometry.Format(point.X)"
+                          y="@InstrumentGeometry.Format(point.Y)"
+                          class="cardinal-label"
+                          dominant-baseline="middle"
+                          text-anchor="middle"
+                          transform="@GetCounterRotation(label.Angle)">
+                    @label.Text
+                </svg:text>
+            }
+
+            <!-- Numbered headings every 30 degrees -->
+            @for (var heading = 30; heading < 360; heading += 30)
+            {
+                if (heading % 90 == 0)
+                {
+                    continue;
+                }
+
+                var point = InstrumentGeometry.GetDialPoint(
+                    CenterX,
+                    CenterY,
+                    91,
+                    heading);
+
+                <svg:text x="@InstrumentGeometry.Format(point.X)"
+                          y="@InstrumentGeometry.Format(point.Y)"
+                          class="heading-number"
+                          dominant-baseline="middle"
+                          text-anchor="middle"
+                          transform="@GetCounterRotation(heading)">
+                    @(heading / 10)
+                </svg:text>
+            }
+
+        </g>
+
+        <!-- Fixed lubber line -->
+        <polygon points="143,24 157,24 150,42"
+                 class="lubber-pointer" />
+
+        <!-- Fixed aircraft reference -->
+        <path d="M 150 120
+                 L 150 180
+                 M 112 150
+                 L 188 150
+                 M 150 134
+                 L 136 160
+                 M 150 134
+                 L 164 160"
+              class="aircraft-reference" />
+
+        <!-- Center hub -->
+        <circle cx="150"
+                cy="150"
+                r="7"
+                class="center-hub" />
+
+        <!-- Current heading readout -->
+        <rect x="116"
+              y="212"
+              width="68"
+              height="28"
+              rx="4"
+              class="heading-window" />
+
+        <svg:text x="150"
+                  y="227"
+                  class="heading-readout"
+                  dominant-baseline="middle"
+                  text-anchor="middle">
+            @FormatHeading(Reading.Heading)°
+        </svg:text>
+
+    </svg>
+
+</InstrumentBase>
+
+@code {
+    [Parameter]
+    public double Heading { get; set; }
+
+    private const double CenterX = 150;
+    private const double CenterY = 150;
+
+    private HeadingReading Reading =>
+        HeadingIndicatorMath.GetReading(Heading);
+
+    private string CompassCardTransform =>
+        FormattableString.Invariant(
+            $"rotate({Reading.CompassCardRotation} {CenterX} {CenterY})");
+
+    private string GetCounterRotation(double itemAngle)
+    {
+        var x = InstrumentGeometry.GetDialPoint(
+            CenterX,
+            CenterY,
+            90,
+            itemAngle).X;
+
+        var y = InstrumentGeometry.GetDialPoint(
+            CenterX,
+            CenterY,
+            90,
+            itemAngle).Y;
+
+        return FormattableString.Invariant(
+            $"rotate({-Reading.CompassCardRotation} {x} {y})");
+    }
+
+    private static string FormatHeading(double heading)
+    {
+        var rounded = (int)Math.Round(heading) % 360;
+
+        return rounded == 0
+            ? "360"
+            : rounded.ToString("000");
+    }
+
+    private static readonly CompassLabel[] CardinalLabels =
+    [
+        new(0, "N"),
+        new(90, "E"),
+        new(180, "S"),
+        new(270, "W")
+    ];
+
+    private readonly record struct CompassLabel(
+        double Angle,
+        string Text);
+}

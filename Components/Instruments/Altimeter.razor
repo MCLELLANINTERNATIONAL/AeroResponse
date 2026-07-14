@@ -1,4 +1,5 @@
 @using AeroResponse.Simulation.Instruments.Altimeter
+@using AeroResponse.Simulation.Instruments
 
 <InstrumentBase Label="ALTIMETER"
                 AriaLabel="@($"Altimeter showing {Altitude} feet")">
@@ -19,13 +20,13 @@
             var angle = index * 7.2;
             var isMajorTick = index % 5 == 0;
 
-            var outerPoint = GetDialPoint(132, angle);
-            var innerPoint = GetDialPoint(isMajorTick ? 111 : 121, angle);
+            var outerPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 132, angle);
+            var innerPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, isMajorTick ? 111 : 121, angle);
 
-            <line x1="@Format(innerPoint.X)"
-                y1="@Format(innerPoint.Y)"
-                x2="@Format(outerPoint.X)"
-                y2="@Format(outerPoint.Y)"
+            <line x1="@InstrumentGeometry.Format(innerPoint.X)"
+                y1="@InstrumentGeometry.Format(innerPoint.Y)"
+                x2="@InstrumentGeometry.Format(outerPoint.X)"
+                y2="@InstrumentGeometry.Format(outerPoint.Y)"
                 class="@(isMajorTick ? "dial-tick major-tick" : "dial-tick minor-tick")" />
         }
 
@@ -33,10 +34,10 @@
         @for (var number = 0; number < 10; number++)
         {
             var angle = number * 36.0;
-            var numberPoint = GetDialPoint(92, angle);
+            var numberPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 92, angle);
 
-                    <svg:text x="@Format(numberPoint.X)"
-                                        y="@Format(numberPoint.Y)"
+                    <svg:text x="@InstrumentGeometry.Format(numberPoint.X)"
+                                        y="@InstrumentGeometry.Format(numberPoint.Y)"
                                         class="dial-number"
                                         dominant-baseline="middle"
                                         text-anchor="middle">
@@ -106,26 +107,8 @@
         FormattableString.Invariant(
             $"rotate({ThousandsNeedleAngle} {CenterX} {CenterY})");
 
-    private static DialPoint GetDialPoint(double radius, double angle)
-    {
-        var radians = angle * Math.PI / 180.0;
-
-        return new DialPoint(
-            CenterX + radius * Math.Sin(radians),
-            CenterY - radius * Math.Cos(radians));
-    }
-
     private static int PositiveModulo(int value, int modulus)
     {
         return ((value % modulus) + modulus) % modulus;
     }
-
-    private static string Format(double value)
-    {
-        return value.ToString(
-            "0.###",
-            System.Globalization.CultureInfo.InvariantCulture);
-    }
-
-    private readonly record struct DialPoint(double X, double Y);
 }

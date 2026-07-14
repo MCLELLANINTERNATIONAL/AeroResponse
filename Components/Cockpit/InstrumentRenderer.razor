@@ -10,6 +10,26 @@
         case InstrumentType.Altimeter:
             <Altimeter Altitude="@State.Altitude" />
             break;
+        
+        case InstrumentType.ArtificialHorizon:
+            <ArtificialHorizon Pitch="@State.Pitch"
+                            Bank="@State.Bank" />
+            break;
+
+        case InstrumentType.TurnCoordinator:
+            <TurnCoordinator Slip="@State.Slip"
+                            TurnRate="@State.TurnRate" />
+            break;
+
+        case InstrumentType.HeadingIndicator:
+            <HeadingIndicator Heading="@State.Heading" />
+            break;
+        
+        case InstrumentType.VerticalSpeedIndicator:
+            <VSI VerticalSpeed="@State.VerticalSpeed"
+                DisplayedVerticalSpeed="@State.DisplayedVerticalSpeed"
+                Config="@Layout" />
+            break;
 
         default:
             <div class="unsupported-instrument">

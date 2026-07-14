@@ -1,4 +1,5 @@
 using AeroResponse.Models;
+
 namespace AeroResponse.Simulation.Layouts;
 
 public class CockpitLayoutDefinition
@@ -13,4 +14,6 @@ public class CockpitLayoutDefinition
     public int EngineCount { get; set; }
 
     public AirspeedIndicatorLayout Airspeed { get; set; } = new();
+    public ArtificialHorizonLayout ArtificialHorizon { get; set; } = new();
+    public VerticalSpeedIndicatorLayout VSI { get; set; } = new();
 }

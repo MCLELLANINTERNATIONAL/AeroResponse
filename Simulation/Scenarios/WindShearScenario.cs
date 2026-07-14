@@ -1,12 +1,15 @@
 using AeroResponse.Models;
+using AeroResponse.Simulation.Layouts;
 
 namespace AeroResponse.Simulation.Scenarios;
 
 public class WindShearScenario : ISimulationScenario
 {
+    public int ScenarioId => 10;
+
     public string ScenarioType => "Wind Shear";
 
-    public CockpitState Start(string aircraftName)
+    public CockpitState Start(CockpitLayoutDefinition aircraft)
     {
         return new CockpitState
         {
@@ -14,21 +17,24 @@ public class WindShearScenario : ISimulationScenario
             Altitude = 900,
             Heading = 270,
             VerticalSpeed = -1200,
-            EngineOnePower = 70,
-            EngineTwoPower = 70,
-            AlertMessage = $"{aircraftName}: WINDSHEAR WARNING - TAKEOFF/LANDING PHASE"
+            Engines =
+            [
+                new EngineState { Number = 1, Power = 70, Running = true },
+                new EngineState { Number = 2, Power = 70, Running = true }
+            ],
+            AlertMessage = $"{aircraft.Name}: WINDSHEAR WARNING - TAKEOFF/LANDING PHASE"
         };
     }
 
-    public List<ScenarioProcedureStep> GetProcedureSteps(string aircraftName, int scenarioId)
+    public List<ScenarioProcedureStep> GetProcedureSteps(CockpitLayoutDefinition aircraft, int scenarioId)
     {
         return
         [
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 1, Instruction = "Apply maximum thrust", CorrectAction = "Maximum Thrust", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 2, Instruction = "Maintain pitch attitude", CorrectAction = "Maintain Pitch", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 3, Instruction = "Do not change configuration until clear", CorrectAction = "Hold Configuration", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 4, Instruction = "Monitor vertical speed and altitude", CorrectAction = "Monitor Flight Path", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 5, Instruction = "Advise ATC when able", CorrectAction = "Declare Emergency", IsSafetyCritical = false }
+            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 1, Instruction = "Apply maximum thrust", CorrectAction = "Maximum Thrust", IsSafetyCritical = true },
+            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 2, Instruction = "Maintain pitch attitude", CorrectAction = "Maintain Pitch", IsSafetyCritical = true },
+            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 3, Instruction = "Do not change configuration until clear", CorrectAction = "Hold Configuration", IsSafetyCritical = true },
+            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 4, Instruction = "Monitor vertical speed and altitude", CorrectAction = "Monitor Flight Path", IsSafetyCritical = true },
+            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 5, Instruction = "Advise ATC when able", CorrectAction = "Declare Emergency", IsSafetyCritical = false }
         ];
     }
 
@@ -36,8 +42,10 @@ public class WindShearScenario : ISimulationScenario
     {
         if (actionName == "Maximum Thrust")
         {
-            state.EngineOnePower = 100;
-            state.EngineTwoPower = 100;
+            foreach (var engine in state.Engines)
+            {
+                engine.Power = 100;
+            }
             state.Airspeed += 20;
         }
 
@@ -60,9 +68,9 @@ public class WindShearScenario : ISimulationScenario
         return state;
     }
 
-    public bool IsActionCorrect(string actionName, int expectedStep)
+    public bool IsActionCorrect(CockpitLayoutDefinition aircraft, string actionName, int expectedStep)
     {
-        var steps = GetProcedureSteps("Generic Aircraft", 0);
+        var steps = GetProcedureSteps(aircraft, 0);
         return steps.Any(s => s.StepOrder == expectedStep && s.CorrectAction == actionName);
     }
 }

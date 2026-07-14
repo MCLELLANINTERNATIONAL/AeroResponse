@@ -1,34 +1,39 @@
 using AeroResponse.Models;
+using AeroResponse.Simulation.Layouts;
 
 namespace AeroResponse.Simulation.Scenarios;
 
 public class FuelLeakScenario : ISimulationScenario
 {
+    public int ScenarioId => 6;
+
     public string ScenarioType => "Fuel Leak";
 
-    public CockpitState Start(string aircraftName)
+    public CockpitState Start(CockpitLayoutDefinition aircraft)
     {
         return new CockpitState
         {
             Airspeed = 260,
             Altitude = 22000,
             Heading = 300,
-            EngineOnePower = 90,
-            EngineTwoPower = 90,
-            FuelPercentage = 48,
-            AlertMessage = $"{aircraftName}: FUEL LEAK DETECTED - FUEL QUANTITY DECREASING"
+            Engines =
+            [
+                new EngineState { Number = 1, Power = 90, Running = true, FuelPercentage = 48 },
+                new EngineState { Number = 2, Power = 90, Running = true, FuelPercentage = 48 }
+            ],
+            AlertMessage = $"{aircraft.Name}: FUEL LEAK DETECTED - FUEL QUANTITY DECREASING"
         };
     }
 
-    public List<ScenarioProcedureStep> GetProcedureSteps(string aircraftName, int scenarioId)
+    public List<ScenarioProcedureStep> GetProcedureSteps(CockpitLayoutDefinition aircraft, int scenarioId)
     {
         return
         [
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 1, Instruction = "Maintain aircraft control and monitor fuel", CorrectAction = "Monitor Fuel", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 2, Instruction = "Identify affected fuel system", CorrectAction = "Identify Fuel Leak", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 3, Instruction = "Isolate affected fuel source if required", CorrectAction = "Fuel Cutoff", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 4, Instruction = "Declare emergency", CorrectAction = "Declare Emergency", IsSafetyCritical = false },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 5, Instruction = "Divert to nearest suitable airport", CorrectAction = "Prepare Diversion", IsSafetyCritical = false }
+            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 1, Instruction = "Maintain aircraft control and monitor fuel", CorrectAction = "Monitor Fuel", IsSafetyCritical = true },
+            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 2, Instruction = "Identify affected fuel system", CorrectAction = "Identify Fuel Leak", IsSafetyCritical = true },
+            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 3, Instruction = "Isolate affected fuel source if required", CorrectAction = "Fuel Cutoff", IsSafetyCritical = true },
+            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 4, Instruction = "Declare emergency", CorrectAction = "Declare Emergency", IsSafetyCritical = false },
+            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 5, Instruction = "Divert to nearest suitable airport", CorrectAction = "Prepare Diversion", IsSafetyCritical = false }
         ];
     }
 
@@ -36,7 +41,10 @@ public class FuelLeakScenario : ISimulationScenario
     {
         if (actionName == "Monitor Fuel")
         {
-            state.FuelPercentage = Math.Max(0, state.FuelPercentage - 5);
+            foreach (var engine in state.Engines)
+            {
+                engine.FuelPercentage = Math.Max(0, engine.FuelPercentage - 5);
+            }
         }
 
         if (actionName == "Identify Fuel Leak")
@@ -46,7 +54,10 @@ public class FuelLeakScenario : ISimulationScenario
 
         if (actionName == "Fuel Cutoff")
         {
-            state.FuelCutoff = true;
+            foreach (var engine in state.Engines)
+            {
+                engine.FuelCutoff = true;
+            }
             state.AlertMessage = "AFFECTED FUEL SYSTEM ISOLATED";
         }
 
@@ -58,9 +69,9 @@ public class FuelLeakScenario : ISimulationScenario
         return state;
     }
 
-    public bool IsActionCorrect(string actionName, int expectedStep)
+    public bool IsActionCorrect(CockpitLayoutDefinition aircraft, string actionName, int expectedStep)
     {
-        var steps = GetProcedureSteps("Generic Aircraft", 0);
+        var steps = GetProcedureSteps(aircraft, 0);
         return steps.Any(s => s.StepOrder == expectedStep && s.CorrectAction == actionName);
     }
 }

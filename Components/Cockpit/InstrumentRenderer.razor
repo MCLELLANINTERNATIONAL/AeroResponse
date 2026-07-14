@@ -1,0 +1,39 @@
+<div class="instrument-position"
+     style="@PositionStyle">
+
+    @switch (Definition.Type)
+    {
+        case InstrumentType.AirspeedIndicator:
+            <AirspeedIndicator Airspeed="@State.Airspeed"
+                            Config="@Layout" />
+            break;
+        case InstrumentType.Altimeter:
+            <Altimeter Altitude="@State.Altitude" />
+            break;
+
+        default:
+            <div class="unsupported-instrument">
+                Unsupported instrument: @Definition.Type
+            </div>
+            break;
+    }
+
+</div>
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public InstrumentDefinition Definition { get; set; } = default!;
+
+    [Parameter]
+    [EditorRequired]
+    public CockpitState State { get; set; } = default!;
+
+    [Parameter]
+    [EditorRequired]
+    public CockpitLayoutDefinition Layout {get; set; } = default!;
+
+    private string PositionStyle =>
+        $"grid-row: {Definition.GridRow} / span {Definition.RowSpan}; " +
+        $"grid-column: {Definition.GridColumn} / span {Definition.ColumnSpan};";
+}

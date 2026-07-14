@@ -1,64 +1,184 @@
 using AeroResponse.Models;
+using AeroResponse.Simulation.Layouts;
+using AeroResponse.Simulation;
 
 namespace AeroResponse.Simulation.Scenarios;
 
 public class BirdStrikeScenario : ISimulationScenario
 {
+    public int ScenarioId => 1;
+    private const int AffectedEngineNumber = 1;
+
     public string ScenarioType => "Bird Strike";
 
-    public CockpitState Start(string aircraftName)
+    public CockpitState Start(CockpitLayoutDefinition aircraft)
     {
+        if (aircraft.EngineCount < 1)
+        {
+            throw new InvalidOperationException(
+                $"{aircraft.Name} cannot run the bird-strike scenario " +
+                "because it defines no engines.");
+        }
+
+        var engines = Enumerable
+            .Range(1, aircraft.EngineCount)
+            .Select(number => new EngineState
+            {
+                Number = number,
+                Power = number == AffectedEngineNumber ? 65 : 90,
+                Running = true,
+                OnFire = false,
+                FuelCutoff = false,
+                FireSuppressionActivated = false
+            })
+            .ToList();
+
         return new CockpitState
         {
             Airspeed = 220,
             Altitude = 3000,
             Heading = 240,
-            EngineOnePower = 65,
-            EngineTwoPower = 90,
-            AlertMessage = $"{aircraftName}: BIRD STRIKE - ENGINE 1 PERFORMANCE DEGRADED"
+            VerticalSpeed = 0,
+            Engines = engines,
+
+            AlertMessage =
+                $"{aircraft.Name}: BIRD STRIKE - " +
+                $"ENGINE {AffectedEngineNumber} PERFORMANCE DEGRADED"
         };
     }
 
-    public List<ScenarioProcedureStep> GetProcedureSteps(string aircraftName, int scenarioId)
+    public List<ScenarioProcedureStep> GetProcedureSteps(
+        CockpitLayoutDefinition aircraft,
+        int scenarioId)
     {
+        var engineAssessmentInstruction =
+            aircraft.EngineCount == 1
+                ? "Assess engine performance"
+                : $"Assess engine {AffectedEngineNumber} performance";
+
+        var throttleInstruction =
+            aircraft.EngineCount == 1
+                ? "Reduce engine power if operation is unstable"
+                : $"Reduce engine {AffectedEngineNumber} thrust if unstable";
+
+        var landingInstruction =
+            aircraft.EngineCount == 1
+                ? "Prepare for an immediate return or forced landing"
+                : "Return or divert for inspection";
+
         return
         [
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 1, Instruction = "Maintain aircraft control", CorrectAction = "Stabilize Aircraft", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 2, Instruction = "Assess engine performance", CorrectAction = "Check Engine Status", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 3, Instruction = "Reduce affected engine thrust if unstable", CorrectAction = "Reduce Throttle", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 4, Instruction = "Declare emergency", CorrectAction = "Declare Emergency", IsSafetyCritical = false },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraftName, StepOrder = 5, Instruction = "Return or divert for inspection", CorrectAction = "Prepare Landing", IsSafetyCritical = false }
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 1,
+                Instruction = "Maintain aircraft control",
+                CorrectAction = "Stabilize Aircraft",
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 2,
+                Instruction = engineAssessmentInstruction,
+                CorrectAction = "Check Engine Status",
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 3,
+                Instruction = throttleInstruction,
+                CorrectAction = "Reduce Throttle",
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 4,
+                Instruction = "Declare emergency",
+                CorrectAction = "Declare Emergency",
+                IsSafetyCritical = false
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 5,
+                Instruction = landingInstruction,
+                CorrectAction = "Prepare Landing",
+                IsSafetyCritical = true
+            }
         ];
     }
 
-    public CockpitState ApplyPilotAction(CockpitState state, string actionName)
+    public CockpitState ApplyPilotAction(
+        CockpitState state,
+        string actionName)
     {
-        if (actionName == "Stabilize Aircraft")
+        switch (actionName)
         {
-            state.VerticalSpeed = 0;
-        }
+            case "Stabilize Aircraft":
+                state.VerticalSpeed = 0;
+                break;
 
-        if (actionName == "Check Engine Status")
-        {
-            state.AlertMessage = "ENGINE 1 DAMAGE CONFIRMED - MONITOR PARAMETERS";
-        }
+            case "Check Engine Status":
+                state.AlertMessage =
+                    $"ENGINE {AffectedEngineNumber} DAMAGE CONFIRMED - " +
+                    "MONITOR PARAMETERS";
+                break;
 
-        if (actionName == "Reduce Throttle")
-        {
-            state.EngineOnePower = 45;
-        }
+            case "Reduce Throttle":
+                var affectedEngine = state.Engines.FirstOrDefault(
+                    engine => engine.Number == AffectedEngineNumber);
 
-        if (actionName == "Declare Emergency")
-        {
-            state.AlertMessage = "EMERGENCY DECLARED - RETURN TO AIRPORT";
+                if (affectedEngine is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Engine {AffectedEngineNumber} was not found " +
+                        "in the current cockpit state.");
+                }
+
+                affectedEngine.Power = 45;
+                break;
+
+            case "Declare Emergency":
+                state.AlertMessage =
+                    "EMERGENCY DECLARED - RETURN TO AIRPORT";
+                break;
+
+            case "Prepare Landing":
+                state.AlertMessage =
+                    "LANDING PREPARATION INITIATED";
+                break;
         }
 
         return state;
     }
 
-    public bool IsActionCorrect(string actionName, int expectedStep)
+    public bool IsActionCorrect(
+        CockpitLayoutDefinition aircraft,
+        string actionName,
+        int expectedStep)
     {
-        var steps = GetProcedureSteps("Generic Aircraft", 0);
-        return steps.Any(s => s.StepOrder == expectedStep && s.CorrectAction == actionName);
+        var expectedProcedure = GetProcedureSteps(
+                aircraft,
+                scenarioId: 0)
+            .FirstOrDefault(step =>
+                step.StepOrder == expectedStep);
+
+        return expectedProcedure is not null &&
+               string.Equals(
+                   expectedProcedure.CorrectAction,
+                   actionName,
+                   StringComparison.OrdinalIgnoreCase);
     }
 }

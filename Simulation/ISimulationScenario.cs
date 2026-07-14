@@ -1,16 +1,27 @@
 using AeroResponse.Models;
+using AeroResponse.Simulation.Layouts;
 
 namespace AeroResponse.Simulation;
 
 public interface ISimulationScenario
 {
+    int ScenarioId { get; }
+
     string ScenarioType { get; }
 
-    CockpitState Start(string aircraftName);
+    CockpitState Start(
+        CockpitLayoutDefinition aircraft);
 
-    List<ScenarioProcedureStep> GetProcedureSteps(string aircraftName, int scenarioId);
+    List<ScenarioProcedureStep> GetProcedureSteps(
+        CockpitLayoutDefinition aircraft,
+        int scenarioId);
 
-    CockpitState ApplyPilotAction(CockpitState state, string actionName);
+    CockpitState ApplyPilotAction(
+        CockpitState state,
+        string actionName);
 
-    bool IsActionCorrect(string actionName, int expectedStep);
+    bool IsActionCorrect(
+        CockpitLayoutDefinition aircraft,
+        string actionName,
+        int expectedStep);
 }

@@ -4,6 +4,7 @@ using AeroResponse.Data;
 using AeroResponse.Hubs;
 using AeroResponse.Repositories;
 using AeroResponse.Services;
+using AeroResponse.Simulation.Layouts;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -69,6 +70,7 @@ builder.Services.AddScoped<ScenarioService>();
 builder.Services.AddScoped<MembershipService>();
 builder.Services.AddScoped<PerformanceService>();
 builder.Services.AddScoped<SimulationService>();
+builder.Services.AddSingleton<ICockpitLayoutProvider, CockpitLayoutProvider>();
 
 var app = builder.Build();
 

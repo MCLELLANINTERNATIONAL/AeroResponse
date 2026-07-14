@@ -4,9 +4,9 @@ public class InstrumentDefinition
 {
     public InstrumentType Type { get; set; }
 
-    public int Row { get; set; }
+    public int GridRow { get; set; }
 
-    public int Column { get; set; }
+    public int GridColumn { get; set; }
 
     public int RowSpan { get; set; } = 1;
 

@@ -1,5 +1,6 @@
 using AeroResponse.Models;
 using AeroResponse.Simulation;
+using AeroResponse.Simulation.Layouts;
 
 namespace AeroResponse.Services;
 
@@ -10,6 +11,9 @@ public class SimulationService
 
     private ScenarioRun? _currentRun;
     private CockpitState? _currentState;
+    private CockpitLayoutDefinition? _currentAircraft;
+    private string? _currentScenarioType;
+
     private List<ScenarioProcedureStep> _expectedSteps = [];
     private readonly List<PilotAction> _pilotActions = [];
 
@@ -17,35 +21,55 @@ public class SimulationService
         string userId,
         int aircraftId,
         int scenarioId,
-        string aircraftName,
+        CockpitLayoutDefinition aircraft,
         string scenarioType)
     {
+        _currentAircraft = aircraft;
+        _currentScenarioType = scenarioType;
+
         _currentRun = new ScenarioRun
         {
             UserId = userId,
             AircraftId = aircraftId,
             EmergencyScenarioId = scenarioId,
-            AircraftName = aircraftName,
+            AircraftName = aircraft.Name,
             ScenarioName = scenarioType
         };
 
-        _expectedSteps = _simulationEngine.GetProcedureSteps(scenarioType, aircraftName, scenarioId);
-        _currentState = _simulationEngine.StartScenario(scenarioType, aircraftName);
+        _expectedSteps = _simulationEngine.GetProcedureSteps(
+            scenarioType,
+            aircraft,
+            scenarioId);
+
+        _currentState = _simulationEngine.StartScenario(
+            scenarioType,
+            aircraft);
+
         _pilotActions.Clear();
 
         return _currentState;
     }
 
-    public CockpitState SubmitPilotAction(string scenarioType, string actionName)
+    public CockpitState SubmitPilotAction(string actionName)
     {
-        if (_currentRun is null || _currentState is null)
+        if (_currentRun is null ||
+            _currentState is null ||
+            _currentAircraft is null ||
+            string.IsNullOrWhiteSpace(_currentScenarioType))
         {
             throw new InvalidOperationException("No active simulation.");
         }
 
         var nextStep = _pilotActions.Count + 1;
-        var expectedStep = _expectedSteps.FirstOrDefault(s => s.StepOrder == nextStep);
-        var correctAction = expectedStep?.CorrectAction == actionName;
+
+        var expectedStep = _expectedSteps.FirstOrDefault(
+            step => step.StepOrder == nextStep);
+
+        var correctAction = _simulationEngine.IsActionCorrect(
+            _currentScenarioType,
+            _currentAircraft,
+            actionName,
+            nextStep);
 
         _pilotActions.Add(new PilotAction
         {
@@ -57,7 +81,10 @@ public class SimulationService
             IsSafetyCritical = expectedStep?.IsSafetyCritical ?? false
         });
 
-        _currentState = _simulationEngine.ApplyAction(scenarioType, _currentState, actionName);
+        _currentState = _simulationEngine.ApplyAction(
+            _currentScenarioType,
+            _currentState,
+            actionName);
 
         return _currentState;
     }
@@ -72,7 +99,10 @@ public class SimulationService
         _currentRun.CompletedAt = DateTime.UtcNow;
         _currentRun.Status = "Completed";
 
-        return _scoringEngine.GenerateReport(_currentRun, _pilotActions, _expectedSteps);
+        return _scoringEngine.GenerateReport(
+            _currentRun,
+            _pilotActions,
+            _expectedSteps);
     }
 
     public List<ScenarioProcedureStep> GetCurrentChecklist()

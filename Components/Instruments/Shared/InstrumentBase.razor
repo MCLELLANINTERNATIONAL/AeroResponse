@@ -1,0 +1,32 @@
+<div class="instrument"
+     role="img"
+     aria-label="@AriaLabel">
+
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <div class="instrument-label">
+            @Label
+        </div>
+    }
+
+    <div class="instrument-bezel">
+        <div class="instrument-face">
+            <div class="instrument-content">
+                @ChildContent
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public string AriaLabel { get; set; } = "Aircraft instrument";
+
+    [Parameter]
+    [EditorRequired]
+    public RenderFragment? ChildContent { get; set; }
+}

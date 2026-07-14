@@ -2,29 +2,64 @@
 @rendermode InteractiveServer
 
 @using AeroResponse.Components.Cockpit
+@using AeroResponse.Models
 @using AeroResponse.Simulation
+@using AeroResponse.Simulation.Layouts
+@using AeroResponse.Simulation.Scenarios
+
+@inject ICockpitLayoutProvider LayoutProvider
 
 <PageTitle>Cockpit</PageTitle>
 
-<h1>Cockpit</h1>
+<h1>@selectedAircraft.Name Cockpit</h1>
 
-<div class="simulation-test-panel">
-    <label for="altitude-control">
-        Test altitude:
-        <strong>@cockpitState.Altitude.ToString("N0") ft</strong>
-    </label>
+<CockpitLayout Layout="@cockpitLayout"
+               State="@cockpitState" />
 
-    <input id="altitude-control"
-           type="range"
-           min="0"
-           max="20000"
-           step="100"
-           @bind="cockpitState.Altitude"
-           @bind:event="oninput" />
-</div>
+<h2>Altitude</h2>
+<input type="range"
+       min="0"
+       max="20000"
+       step="10"
+       @bind="cockpitState.Altitude"
+       @bind:event="oninput" />
 
-<CockpitLayout State="@cockpitState" />
+<h2>Airspeed</h2>
+<input type="range"
+       min="0"
+       max="@cockpitLayout.Airspeed.MaximumSpeed"
+       step="10"
+       @bind="cockpitState.Airspeed"
+       @bind:event="oninput" />
 
 @code {
-    private readonly CockpitState cockpitState = new();
+    private CockpitState cockpitState = new();
+    private List<ScenarioProcedureStep> procedureSteps = [];
+
+    private Aircraft selectedAircraft = new()
+    {
+        Name = "Cessna 172",
+        Manufacturer = "Cessna",
+        CockpitLayoutKey = "cessna-172-standard"
+    };
+
+    private CockpitLayoutDefinition cockpitLayout = default!;
+
+    private readonly ISimulationScenario selectedScenario =
+    new BirdStrikeScenario();
+
+    protected override void OnInitialized()
+    {
+        cockpitLayout =
+            LayoutProvider.GetLayout(
+                selectedAircraft.CockpitLayoutKey);
+
+        cockpitState =
+            selectedScenario.Start(cockpitLayout);
+
+        procedureSteps =
+            selectedScenario.GetProcedureSteps(
+                cockpitLayout,
+                scenarioId: 1);
+    }
 }

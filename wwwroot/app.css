@@ -77,6 +77,10 @@ h1:focus {
     padding: 3rem 0 5rem;
 }
 
+/* ======================================================
+    Page header
+====================================================== */
+
 .scenario-header {
     display: flex;
     justify-content: space-between;
@@ -87,13 +91,14 @@ h1:focus {
 
 .scenario-header h1 {
     margin: 0.3rem 0 0.8rem;
+    color: black;
     font-size: clamp(2rem, 5vw, 3.5rem);
 }
 
 .scenario-header p {
     max-width: 760px;
     margin: 0;
-    color: #94a3b8;
+    color: #636669;
     line-height: 1.7;
 }
 
@@ -105,31 +110,124 @@ h1:focus {
     text-transform: uppercase;
 }
 
+/* ======================================================
+    Search and filter toolbar
+====================================================== */
+
 .scenario-toolbar {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 220px;
     gap: 1rem;
     margin-bottom: 1.5rem;
     padding: 1rem;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 1rem;
-    background: rgba(15, 23, 42, 0.75);
+
+    border: 1px solid rgba(56, 142, 224, 0.34);
+    border-radius: 10px;
+
+    background:
+        linear-gradient(100deg,
+            #07182b 0%,
+            #0a2848 100%);
+
+    box-shadow:
+        0 16px 35px rgba(3, 17, 34, 0.22);
 }
 
 .scenario-toolbar label,
 .form-field label {
     display: block;
-    margin-bottom: 0.45rem;
-    color: #cbd5e1;
-    font-size: 0.9rem;
-    font-weight: 700;
+    margin-bottom: 0.55rem;
+    color: #ffffff;
+    font-size: 1.05rem;
+    font-weight: 800;
 }
+
+/* ======================================================
+    Form controls
+====================================================== */
+
+.form-field .form-control,
+.form-field .form-select,
+.scenario-toolbar .form-control,
+.scenario-toolbar .form-select {
+    min-height: 44px;
+
+    color: #ffffff;
+    background: #0c3966;
+
+    border: 1px solid rgba(56, 142, 224, 0.65);
+    border-radius: 6px;
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.form-field .form-control:hover,
+.form-field .form-select:hover,
+.scenario-toolbar .form-control:hover,
+.scenario-toolbar .form-select:hover {
+    background: #104a80;
+    border-color: #168cff;
+}
+
+.form-field .form-control:focus,
+.form-field .form-select:focus,
+.scenario-toolbar .form-control:focus,
+.scenario-toolbar .form-select:focus {
+    color: #ffffff;
+    background: #125a98;
+
+    border-color: #168cff;
+    outline: none;
+
+    box-shadow:
+        0 0 0 0.2rem rgba(22, 140, 255, 0.25);
+}
+
+.form-field .form-control::placeholder,
+.scenario-toolbar .form-control::placeholder {
+    color: #bdcadd;
+    opacity: 0.88;
+}
+
+.form-field .form-select option,
+.scenario-toolbar .form-select option {
+    color: #ffffff;
+    background: #0a2848;
+}
+
+.form-field textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.form-field medium {
+    display: block;
+    margin-top: 0.45rem;
+
+    color: white;
+    line-height: 1.45;
+}
+
+/* ======================================================
+    Scenario table
+====================================================== */
 
 .scenario-table-wrapper {
     overflow-x: auto;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 1rem;
-    background: rgba(15, 23, 42, 0.75);
+
+    border: 1px solid rgba(56, 142, 224, 0.34);
+    border-radius: 10px;
+
+    background:
+        linear-gradient(100deg,
+            #07182b 0%,
+            #0a2848 100%);
+
+    box-shadow:
+        0 16px 35px rgba(3, 17, 34, 0.22);
 }
 
 .scenario-table {
@@ -140,29 +238,50 @@ h1:focus {
 .scenario-table th,
 .scenario-table td {
     padding: 1rem;
+
+    color: #ffffff;
     text-align: left;
     vertical-align: top;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+
+    border-bottom:
+        1px solid rgba(173, 207, 241, 0.22);
 }
 
 .scenario-table th {
-    color: #94a3b8;
+    color: white;
+
     font-size: 0.78rem;
+    font-weight: 800;
     letter-spacing: 0.07em;
     text-transform: uppercase;
+
+    background: rgba(6, 43, 82, 0.72);
+}
+
+.scenario-table tbody tr {
+    transition: background-color 0.2s ease;
 }
 
 .scenario-table tbody tr:hover {
-    background: rgba(56, 189, 248, 0.05);
+    background: rgba(22, 140, 255, 0.14);
+}
+
+.scenario-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
 .scenario-description {
     display: block;
     margin-top: 0.35rem;
+
     color: #94a3b8;
     font-size: 0.86rem;
     line-height: 1.45;
 }
+
+/* ======================================================
+    Table actions
+====================================================== */
 
 .scenario-actions {
     display: flex;
@@ -172,19 +291,36 @@ h1:focus {
 
 .scenario-actions a {
     color: #38bdf8;
-    text-decoration: none;
     font-weight: 700;
+    text-decoration: none;
+}
+
+.scenario-actions a:hover {
+    color: #ffffff;
+    text-decoration: underline;
 }
 
 .scenario-actions .delete-link {
     color: #f87171;
 }
 
+.scenario-actions .delete-link:hover {
+    color: #fca5a5;
+}
+
+/* ======================================================
+    Status and difficulty badges
+====================================================== */
+
 .status-badge,
 .difficulty-badge {
     display: inline-flex;
+    align-items: center;
+
     padding: 0.3rem 0.65rem;
+
     border-radius: 999px;
+
     font-size: 0.78rem;
     font-weight: 800;
 }
@@ -192,43 +328,57 @@ h1:focus {
 .status-active,
 .difficulty-beginner {
     color: #86efac;
-    background: rgba(34, 197, 94, 0.14);
+    background: rgba(34, 197, 94, 0.18);
 }
 
 .status-inactive {
     color: #cbd5e1;
-    background: rgba(148, 163, 184, 0.15);
+    background: rgba(56, 142, 224, 0.18);
 }
 
 .difficulty-intermediate {
     color: #7dd3fc;
-    background: rgba(14, 165, 233, 0.15);
+    background: rgba(8, 124, 240, 0.22);
 }
 
 .difficulty-advanced {
     color: #fdba74;
-    background: rgba(249, 115, 22, 0.15);
+    background: rgba(249, 115, 22, 0.18);
 }
 
 .difficulty-expert {
     color: #fca5a5;
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(239, 68, 68, 0.18);
 }
+
+/* ======================================================
+    Shared CRUD cards
+====================================================== */
 
 .scenario-form-card,
 .delete-card,
 .scenario-detail-card,
 .scenario-content-card {
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    background: rgba(15, 23, 42, 0.78);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(56, 142, 224, 0.34);
+
+    background:
+        linear-gradient(100deg,
+            #07182b 0%,
+            #0a2848 100%);
+
+    box-shadow:
+        0 16px 35px rgba(3, 17, 34, 0.22);
 }
 
 .scenario-form-card,
 .delete-card {
     padding: 2rem;
-    border-radius: 1.2rem;
+    border-radius: 10px;
 }
+
+/* ======================================================
+    Create and edit forms
+====================================================== */
 
 .scenario-form-grid {
     display: grid;
@@ -240,40 +390,25 @@ h1:focus {
     grid-column: 1 / -1;
 }
 
-.form-field .form-control,
-.form-field .form-select,
-.scenario-toolbar .form-control,
-.scenario-toolbar .form-select {
-    color: #f8fafc;
-    background: #07111f;
-    border-color: rgba(148, 163, 184, 0.35);
-}
-
-.form-field .form-control:focus,
-.form-field .form-select:focus {
-    color: #f8fafc;
-    background: #07111f;
-    border-color: #38bdf8;
-    box-shadow: 0 0 0 0.2rem rgba(56, 189, 248, 0.16);
-}
-
-.form-field small {
-    display: block;
-    margin-top: 0.45rem;
-    color: #64748b;
-}
-
 .checkbox-label {
     display: flex !important;
     align-items: center;
     gap: 0.65rem;
+
     margin-top: 1.7rem;
+    color: white !important;
 }
 
 .checkbox-label input {
     width: 1.1rem;
     height: 1.1rem;
+
+    accent-color: #087cf0;
 }
+
+/* ======================================================
+    Buttons and actions
+====================================================== */
 
 .scenario-form-actions,
 .scenario-header-actions,
@@ -287,24 +422,110 @@ h1:focus {
     margin-top: 2rem;
 }
 
+.scenario-header .btn-primary,
+.scenario-form-card .btn-primary,
+.scenario-empty .btn-primary {
+    min-height: 44px;
+    padding: 0.65rem 1.35rem;
+
+    color: #ffffff;
+    background: #087cf0;
+
+    border: 1px solid #087cf0;
+    border-radius: 5px;
+
+    font-weight: 800;
+
+    box-shadow:
+        0 10px 25px rgba(0, 119, 255, 0.24);
+
+    transition:
+        transform 0.2s ease,
+        background-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.scenario-header .btn-primary:hover,
+.scenario-form-card .btn-primary:hover,
+.scenario-empty .btn-primary:hover {
+    color: #ffffff;
+    background: #168cff;
+    border-color: #168cff;
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 14px 30px rgba(0, 119, 255, 0.3);
+}
+
+.scenario-form-card .btn-outline-light,
+.scenario-bottom-actions .btn-outline-light,
+.delete-card .btn-outline-light {
+    min-height: 44px;
+    padding: 0.65rem 1.35rem;
+
+    color: #ffffff;
+
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 5px;
+
+    background: rgba(3, 14, 28, 0.28);
+}
+
+.scenario-form-card .btn-outline-light:hover,
+.scenario-bottom-actions .btn-outline-light:hover,
+.delete-card .btn-outline-light:hover {
+    color: #ffffff;
+    background: rgba(22, 140, 255, 0.18);
+    border-color: #168cff;
+}
+
+.delete-card .btn-danger {
+    min-height: 44px;
+    padding: 0.65rem 1.35rem;
+
+    color: #ffffff;
+    background: #c92f42;
+
+    border: 1px solid #f87171;
+    border-radius: 5px;
+
+    font-weight: 800;
+}
+
+.delete-card .btn-danger:hover {
+    background: #e03c50;
+    border-color: #fca5a5;
+}
+
+/* ======================================================
+    Details page
+====================================================== */
+
 .scenario-details-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
+
     margin-bottom: 1rem;
 }
 
 .scenario-detail-card {
     padding: 1.2rem;
-    border-radius: 1rem;
+    border-radius: 8px;
 }
 
 .scenario-detail-card span {
     display: block;
     margin-bottom: 0.4rem;
-    color: #64748b;
+
+    color: #94a3b8;
     font-size: 0.8rem;
     text-transform: uppercase;
+}
+
+.scenario-detail-card strong {
+    color: #ffffff;
 }
 
 .scenario-content-grid {
@@ -315,11 +536,13 @@ h1:focus {
 
 .scenario-content-card {
     padding: 1.5rem;
-    border-radius: 1rem;
+    border-radius: 8px;
 }
 
 .scenario-content-card h2 {
     margin-top: 0;
+
+    color: #ffffff;
     font-size: 1.25rem;
 }
 
@@ -336,22 +559,49 @@ h1:focus {
     margin-top: 1.5rem;
 }
 
+/* ======================================================
+    Loading and empty states
+====================================================== */
+
 .scenario-message,
 .scenario-empty {
     padding: 3rem 1.5rem;
+
+    color: #ffffff;
     text-align: center;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 1rem;
-    background: rgba(15, 23, 42, 0.72);
+
+    border: 1px solid rgba(56, 142, 224, 0.34);
+    border-radius: 10px;
+
+    background:
+        linear-gradient(100deg,
+            #07182b 0%,
+            #0a2848 100%);
+
+    box-shadow:
+        0 16px 35px rgba(3, 17, 34, 0.22);
+}
+
+.scenario-empty h1,
+.scenario-empty h2 {
+    color: #ffffff;
 }
 
 .scenario-empty p {
     color: #94a3b8;
 }
 
+/* ======================================================
+    Delete page
+====================================================== */
+
 .delete-card {
     max-width: 720px;
     margin: 2rem auto;
+}
+
+.delete-card h1 {
+    color: #ffffff;
 }
 
 .delete-card>p {
@@ -371,23 +621,45 @@ h1:focus {
     display: grid;
     grid-template-columns: 170px 1fr;
     gap: 1rem;
+
     padding: 0.8rem 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+
+    border-bottom:
+        1px solid rgba(173, 207, 241, 0.22);
 }
 
 .delete-summary dt {
-    color: #64748b;
+    color: #94a3b8;
 }
 
 .delete-summary dd {
     margin: 0;
-    color: #f8fafc;
+
+    color: #ffffff;
     font-weight: 700;
 }
 
-.validation-message {
+/* ======================================================
+    Validation and alerts
+====================================================== */
+
+.validation-message,
+.validation-summary-errors {
     color: #fca5a5;
+    font-weight: 600;
 }
+
+.scenario-form-card .alert-danger,
+.delete-card .alert-danger {
+    color: #ffffff;
+
+    background: rgba(185, 33, 51, 0.62);
+    border-color: rgba(248, 113, 113, 0.65);
+}
+
+/* ======================================================
+    Responsive layout
+====================================================== */
 
 @media (max-width: 900px) {
     .scenario-header {
@@ -427,6 +699,11 @@ h1:focus {
     .delete-summary div {
         grid-template-columns: 1fr;
         gap: 0.25rem;
+    }
+
+    .scenario-actions {
+        flex-direction: column;
+        gap: 0.35rem;
     }
 }
 

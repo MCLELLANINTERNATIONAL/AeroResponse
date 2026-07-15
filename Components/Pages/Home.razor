@@ -1,7 +1,53 @@
 ﻿@page "/"
+@inject NavigationManager Navigation
+@inject SimulationSelectionStorage SelectionStorage
 
 <PageTitle>Home</PageTitle>
 
 <h1>AeroResponse</h1>
 
-Welcome to our new app.
+<button type="button"
+        class="launch-simulator-button"
+        disabled="@_checkingSelection"
+        @onclick="LaunchSimulatorAsync">
+
+    @(_checkingSelection
+        ? "Loading..."
+        : "Launch Simulator")
+
+</button>
+
+@code
+{
+    private bool _checkingSelection;
+
+    private async Task LaunchSimulatorAsync()
+    {
+        if (_checkingSelection)
+        {
+            return;
+        }
+
+        _checkingSelection = true;
+
+        try
+        {
+            var selection = await SelectionStorage.GetAsync(); 
+
+            if (selection is null || !selection.IsValid)
+            {
+                Navigation.NavigateTo("/simulation/select");
+                return;
+            }
+
+            Navigation.NavigateTo(
+                $"/simulation/" +
+                $"{Uri.EscapeDataString(selection.AircraftKey)}/" +
+                $"{Uri.EscapeDataString(selection.ScenarioType)}");
+        }
+        finally
+        {
+            _checkingSelection = false;
+        }
+    }
+}

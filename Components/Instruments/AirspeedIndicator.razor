@@ -128,7 +128,7 @@
 
 @code {
     [Parameter]
-    public int Airspeed { get; set; }
+    public double Airspeed { get; set; }
 
     [Parameter]
     [EditorRequired]
@@ -138,7 +138,7 @@
     private const double CenterY = 150;
 
     private AirspeedReading Reading =>
-        AirspeedIndicatorMath.GetReading(Airspeed, Config);
+        AirspeedIndicatorMath.GetReading((int)Math.Round(Airspeed), Config);
 
     private string NeedleTransform =>
         FormattableString.Invariant(

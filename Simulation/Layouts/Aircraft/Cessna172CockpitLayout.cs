@@ -9,6 +9,10 @@ public static class Cessna172CockpitLayout
     {
         return new CockpitLayoutDefinition
         {
+            AircraftId = 1,
+            
+            Key = "cessna-172-standard",
+
             Name = "Cessna 172",
 
             Columns = 3,
@@ -109,7 +113,19 @@ public static class Cessna172CockpitLayout
                 ]
             },
 
-            EngineCount = 1
+            EngineCount = 1,
+
+            DefaultState = new()
+            {
+                CruiseAirspeed = 115,
+                CruiseAltitude = 3000,
+                DefaultHeading = 240,
+                DefaultVerticalSpeed = 0,
+                DefaultPitch = 2,
+                DefaultBank = 0,
+                NormalEnginePower = 75,
+                FuelPercentage = 75
+            }
         };
     }
 }

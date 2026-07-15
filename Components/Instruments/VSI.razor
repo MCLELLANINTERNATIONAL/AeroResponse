@@ -162,7 +162,7 @@
 
 @code {
     [Parameter]
-    public int VerticalSpeed { get; set; }
+    public double VerticalSpeed { get; set; }
 
     [Parameter]
     public double DisplayedVerticalSpeed { get; set; }
@@ -176,7 +176,7 @@
 
     private VSIReading Reading =>
         VSIMath.GetReading(
-            VerticalSpeed,
+            (int)Math.Round(VerticalSpeed),
             DisplayedVerticalSpeed,
             Config.VSI);
 

@@ -11,17 +11,40 @@ public class EngineFireScenario : ISimulationScenario
 
     public CockpitState Start(CockpitLayoutDefinition aircraft)
     {
+        var defaults = aircraft.DefaultState;
+        var engines = Enumerable.Range(1, aircraft.EngineCount)
+            .Select(number => new EngineState
+            {
+                Number = number,
+                Power = defaults.NormalEnginePower,
+                Running = true,
+                FuelPercentage = defaults.FuelPercentage
+            })
+            .ToList();
+
+        var fireEngineNumber = aircraft.EngineCount >= 2 ? 2 : aircraft.EngineCount;
+        if (fireEngineNumber > 0)
+        {
+            var fireEngine = engines.FirstOrDefault(e => e.Number == fireEngineNumber);
+            if (fireEngine is not null)
+            {
+                fireEngine.Power = Math.Max(0, defaults.NormalEnginePower - 35);
+                fireEngine.EngineFire = true;
+            }
+        }
+
         return new CockpitState
         {
-            Airspeed = 260,
-            Altitude = 8000,
-            Heading = 270,
-            Engines =
-            [
-                new EngineState { Number = 1, Power = 92, Running = true },
-                new EngineState { Number = 2, Power = 40, Running = true, EngineFire = true }
-            ],
-            AlertMessage = $"{aircraft.Name}: ENGINE 2 FIRE DETECTED"
+            Airspeed = defaults.CruiseAirspeed,
+            Altitude = defaults.CruiseAltitude,
+            Heading = defaults.DefaultHeading,
+            VerticalSpeed = defaults.DefaultVerticalSpeed,
+            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
+            Pitch = defaults.DefaultPitch,
+            Bank = defaults.DefaultBank,
+            FuelPercentage = defaults.FuelPercentage,
+            Engines = engines,
+            AlertMessage = $"{aircraft.Name}: ENGINE {fireEngineNumber} FIRE DETECTED"
         };
     }
 

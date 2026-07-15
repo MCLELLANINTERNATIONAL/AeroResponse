@@ -11,12 +11,30 @@ public class CabinDepressurizationScenario : ISimulationScenario
 
     public CockpitState Start(CockpitLayoutDefinition aircraft)
     {
+        var defaults = aircraft.DefaultState;
+        var engines = Enumerable.Range(1, aircraft.EngineCount)
+            .Select(number => new EngineState
+            {
+                Number = number,
+                Power = defaults.NormalEnginePower,
+                Running = true,
+                FuelPercentage = defaults.FuelPercentage
+            })
+            .ToList();
+
         return new CockpitState
         {
-            Airspeed = 300,
-            Altitude = 35000,
-            Heading = 90,
-            VerticalSpeed = -3000,
+            Airspeed = defaults.CruiseAirspeed,
+            Altitude = defaults.CruiseAltitude,
+            Heading = defaults.DefaultHeading,
+            VerticalSpeed = defaults.DefaultVerticalSpeed,
+            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
+
+            Pitch = defaults.DefaultPitch,
+            Bank = defaults.DefaultBank,
+
+            FuelPercentage = defaults.FuelPercentage,
+            Engines = engines,
             AlertMessage = $"{aircraft.Name}: CABIN PRESSURE WARNING"
         };
     }

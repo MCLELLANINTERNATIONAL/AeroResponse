@@ -11,17 +11,40 @@ public class EngineFailureScenario : ISimulationScenario
 
     public CockpitState Start(CockpitLayoutDefinition aircraft)
     {
+        var defaults = aircraft.DefaultState;
+        var engines = Enumerable.Range(1, aircraft.EngineCount)
+            .Select(number => new EngineState
+            {
+                Number = number,
+                Power = defaults.NormalEnginePower,
+                Running = true,
+                FuelPercentage = defaults.FuelPercentage
+            })
+            .ToList();
+
+        var failedEngineNumber = aircraft.EngineCount >= 2 ? 2 : aircraft.EngineCount;
+        if (failedEngineNumber > 0)
+        {
+            var failedEngine = engines.FirstOrDefault(e => e.Number == failedEngineNumber);
+            if (failedEngine is not null)
+            {
+                failedEngine.Power = 0;
+                failedEngine.Running = false;
+            }
+        }
+
         return new CockpitState
         {
-            Airspeed = 240,
-            Altitude = 10000,
-            Heading = 180,
-            Engines =
-            [
-                new EngineState { Number = 1, Power = 90, Running = true },
-                new EngineState { Number = 2, Power = 0, Running = false }
-            ],
-            AlertMessage = $"{aircraft.Name}: ENGINE 2 FAILURE"
+            Airspeed = defaults.CruiseAirspeed,
+            Altitude = defaults.CruiseAltitude,
+            Heading = defaults.DefaultHeading,
+            VerticalSpeed = defaults.DefaultVerticalSpeed,
+            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
+            Pitch = defaults.DefaultPitch,
+            Bank = defaults.DefaultBank,
+            FuelPercentage = defaults.FuelPercentage,
+            Engines = engines,
+            AlertMessage = $"{aircraft.Name}: ENGINE {failedEngineNumber} FAILURE"
         };
     }
 

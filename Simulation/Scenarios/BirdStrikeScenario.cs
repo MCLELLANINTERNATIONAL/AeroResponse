@@ -1,6 +1,5 @@
 using AeroResponse.Models;
 using AeroResponse.Simulation.Layouts;
-using AeroResponse.Simulation;
 
 namespace AeroResponse.Simulation.Scenarios;
 
@@ -20,12 +19,18 @@ public class BirdStrikeScenario : ISimulationScenario
                 "because it defines no engines.");
         }
 
+        var defaults = aircraft.DefaultState;
+
         var engines = Enumerable
             .Range(1, aircraft.EngineCount)
             .Select(number => new EngineState
             {
                 Number = number,
-                Power = number == AffectedEngineNumber ? 65 : 90,
+
+                Power = number == AffectedEngineNumber
+                    ? GetDegradedPower(defaults.NormalEnginePower)
+                    : defaults.NormalEnginePower,
+
                 Running = true,
                 OnFire = false,
                 FuelCutoff = false,
@@ -35,10 +40,16 @@ public class BirdStrikeScenario : ISimulationScenario
 
         return new CockpitState
         {
-            Airspeed = 220,
-            Altitude = 3000,
-            Heading = 240,
-            VerticalSpeed = 0,
+            Airspeed = defaults.CruiseAirspeed,
+            Altitude = defaults.CruiseAltitude,
+            Heading = defaults.DefaultHeading,
+            VerticalSpeed = defaults.DefaultVerticalSpeed,
+            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
+
+            Pitch = defaults.DefaultPitch,
+            Bank = defaults.DefaultBank,
+
+            FuelPercentage = defaults.FuelPercentage,
             Engines = engines,
 
             AlertMessage =
@@ -180,5 +191,12 @@ public class BirdStrikeScenario : ISimulationScenario
                    expectedProcedure.CorrectAction,
                    actionName,
                    StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static int GetDegradedPower(double normalPower)
+    {
+        return Math.Max(
+            0,
+            (int)Math.Round(normalPower * 0.72));
     }
 }

@@ -11,17 +11,28 @@ public class WindShearScenario : ISimulationScenario
 
     public CockpitState Start(CockpitLayoutDefinition aircraft)
     {
+        var defaults = aircraft.DefaultState;
+        var engines = Enumerable.Range(1, aircraft.EngineCount)
+            .Select(number => new EngineState
+            {
+                Number = number,
+                Power = Math.Max(0, defaults.NormalEnginePower - 5),
+                Running = true,
+                FuelPercentage = defaults.FuelPercentage
+            })
+            .ToList();
+
         return new CockpitState
         {
-            Airspeed = 145,
-            Altitude = 900,
-            Heading = 270,
+            Airspeed = defaults.CruiseAirspeed + 30,
+            Altitude = defaults.CruiseAltitude * 0.30,
+            Heading = defaults.DefaultHeading,
             VerticalSpeed = -1200,
-            Engines =
-            [
-                new EngineState { Number = 1, Power = 70, Running = true },
-                new EngineState { Number = 2, Power = 70, Running = true }
-            ],
+            DisplayedVerticalSpeed = -1200,
+            Pitch = defaults.DefaultPitch,
+            Bank = defaults.DefaultBank,
+            FuelPercentage = defaults.FuelPercentage,
+            Engines = engines,
             AlertMessage = $"{aircraft.Name}: WINDSHEAR WARNING - TAKEOFF/LANDING PHASE"
         };
     }

@@ -1,4 +1,5 @@
 ﻿@page "/simulation"
+@page "/simulation/{AircraftKey}/{ScenarioType}"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 
@@ -10,128 +11,225 @@
 @using AeroResponse.Simulation.Scenarios
 
 @inject ICockpitLayoutProvider LayoutProvider
+@inject SimulationEngine SimulationEngine
+@inject SimulationSelectionStorage SelectionStorage
+@inject NavigationManager Navigation
 
 <PageTitle>Cockpit</PageTitle>
 
-<h1>@selectedAircraft.Name Cockpit</h1>
-
-<CockpitLayout Layout="@cockpitLayout"
-               State="@cockpitState" />
-<div class="testing-center">
-    <div>
-        <h2>Airspeed</h2>
-        <input type="range"
-            min="0"
-            max="@cockpitLayout.Airspeed.MaximumSpeed"
-            step="10"
-            @bind="cockpitState.Airspeed"
-            @bind:event="oninput" />
+@if (!_isReady)
+{
+    <p>Loading simulation...</p>
+}
+else
+{
+    <div class="simulation-toolbar">
+        <button type="button"
+                class="change-selection-button"
+                @onclick="ChangeSelection">
+            ← Change Aircraft / Scenario
+        </button>
     </div>
-    <div>
-        <h2>Attitude</h2>
-        <h3>Pitch</h3>
-        <input type="range"
-            min="-30"
-            max="30"
-            step="1"
-            @bind="cockpitState.Pitch"
-            @bind:event="oninput" />
+    <h1>@cockpitLayout.Name Cockpit</h1>
 
-        <p>@cockpitState.Pitch°</p>
+    <CockpitLayout Layout="@cockpitLayout"
+                   State="@cockpitState" />
+    <div class="testing-center">
+        <div>
+            <h2>Airspeed</h2>
+            <input type="range"
+                min="0"
+                max="@cockpitLayout.Airspeed.MaximumSpeed"
+                step="10"
+                @bind="cockpitState.Airspeed"
+                @bind:event="oninput" />
+        </div>
+        <div>
+            <h2>Attitude</h2>
+            <h3>Pitch</h3>
+            <input type="range"
+                min="-30"
+                max="30"
+                step="1"
+                @bind="cockpitState.Pitch"
+                @bind:event="oninput" />
 
-        <h3>Bank</h3>
-        <input type="range"
-            min="-90"
-            max="90"
-            step="1"
-            @bind="cockpitState.Bank"
-            @bind:event="oninput" />
+            <p>@cockpitState.Pitch°</p>
 
-        <p>@cockpitState.Bank°</p>
+            <h3>Bank</h3>
+            <input type="range"
+                min="-90"
+                max="90"
+                step="1"
+                @bind="cockpitState.Bank"
+                @bind:event="oninput" />
+
+            <p>@cockpitState.Bank°</p>
+        </div>
+        <div>
+            <h2>Altitude</h2>
+            <input type="range"
+                min="0"
+                max="20000"
+                step="10"
+                @bind="cockpitState.Altitude"
+                @bind:event="oninput" />
+        </div>
+        <div>
+            <h2>Turn Rate</h2>
+
+            <input type="range"
+                min="-3"
+                max="3"
+                step="0.1"
+                @bind="cockpitState.TurnRate"
+                @bind:event="oninput" />
+
+            <p>@cockpitState.TurnRate.ToString("0.0")°/sec</p>
+            <h2>Slip / Skid</h2>
+
+            <input type="range"
+                min="-1"
+                max="1"
+                step="0.05"
+                @bind="cockpitState.Slip"
+                @bind:event="oninput" />
+
+            <p>@cockpitState.Slip.ToString("0.00")</p>
+        </div>
+        <div>
+            <h2>Heading</h2>
+
+            <input type="range"
+                min="0"
+                max="359"
+                step="1"
+                @bind="cockpitState.Heading"
+                @bind:event="oninput" />
+
+            <p>@cockpitState.Heading°</p>
+        </div>
+        <div>
+            <h2>Vertical Speed</h2>
+
+            <input type="range"
+                min="@cockpitLayout.VSI.MinimumVerticalSpeed"
+                max="@cockpitLayout.VSI.MaximumVerticalSpeed"
+                step="100"
+                @bind="cockpitState.VerticalSpeed"
+                @bind:event="oninput" />
+
+            <p>
+                @cockpitState.VerticalSpeed.ToString("N0") FPM
+            </p>
+        </div>
     </div>
-    <div>
-        <h2>Altitude</h2>
-        <input type="range"
-            min="0"
-            max="20000"
-            step="10"
-            @bind="cockpitState.Altitude"
-            @bind:event="oninput" />
-    </div>
-    <div>
-        <h2>Turn Rate</h2>
+}
 
-        <input type="range"
-            min="-3"
-            max="3"
-            step="0.1"
-            @bind="cockpitState.TurnRate"
-            @bind:event="oninput" />
-
-        <p>@cockpitState.TurnRate.ToString("0.0")°/sec</p>
-        <h2>Slip / Skid</h2>
-
-        <input type="range"
-            min="-1"
-            max="1"
-            step="0.05"
-            @bind="cockpitState.Slip"
-            @bind:event="oninput" />
-
-        <p>@cockpitState.Slip.ToString("0.00")</p>
-    </div>
-    <div>
-        <h2>Heading</h2>
-
-        <input type="range"
-            min="0"
-            max="359"
-            step="1"
-            @bind="cockpitState.Heading"
-            @bind:event="oninput" />
-
-        <p>@cockpitState.Heading°</p>
-    </div>
-    <div>
-        <h2>Vertical Speed</h2>
-
-        <input type="range"
-            min="@cockpitLayout.VSI.MinimumVerticalSpeed"
-            max="@cockpitLayout.VSI.MaximumVerticalSpeed"
-            step="100"
-            @bind="cockpitState.VerticalSpeed"
-            @bind:event="oninput" />
-
-        <p>
-            @cockpitState.VerticalSpeed.ToString("N0") FPM
-        </p>
-    </div>
-</div>
 @code {
     private CockpitState cockpitState = new();
     private List<ScenarioProcedureStep> procedureSteps = [];
-    
+
     private PeriodicTimer? _simulationTimer;
     private CancellationTokenSource? _simulationCancellation;
     private Task? _simulationLoop;
 
-    private Aircraft selectedAircraft = new()
-    {
-        Name = "Cessna 172",
-        Manufacturer = "Cessna",
-        CockpitLayoutKey = "cessna-172-standard"
-    };
+    private bool _isReady;
+    private bool _needsStorageCheck;
+
+    [Parameter]
+    public string? AircraftKey { get; set; }
+
+    [Parameter]
+    public string? ScenarioType { get; set; }
 
     private CockpitLayoutDefinition cockpitLayout = default!;
+    private ISimulationScenario selectedScenario = default!;
 
-    private readonly ISimulationScenario selectedScenario =
-    new BirdStrikeScenario();
-
-    protected override void OnInitialized()
+    protected override Task OnParametersSetAsync()
     {
-        cockpitLayout =
-            LayoutProvider.GetLayout(selectedAircraft.CockpitLayoutKey);
+        if (!string.IsNullOrWhiteSpace(AircraftKey) &&
+            !string.IsNullOrWhiteSpace(ScenarioType))
+        {
+            // Came here from a specific URL. No JS interop involved,
+            // so this is safe to resolve during prerendering.
+            try
+            {
+                cockpitLayout =
+                    LayoutProvider.GetLayout(AircraftKey!);
 
+                selectedScenario =
+                    SimulationEngine.GetScenario(ScenarioType!);
+            }
+            catch
+            {
+                Navigation.NavigateTo("/simulation/select");
+                return Task.CompletedTask;
+            }
+
+            InitializeSimulationState();
+        }
+        else
+        {
+            // Bare "/simulation" — need to check saved selection, which
+            // requires JS interop (localStorage). Can't run that here;
+            // defer to OnAfterRenderAsync where interactivity is
+            // guaranteed to exist.
+            _needsStorageCheck = true;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void ChangeSelection()
+    {
+        Navigation.NavigateTo("/simulation/select");
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !_needsStorageCheck)
+        {
+            return;
+        }
+
+        _needsStorageCheck = false;
+
+        var savedSelection = await SelectionStorage.GetAsync();
+
+        var hasUsableSavedSelection =
+            savedSelection?.IsValid == true;
+
+        if (hasUsableSavedSelection)
+        {
+            try
+            {
+                cockpitLayout =
+                    LayoutProvider.GetLayout(
+                        savedSelection!.AircraftKey);
+
+                selectedScenario =
+                    SimulationEngine.GetScenario(
+                        savedSelection.ScenarioType);
+            }
+            catch
+            {
+                hasUsableSavedSelection = false;
+            }
+        }
+
+        if (!hasUsableSavedSelection)
+        {
+            Navigation.NavigateTo("/simulation/select");
+            return;
+        }
+
+        InitializeSimulationState();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void InitializeSimulationState()
+    {
         cockpitState =
             selectedScenario.Start(cockpitLayout);
 
@@ -143,8 +241,14 @@
         cockpitState.DisplayedVerticalSpeed =
             cockpitState.VerticalSpeed;
 
-        StartSimulationLoop();
+        _isReady = true;
+
+        if (_simulationLoop is null)
+        {
+            StartSimulationLoop();
+        }
     }
+
     private void StartSimulationLoop()
     {
         _simulationCancellation = new CancellationTokenSource();
@@ -181,6 +285,7 @@
             // Expected when leaving the page.
         }
     }
+
     public async ValueTask DisposeAsync()
     {
         _simulationCancellation?.Cancel();

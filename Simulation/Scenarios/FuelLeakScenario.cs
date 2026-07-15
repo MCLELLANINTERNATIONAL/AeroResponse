@@ -11,16 +11,28 @@ public class FuelLeakScenario : ISimulationScenario
 
     public CockpitState Start(CockpitLayoutDefinition aircraft)
     {
+        var defaults = aircraft.DefaultState;
+        var engines = Enumerable.Range(1, aircraft.EngineCount)
+            .Select(number => new EngineState
+            {
+                Number = number,
+                Power = defaults.NormalEnginePower,
+                Running = true,
+                FuelPercentage = Math.Max(0, defaults.FuelPercentage - 25)
+            })
+            .ToList();
+
         return new CockpitState
         {
-            Airspeed = 260,
-            Altitude = 22000,
-            Heading = 300,
-            Engines =
-            [
-                new EngineState { Number = 1, Power = 90, Running = true, FuelPercentage = 48 },
-                new EngineState { Number = 2, Power = 90, Running = true, FuelPercentage = 48 }
-            ],
+            Airspeed = defaults.CruiseAirspeed,
+            Altitude = defaults.CruiseAltitude,
+            Heading = defaults.DefaultHeading,
+            VerticalSpeed = defaults.DefaultVerticalSpeed,
+            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
+            Pitch = defaults.DefaultPitch,
+            Bank = defaults.DefaultBank,
+            FuelPercentage = defaults.FuelPercentage,
+            Engines = engines,
             AlertMessage = $"{aircraft.Name}: FUEL LEAK DETECTED - FUEL QUANTITY DECREASING"
         };
     }

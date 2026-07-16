@@ -38,7 +38,7 @@ Video Coming Soon
 - Nathaniel Cole Stokes
 
 ## Project Milestones
-- Week 1: Landing Page, Simulation Page Layout (AirCrafts), App Set-up - Architecture and Logic, Emergency Scenarios
+- Week 1: GitHub Repositiry + Trello, App Set-up - Architecture and Logic, Landing Page, Simulation Page, Emergency Scenarios
 - Week 2: Membership Tier Implementation | Access & Control and Joining | Payment, Aircraft Management, Emergency Scenarios Management
 - Week 3: Security Authentication, Full Simulation Finalization, Results Dashboard
 - Week 4: Stretch Features Finalization, Production Deployment and Demo Recording

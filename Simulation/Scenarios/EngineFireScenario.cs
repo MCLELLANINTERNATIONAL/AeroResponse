@@ -29,8 +29,8 @@ public class EngineFireScenario : ISimulationScenario
             .ToList();
 
         // Engine 2 is the affected engine where available.
-        var affectedEngine = engines.FirstOrDefault(engine => engine.Number == 2)
-                             ?? engines.First();
+    var affectedEngine = engines.FirstOrDefault(engine => engine.Number == 2)
+                    ?? engines[0];
 
         affectedEngine.Power = 40;
         affectedEngine.OnFire = true;

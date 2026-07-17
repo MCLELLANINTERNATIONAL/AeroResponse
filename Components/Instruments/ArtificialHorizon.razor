@@ -1,0 +1,165 @@
+@using AeroResponse.Simulation.Instruments.ArtificialHorizon
+@using AeroResponse.Simulation.Instruments
+
+<InstrumentBase Label="ATTITUDE"
+                AriaLabel="@($"Attitude indicator showing {Pitch} degrees pitch and {Bank} degrees bank")">
+    <svg class="attitude-svg"
+     viewBox="0 0 300 300">
+
+    <defs>
+        <clipPath id="attitudeClip">
+            <circle cx="150"
+                    cy="150"
+                    r="140" />
+        </clipPath>
+    </defs>
+
+    <!-- 1. Moving horizon and pitch ladder -->
+    <g clip-path="url(#attitudeClip)">
+        <g transform="@HorizonTransform">
+
+            <rect x="-300"
+                  y="-500"
+                  width="900"
+                  height="650"
+                  class="sky" />
+
+            <rect x="-300"
+                  y="150"
+                  width="900"
+                  height="650"
+                  class="ground" />
+
+            <line x1="-300"
+                  y1="150"
+                  x2="600"
+                  y2="150"
+                  class="horizon" />
+
+            @foreach (var mark in ArtificialHorizonMath.GetPitchMarks())
+            {
+                var y = CenterY - mark.Degrees * PixelsPerPitchDegree;
+                var halfWidth = mark.IsMajor ? 34 : 20;
+
+                <line x1="@(CenterX - halfWidth)"
+                      y1="@y"
+                      x2="@(CenterX + halfWidth)"
+                      y2="@y"
+                      class="@(mark.IsMajor
+                          ? "pitch-mark major-pitch-mark"
+                          : "pitch-mark minor-pitch-mark")" />
+
+                @if (mark.IsMajor)
+                {
+                    <svg:text x="@(CenterX - halfWidth - 12)"
+                              y="@y"
+                              class="pitch-label"
+                              dominant-baseline="middle"
+                              text-anchor="middle">
+                        @Math.Abs(mark.Degrees)
+                    </svg:text>
+
+                    <svg:text x="@(CenterX + halfWidth + 12)"
+                              y="@y"
+                              class="pitch-label"
+                              dominant-baseline="middle"
+                              text-anchor="middle">
+                        @Math.Abs(mark.Degrees)
+                    </svg:text>
+                }
+            }
+
+        </g>
+    </g>
+
+    <!-- 2. Fixed bank scale -->
+    <g>
+        @foreach (var mark in ArtificialHorizonMath.GetBankMarks())
+        {
+            var outer = InstrumentGeometry.GetDialPoint(
+                CenterX,
+                CenterY,
+                132,
+                mark.Angle);
+
+            var inner = InstrumentGeometry.GetDialPoint(
+                CenterX,
+                CenterY,
+                mark.IsMajor ? 112 : 122,
+                mark.Angle);
+
+            <line x1="@InstrumentGeometry.Format(inner.X)"
+                  y1="@InstrumentGeometry.Format(inner.Y)"
+                  x2="@InstrumentGeometry.Format(outer.X)"
+                  y2="@InstrumentGeometry.Format(outer.Y)"
+                  class="@(mark.IsMajor
+                      ? "bank-mark major-bank-mark"
+                      : "bank-mark minor-bank-mark")" />
+
+            @if (mark.ShowLabel)
+            {
+                var label = InstrumentGeometry.GetDialPoint(
+                    CenterX,
+                    CenterY,
+                    98,
+                    mark.Angle);
+
+                <svg:text x="@InstrumentGeometry.Format(label.X)"
+                          y="@InstrumentGeometry.Format(label.Y)"
+                          class="bank-label"
+                          dominant-baseline="middle"
+                          text-anchor="middle">
+                    @Math.Abs(mark.Angle)
+                </svg:text>
+            }
+        }
+    </g>
+
+    <!-- 3. Rotating bank pointer -->
+    <g transform="@BankPointerTransform">
+        <polygon points="143,30 157,30 150,44"
+                 class="moving-bank-pointer" />
+    </g>
+
+    <!-- 4. Fixed aircraft symbol -->
+    <g>
+        <line x1="70"
+              y1="150"
+              x2="135"
+              y2="150"
+              class="aircraft-reference" />
+
+        <line x1="165"
+              y1="150"
+              x2="230"
+              y2="150"
+              class="aircraft-reference" />
+
+        <polygon points="145,150 150,142 155,150 150,158"
+                 class="aircraft-center" />
+    </g>
+
+</svg>
+</InstrumentBase>
+
+@code {
+    [Parameter]
+    public double Pitch { get; set; }
+
+    [Parameter]
+    public double Bank { get; set; }
+
+    private const double CenterX = 150;
+    private const double CenterY = 150;
+    private const double PixelsPerPitchDegree = 3.0;
+
+    private AttitudeReading Reading =>
+        ArtificialHorizonMath.GetReading(Pitch, Bank);
+    private string HorizonTransform =>
+        FormattableString.Invariant(
+            $"rotate({Reading.HorizonRotation} {CenterX} {CenterY}) translate(0 {Reading.HorizonOffset})");
+    
+    private string BankPointerTransform =>
+    FormattableString.Invariant(
+        $"rotate({Reading.HorizonRotation} {CenterX} {CenterY})");
+}

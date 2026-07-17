@@ -68,7 +68,24 @@ h1:focus {
 }
 
 /* ======================================================
-    Emergency Scenario CRUD
+   Cockpit 
+====================================================== */
+
+.testing-center
+{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+.testing-center div
+{
+    border: #07111f;
+    border-style: dashed;
+    border-radius: 2em;
+    padding: 1em;
+}
+
+/* ======================================================
+   Emergency Scenario CRUD
 ====================================================== */
 
 .scenario-page {

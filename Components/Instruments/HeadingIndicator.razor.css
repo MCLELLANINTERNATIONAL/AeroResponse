@@ -1,0 +1,95 @@
+.heading-indicator-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.dial-face {
+    fill: #080808;
+}
+
+/* Compass card */
+
+.compass-card {
+    transition: transform 100ms linear;
+}
+
+.heading-tick {
+    stroke: #f4f4f4;
+    stroke-linecap: square;
+    vector-effect: non-scaling-stroke;
+}
+
+.cardinal-tick {
+    stroke-width: 5;
+}
+
+.major-heading-tick {
+    stroke-width: 3;
+}
+
+.minor-heading-tick {
+    stroke-width: 1.5;
+}
+
+/* Labels */
+
+.cardinal-label {
+    fill: #f5f5f5;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+
+    paint-order: stroke;
+    stroke: #080808;
+    stroke-width: 2px;
+}
+
+.heading-number {
+    fill: #f5f5f5;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+
+    paint-order: stroke;
+    stroke: #080808;
+    stroke-width: 2px;
+}
+
+/* Fixed references */
+
+.lubber-pointer {
+    fill: #f4f4f4;
+    stroke: #080808;
+    stroke-width: 2px;
+    paint-order: stroke;
+}
+
+.aircraft-reference {
+    fill: none;
+    stroke: #f4f4f4;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.center-hub {
+    fill: #d8d8d8;
+    stroke: #222;
+    stroke-width: 2;
+}
+
+/* Heading window */
+
+.heading-window {
+    fill: #101010;
+    stroke: #d8d8d8;
+    stroke-width: 2;
+}
+
+.heading-readout {
+    fill: #f5f5f5;
+    font-family: Consolas, monospace;
+    font-size: 17px;
+    font-weight: 700;
+}

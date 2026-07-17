@@ -1,0 +1,59 @@
+<div class="instrument-position"
+     style="@PositionStyle">
+
+    @switch (Definition.Type)
+    {
+        case InstrumentType.AirspeedIndicator:
+            <AirspeedIndicator Airspeed="@State.Airspeed"
+                            Config="@Layout" />
+            break;
+        case InstrumentType.Altimeter:
+            <Altimeter Altitude="@State.Altitude" />
+            break;
+        
+        case InstrumentType.ArtificialHorizon:
+            <ArtificialHorizon Pitch="@State.Pitch"
+                            Bank="@State.Bank" />
+            break;
+
+        case InstrumentType.TurnCoordinator:
+            <TurnCoordinator Slip="@State.Slip"
+                            TurnRate="@State.TurnRate" />
+            break;
+
+        case InstrumentType.HeadingIndicator:
+            <HeadingIndicator Heading="@State.Heading" />
+            break;
+        
+        case InstrumentType.VerticalSpeedIndicator:
+            <VSI VerticalSpeed="@State.VerticalSpeed"
+                DisplayedVerticalSpeed="@State.DisplayedVerticalSpeed"
+                Config="@Layout" />
+            break;
+
+        default:
+            <div class="unsupported-instrument">
+                Unsupported instrument: @Definition.Type
+            </div>
+            break;
+    }
+
+</div>
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public InstrumentDefinition Definition { get; set; } = default!;
+
+    [Parameter]
+    [EditorRequired]
+    public CockpitState State { get; set; } = default!;
+
+    [Parameter]
+    [EditorRequired]
+    public CockpitLayoutDefinition Layout {get; set; } = default!;
+
+    private string PositionStyle =>
+        $"grid-row: {Definition.GridRow} / span {Definition.RowSpan}; " +
+        $"grid-column: {Definition.GridColumn} / span {Definition.ColumnSpan};";
+}

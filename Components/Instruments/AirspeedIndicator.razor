@@ -1,0 +1,184 @@
+@using AeroResponse.Simulation.Instruments.AirspeedIndicator
+@using AeroResponse.Simulation.Layouts
+@using AeroResponse.Simulation.Instruments
+
+<InstrumentBase Label="AIRSPEED"
+                AriaLabel="@($"Airspeed indicator showing {Airspeed} knots")">
+
+    <svg class="airspeed-svg"
+         viewBox="0 0 300 300"
+         aria-hidden="true">
+
+        <!-- Dial background -->
+        <circle cx="150"
+                cy="150"
+                r="140"
+                class="dial-face" />
+
+        <!-- Operating-range arcs -->
+        <path d="@GetArcPath(
+                     Config.Airspeed.WhiteArcStart,
+                     Config.Airspeed.WhiteArcEnd,
+                     122)"
+              class="range-arc white-arc" />
+
+        <path d="@GetArcPath(
+                     Config.Airspeed.GreenArcStart,
+                     Config.Airspeed.GreenArcEnd,
+                     130)"
+              class="range-arc green-arc" />
+
+        <path d="@GetArcPath(
+                     Config.Airspeed.YellowArcStart,
+                     Config.Airspeed.YellowArcEnd,
+                     130)"
+              class="range-arc yellow-arc" />
+
+        <!-- Never-exceed red line -->
+        @{
+            var redLineAngle = GetSpeedAngle(
+                Config.Airspeed.NeverExceedSpeed);
+
+            var redLineOuter = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 136, redLineAngle);
+            var redLineInner = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 116, redLineAngle);
+        }
+
+        <line x1="@InstrumentGeometry.Format(redLineInner.X)"
+              y1="@InstrumentGeometry.Format(redLineInner.Y)"
+              x2="@InstrumentGeometry.Format(redLineOuter.X)"
+              y2="@InstrumentGeometry.Format(redLineOuter.Y)"
+              class="never-exceed-line" />
+
+        <!-- Tick marks -->
+        @for (var speed = Config.Airspeed.MinimumSpeed;
+              speed <= Config.Airspeed.MaximumSpeed;
+              speed += 5)
+        {
+            var angle = GetSpeedAngle(speed);
+            var isMajorTick = speed % 20 == 0;
+
+            var outerPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 132, angle);
+            var innerPoint = InstrumentGeometry.GetDialPoint(
+                CenterX,
+                CenterY,
+                isMajorTick ? 111 : 121,
+                angle);
+
+            <line x1="@InstrumentGeometry.Format(innerPoint.X)"
+                  y1="@InstrumentGeometry.Format(innerPoint.Y)"
+                  x2="@InstrumentGeometry.Format(outerPoint.X)"
+                  y2="@InstrumentGeometry.Format(outerPoint.Y)"
+                  class="@(isMajorTick
+                      ? "dial-tick major-tick"
+                      : "dial-tick minor-tick")" />
+        }
+
+        <!-- Speed numbers -->
+        @for (var speed = 20;
+              speed <= Config.Airspeed.MaximumSpeed;
+              speed += 20)
+        {
+            var angle = GetSpeedAngle(speed);
+            var numberPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 94, angle);
+
+            <svg:text x="@InstrumentGeometry.Format(numberPoint.X)"
+                      y="@InstrumentGeometry.Format(numberPoint.Y)"
+                      class="dial-number"
+                      dominant-baseline="middle"
+                      text-anchor="middle">
+                @speed
+            </svg:text>
+        }
+
+        <!-- Units -->
+        <svg:text x="150"
+                  y="190"
+                  class="units-label"
+                  text-anchor="middle">
+            KNOTS
+        </svg:text>
+
+        <!-- Airspeed needle -->
+        <polygon points="146,158 154,158 151,47 149,47"
+                 class="airspeed-needle"
+                 transform="@NeedleTransform" />
+
+        <!-- Needle counterweight -->
+        <polygon points="145,157 155,157 153,186 147,186"
+                 class="needle-counterweight"
+                 transform="@NeedleTransform" />
+
+        <!-- Center hub -->
+        <circle cx="150"
+                cy="150"
+                r="10"
+                class="center-hub" />
+
+        <!-- Temporary numerical verification -->
+        <svg:text x="150"
+                  y="220"
+                  class="airspeed-reading"
+                  text-anchor="middle">
+            @Reading.Airspeed KTS
+        </svg:text>
+
+    </svg>
+
+</InstrumentBase>
+
+@code {
+    [Parameter]
+    public double Airspeed { get; set; }
+
+    [Parameter]
+    [EditorRequired]
+    public CockpitLayoutDefinition Config { get; set; } = default!;
+
+    private const double CenterX = 150;
+    private const double CenterY = 150;
+
+    private AirspeedReading Reading =>
+        AirspeedIndicatorMath.GetReading((int)Math.Round(Airspeed), Config);
+
+    private string NeedleTransform =>
+        FormattableString.Invariant(
+            $"rotate({Reading.NeedleAngle} {CenterX} {CenterY})");
+
+    private double GetSpeedAngle(int speed)
+    {
+        var config = Config.Airspeed;
+
+        var clampedSpeed = Math.Clamp(
+            speed,
+            config.MinimumSpeed,
+            config.MaximumSpeed);
+
+        var percentage =
+            (double)(clampedSpeed - config.MinimumSpeed) /
+            (config.MaximumSpeed - config.MinimumSpeed);
+
+        return config.MinAirspeedAngle +
+               percentage *
+               (config.MaxAirspeedAngle - config.MinAirspeedAngle);
+    }
+
+    private string GetArcPath(
+        int startSpeed,
+        int endSpeed,
+        double radius)
+    {
+        var startAngle = GetSpeedAngle(startSpeed);
+        var endAngle = GetSpeedAngle(endSpeed);
+
+        var startPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, radius, startAngle);
+        var endPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, radius, endAngle);
+
+        var sweep = endAngle - startAngle;
+        var largeArcFlag = Math.Abs(sweep) > 180 ? 1 : 0;
+        var sweepFlag = sweep >= 0 ? 1 : 0;
+
+        return FormattableString.Invariant(
+            $"M {startPoint.X:0.###} {startPoint.Y:0.###} A {radius:0.###} {radius:0.###} 0 {largeArcFlag} {sweepFlag} {endPoint.X:0.###} {endPoint.Y:0.###}");
+    }
+
+}

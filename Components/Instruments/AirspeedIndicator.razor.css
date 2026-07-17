@@ -1,0 +1,123 @@
+.airspeed-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* ===========================
+   Dial
+   =========================== */
+
+.dial-face {
+    fill: #080808;
+}
+
+/* ===========================
+   Colored Operating Arcs
+   =========================== */
+
+.range-arc {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: butt;
+}
+
+.white-arc {
+    stroke: white;
+}
+
+.green-arc {
+    stroke: #2ecc71;
+}
+
+.yellow-arc {
+    stroke: #f1c40f;
+}
+
+.never-exceed-line {
+    stroke: #d32f2f;
+    stroke-width: 6;
+}
+
+/* ===========================
+   Tick Marks
+   =========================== */
+
+.dial-tick {
+    stroke: #f5f5f5;
+}
+
+.major-tick {
+    stroke-width: 4;
+}
+
+.minor-tick {
+    stroke-width: 2;
+}
+
+/* ===========================
+   Numbers
+   =========================== */
+
+.dial-number {
+    fill: white;
+
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+
+    user-select: none;
+}
+
+.units-label {
+    fill: #d8d8d8;
+
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11px;
+
+    letter-spacing: .12rem;
+    font-weight: bold;
+
+    user-select: none;
+}
+
+/* ===========================
+   Needle
+   =========================== */
+
+.airspeed-needle {
+    fill: white;
+
+    transition: transform .1s linear;
+}
+
+.needle-counterweight {
+    fill: #bfbfbf;
+
+    transition: transform .1s linear;
+}
+
+/* ===========================
+   Center Hub
+   =========================== */
+
+.center-hub {
+    fill: #dadada;
+
+    stroke: #222;
+    stroke-width: 3;
+}
+
+/* ===========================
+   Temporary Debug Readout
+   =========================== */
+
+.airspeed-reading {
+    fill: white;
+
+    font-family: Consolas, monospace;
+    font-size: 15px;
+    font-weight: bold;
+
+    user-select: none;
+}

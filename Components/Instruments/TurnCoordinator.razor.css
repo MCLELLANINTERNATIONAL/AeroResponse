@@ -1,0 +1,123 @@
+.turn-coordinator-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.dial-face {
+    fill: #080808;
+}
+
+/* Standard-rate references */
+
+.standard-rate-mark {
+    stroke: #f4f4f4;
+    stroke-width: 6;
+    stroke-linecap: round;
+}
+
+/* Miniature aircraft */
+
+.airplane-indicator {
+    transition: transform 100ms linear;
+}
+
+.airplane-shape {
+    fill: none;
+    stroke: #f4f4f4;
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.airplane-body {
+    fill: #f4f4f4;
+    stroke: #080808;
+    stroke-width: 1.5;
+}
+
+/* Labels */
+
+.turn-label {
+    fill: #f4f4f4;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* Inclinometer */
+
+.inclinometer-tube {
+    fill: none;
+    stroke: #d7d7d7;
+    stroke-width: 28;
+    stroke-linecap: round;
+}
+
+.ball-reference {
+    stroke: #080808;
+    stroke-width: 3;
+}
+
+.slip-ball {
+    fill: #111;
+    stroke: #eee;
+    stroke-width: 2;
+
+    transition:
+        cx 100ms linear,
+        cy 100ms linear;
+}
+
+/* Lower caption */
+
+.instrument-caption {
+    fill: #dedede;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+}
+.standard-rate-label,
+.direction-label,
+.slip-label,
+.instrument-caption {
+    fill: #f4f4f4;
+
+    font-family: Arial, Helvetica, sans-serif;
+
+    paint-order: stroke;
+    stroke: #080808;
+    stroke-width: 2px;
+}
+
+.standard-rate-label {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.direction-label {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.slip-label {
+    font-size: 10px;
+    letter-spacing: .08em;
+}
+
+.instrument-caption {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .18em;
+}
+.pitch-label {
+    fill: white;
+    font-family: sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+
+    paint-order: stroke;
+    stroke: #080808;
+    stroke-width: 2px;
+}

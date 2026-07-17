@@ -1,0 +1,114 @@
+@using AeroResponse.Simulation.Instruments.Altimeter
+@using AeroResponse.Simulation.Instruments
+
+<InstrumentBase Label="ALTIMETER"
+                AriaLabel="@($"Altimeter showing {Altitude} feet")">
+
+    <svg class="altimeter-svg"
+     viewBox="0 0 300 300"
+     aria-hidden="true">
+
+        <!-- Dial background -->
+        <circle cx="150"
+                cy="150"
+                r="140"
+                class="dial-face" />
+
+        <!-- Tick marks -->
+        @for (var index = 0; index < 50; index++)
+        {
+            var angle = index * 7.2;
+            var isMajorTick = index % 5 == 0;
+
+            var outerPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 132, angle);
+            var innerPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, isMajorTick ? 111 : 121, angle);
+
+            <line x1="@InstrumentGeometry.Format(innerPoint.X)"
+                y1="@InstrumentGeometry.Format(innerPoint.Y)"
+                x2="@InstrumentGeometry.Format(outerPoint.X)"
+                y2="@InstrumentGeometry.Format(outerPoint.Y)"
+                class="@(isMajorTick ? "dial-tick major-tick" : "dial-tick minor-tick")" />
+        }
+
+        <!-- Dial numbers -->
+        @for (var number = 0; number < 10; number++)
+        {
+            var angle = number * 36.0;
+            var numberPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 92, angle);
+
+                    <svg:text x="@InstrumentGeometry.Format(numberPoint.X)"
+                                        y="@InstrumentGeometry.Format(numberPoint.Y)"
+                                        class="dial-number"
+                                        dominant-baseline="middle"
+                                        text-anchor="middle">
+                            @number
+                    </svg:text>
+        }
+
+        <!-- Ten's of Thousands Radicule -->
+        <polygon
+            points="145,145 155,145 150,105"
+            class="ten-thousands-pointer"
+            transform="@($"rotate({Reading.TenThousandsAngle} 150 150)")" />
+
+        <!-- Thousands needle -->
+        <line x1="150"
+            y1="160"
+            x2="150"
+            y2="82"
+            class="thousands-needle"
+            transform="@ThousandsNeedleTransform" />
+
+        <!-- Hundreds needle -->
+        <line x1="150"
+            y1="165"
+            x2="150"
+            y2="42"
+            class="hundreds-needle"
+            transform="@HundredsNeedleTransform" />
+
+        <!-- Center hub -->
+        <circle cx="150"
+                cy="150"
+                r="10"
+                class="center-hub" />
+
+        <!-- Temporary numerical verification -->
+        <svg:text x="150"
+                y="220"
+                class="altitude-reading"
+                text-anchor="middle">
+            @Altitude.ToString("N0") FT
+        </svg:text>
+
+    </svg>
+
+</InstrumentBase>
+
+@code {
+    [Parameter]
+    public double Altitude { get; set; }
+
+    private const double CenterX = 150;
+    private const double CenterY = 150;
+
+    private AltitudeReading Reading => AltimeterMath.Calculate((int)Math.Round(Altitude));
+    private double HundredsNeedleAngle =>
+        PositiveModulo((int)Math.Round(Altitude), 1000) / 1000.0 * 360.0;
+
+    private double ThousandsNeedleAngle =>
+        PositiveModulo((int)Math.Round(Altitude), 10000) / 10000.0 * 360.0;
+
+    private string HundredsNeedleTransform =>
+        FormattableString.Invariant(
+            $"rotate({HundredsNeedleAngle} {CenterX} {CenterY})");
+
+    private string ThousandsNeedleTransform =>
+        FormattableString.Invariant(
+            $"rotate({ThousandsNeedleAngle} {CenterX} {CenterY})");
+
+    private static int PositiveModulo(int value, int modulus)
+    {
+        return ((value % modulus) + modulus) % modulus;
+    }
+}

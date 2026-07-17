@@ -1,0 +1,186 @@
+@using AeroResponse.Simulation.Instruments
+@using AeroResponse.Simulation.Instruments.VerticalSpeedIndicator
+@using AeroResponse.Simulation.Layouts
+
+<InstrumentBase Label="VERTICAL SPEED"
+                AriaLabel="@($"Vertical speed indicator showing {Reading.DisplayedVerticalSpeed:0} feet per minute")">
+
+    <svg class="vsi-svg"
+         viewBox="0 0 300 300"
+         aria-hidden="true">
+
+        <!-- Dial face -->
+        <circle cx="@CenterX"
+                cy="@CenterY"
+                r="140"
+                class="dial-face" />
+        
+        <!-- Instrument Labels -->
+        <svg:text x="@CenterX"
+                y="182"
+                class="vsi-caption"
+                text-anchor="middle">
+            VERTICAL SPEED
+        </svg:text>
+
+        <svg:text x="@CenterX"
+                y="196"
+                class="vsi-units"
+                text-anchor="middle">
+            HUNDREDS OF FEET
+        </svg:text>
+
+        <svg:text x="@CenterX"
+                y="208"
+                class="vsi-units"
+                text-anchor="middle">
+            PER MINUTE
+        </svg:text>
+
+        <!-- Tick marks every 100 FPM -->
+        @for (var verticalSpeed = Config.VSI.MinimumVerticalSpeed;
+              verticalSpeed <= Config.VSI.MaximumVerticalSpeed;
+              verticalSpeed += 100)
+        {
+            var angle = VSIMath.GetNeedleRotation(
+                verticalSpeed,
+                Config.VSI.CalibrationPoints);
+
+            var magnitude = Math.Abs(verticalSpeed);
+
+            var isMajor = magnitude % 500 == 0;
+            var isMedium = !isMajor && magnitude % 200 == 0;
+
+            var outer = InstrumentGeometry.GetDialPoint(
+                CenterX,
+                CenterY,
+                132,
+                angle);
+
+            var innerRadius = isMajor
+                ? 110
+                : isMedium
+                    ? 118
+                    : 123;
+
+            var inner = InstrumentGeometry.GetDialPoint(
+                CenterX,
+                CenterY,
+                innerRadius,
+                angle);
+
+            <line x1="@InstrumentGeometry.Format(inner.X)"
+                  y1="@InstrumentGeometry.Format(inner.Y)"
+                  x2="@InstrumentGeometry.Format(outer.X)"
+                  y2="@InstrumentGeometry.Format(outer.Y)"
+                  class="@(isMajor
+                      ? "vsi-tick major-vsi-tick"
+                      : isMedium
+                          ? "vsi-tick medium-vsi-tick"
+                          : "vsi-tick minor-vsi-tick")" />
+        }
+
+        <!-- Calibration labels -->
+        @foreach (var point in Config.VSI.CalibrationPoints)
+        {
+            var labelPoint = InstrumentGeometry.GetDialPoint(
+                CenterX,
+                CenterY,
+                91,
+                point.Angle);
+
+            var label = point.VerticalSpeed == 0
+                ? "0"
+                : (Math.Abs(point.VerticalSpeed) / 100).ToString();
+
+            <svg:text x="@InstrumentGeometry.Format(labelPoint.X)"
+                      y="@InstrumentGeometry.Format(labelPoint.Y)"
+                      class="vsi-number"
+                      dominant-baseline="middle"
+                      text-anchor="middle">
+                @label
+            </svg:text>
+        }
+
+        <!-- Face labels -->
+        <svg:text x="150"
+                  y="62"
+                  class="vsi-direction-label"
+                  text-anchor="middle">
+            UP
+        </svg:text>
+
+        <svg:text x="150"
+                  y="247"
+                  class="vsi-direction-label"
+                  text-anchor="middle">
+            DOWN
+        </svg:text>
+
+        <svg:text x="150"
+                  y="184"
+                  class="vsi-caption"
+                  text-anchor="middle">
+            VERTICAL SPEED
+        </svg:text>
+
+        <svg:text x="150"
+                  y="198"
+                  class="vsi-units"
+                  text-anchor="middle">
+            100 FEET PER MIN
+        </svg:text>
+
+        <!-- Needle -->
+        <polygon points="146,158 154,158 151,43 149,43"
+                 class="vsi-needle"
+                 transform="@NeedleTransform" />
+
+        <!-- Counterweight -->
+        <polygon points="145,157 155,157 153,187 147,187"
+                 class="needle-counterweight"
+                 transform="@NeedleTransform" />
+
+        <!-- Center hub -->
+        <circle cx="@CenterX"
+                cy="@CenterY"
+                r="10"
+                class="center-hub" />
+
+        <!-- Temporary verification readout -->
+        <svg:text x="150"
+                  y="222"
+                  class="vsi-reading"
+                  dominant-baseline="middle"
+                  text-anchor="middle">
+            @Reading.DisplayedVerticalSpeed.ToString("0") FPM
+        </svg:text>
+
+    </svg>
+
+</InstrumentBase>
+
+@code {
+    [Parameter]
+    public double VerticalSpeed { get; set; }
+
+    [Parameter]
+    public double DisplayedVerticalSpeed { get; set; }
+
+    [Parameter]
+    [EditorRequired]
+    public CockpitLayoutDefinition Config { get; set; } = default!;
+
+    private const double CenterX = 150;
+    private const double CenterY = 150;
+
+    private VSIReading Reading =>
+        VSIMath.GetReading(
+            (int)Math.Round(VerticalSpeed),
+            DisplayedVerticalSpeed,
+            Config.VSI);
+
+    private string NeedleTransform =>
+        FormattableString.Invariant(
+            $"rotate({Reading.NeedleRotation} {CenterX} {CenterY})");
+}

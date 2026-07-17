@@ -1,0 +1,163 @@
+@using AeroResponse.Simulation.Instruments.TurnCoordinator
+
+<InstrumentBase Label="TURN COORDINATOR"
+                AriaLabel="@($"Turn coordinator showing {TurnRate} degrees per second with slip value {Slip}")">
+
+    <svg class="turn-coordinator-svg"
+         viewBox="0 0 300 300"
+         aria-hidden="true">
+
+        <!-- Instrument face -->
+        <circle cx="150"
+                cy="150"
+                r="140"
+                class="dial-face" />
+
+        <!-- Standard-rate reference marks -->
+        <svg:text x="@(CenterX-72)"
+                y="@(IndicatorCenterY+18)"
+                class="standard-rate-label"
+                text-anchor="middle">
+            2
+        </svg:text>
+
+        <svg:text x="@(CenterX+72)"
+                y="@(IndicatorCenterY+18)"
+                class="standard-rate-label"
+                text-anchor="middle">
+            2
+        </svg:text>
+        
+        <line x1="78"
+              y1="76"
+              x2="78"
+              y2="112"
+              class="standard-rate-mark" />
+
+        <line x1="222"
+              y1="76"
+              x2="222"
+              y2="112"
+              class="standard-rate-mark" />
+
+        <!-- Rotating miniature airplane -->
+        <g transform="@IndicatorTransform"
+           class="airplane-indicator">
+
+            <!-- Left wing -->
+            <path d="M 72 118
+                     L 130 112
+                     L 142 116"
+                  class="airplane-shape" />
+
+            <!-- Right wing -->
+            <path d="M 158 116
+                     L 170 112
+                     L 228 118"
+                  class="airplane-shape" />
+
+            <!-- Fuselage -->
+            <path d="M 150 77
+                     L 144 123
+                     L 150 137
+                     L 156 123
+                     Z"
+                  class="airplane-body" />
+
+            <!-- Tail -->
+            <path d="M 135 130
+                     L 150 124
+                     L 165 130"
+                  class="airplane-shape" />
+
+        </g>
+
+        <!-- Turn direction labels -->
+        <svg:text x="@(CenterX-70)"
+                y="@(IndicatorCenterY-70)"
+                class="turn-label"
+                text-anchor="middle">
+            L
+        </svg:text>
+        <svg:text x="@(CenterX+70)"
+                y="@(IndicatorCenterY-70)"
+                class="turn-label"
+                text-anchor="middle">
+            R
+        </svg:text>
+
+        <!-- Slip/skid inclinometer -->
+        <path d="M 78 213
+                 Q 150 245 222 213"
+              class="inclinometer-tube" />
+
+        <!-- Center reference lines -->
+        <line x1="137"
+              y1="218"
+              x2="137"
+              y2="243"
+              class="ball-reference" />
+
+        <line x1="163"
+              y1="218"
+              x2="163"
+              y2="243"
+              class="ball-reference" />
+
+        <!-- Moving slip/skid ball -->
+        <circle cx="@BallX"
+                cy="@BallY"
+                r="11"
+                class="slip-ball" />
+
+        <!-- Instrument text -->
+        <svg:text x="@(CenterX)"
+                  y="@(IndicatorCenterY+90)"
+                  class="pitch-label"
+                  dominant-baseline="middle"
+                  text-anchor="middle">
+            2 MIN
+        </svg:text>
+    </svg>
+
+</InstrumentBase>
+
+@code {
+    [Parameter]
+    public double TurnRate { get; set; }
+
+    [Parameter]
+    public double Slip { get; set; }
+
+    private const double CenterX = 150;
+    private const double IndicatorCenterY = 118;
+
+    private TurnCoordinatorReading Reading =>
+        TurnIndicatorMath.GetReading(TurnRate, Slip);
+
+    private string IndicatorTransform =>
+        FormattableString.Invariant(
+            $"rotate({Reading.IndicatorRotation} {CenterX} {IndicatorCenterY})");
+
+    private double BallX =>
+        CenterX + Reading.SlipBallOffset;
+
+    // The tube is lower in the center and rises toward either side.
+    private double BallY
+    {
+        get
+        {
+            const double maximumOffset = 35.0;
+            const double centerY = 235.0;
+            const double edgeRise = 8.0;
+
+            var normalizedOffset =
+                Reading.SlipBallOffset / maximumOffset;
+
+            return centerY -
+                   edgeRise *
+                   normalizedOffset *
+                   normalizedOffset;
+        }
+    }
+}

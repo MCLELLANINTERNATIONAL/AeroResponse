@@ -1,0 +1,26 @@
+<div class="cockpit-layout"
+     style="@GridStyle">
+
+    @foreach (var instrument in Layout.Instruments)
+    {
+        <InstrumentRenderer Definition="@instrument"
+                            State="@State"
+                            Layout="@Layout" />
+    }
+
+</div>
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public CockpitLayoutDefinition Layout { get; set; } = default!;
+
+    [Parameter]
+    [EditorRequired]
+    public CockpitState State { get; set; } = default!;
+
+
+    private string GridStyle =>
+        $"grid-template-columns: repeat({Layout.Columns}, minmax(0, 1fr)); " +
+        $"grid-template-rows: repeat({Layout.Rows}, minmax(220px, auto));";
+}

@@ -78,6 +78,9 @@ builder.Services.AddSingleton<SimulationEngine>();
 
 var app = builder.Build();
 
+// Apply migrations and add the initial emergency scenarios.
+await SeedData.InitializeAsync(app.Services);
+
 // HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

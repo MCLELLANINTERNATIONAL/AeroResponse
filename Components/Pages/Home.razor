@@ -2,52 +2,252 @@
 @inject NavigationManager Navigation
 @inject SimulationSelectionStorage SelectionStorage
 
-<PageTitle>Home</PageTitle>
+<PageTitle>AeroResponse | Aircraft Emergency Training</PageTitle>
 
-<h1>AeroResponse</h1>
+<section class="hero">
+    <!-- Background image carousel -->
+    <div class="hero-carousel" aria-hidden="true">
+        <div class="hero-slide hero-slide-one"></div>
+        <div class="hero-slide hero-slide-two"></div>
+        <div class="hero-slide hero-slide-three"></div>
+        <div class="hero-slide hero-slide-four"></div>
+    </div>
 
-<button type="button"
-        class="launch-simulator-button"
-        disabled="@_checkingSelection"
-        @onclick="LaunchSimulatorAsync">
+    <div class="hero-overlay"></div>
 
-    @(_checkingSelection
-        ? "Loading..."
-        : "Launch Simulator")
+    <div class="hero-content home-container">
+        <div class="hero-copy">
 
-</button>
+            <p class="eyebrow">
+                REALISTIC. INTERACTIVE. EFFECTIVE.
+            </p>
 
-@code
-{
-    private bool _checkingSelection;
+            <h1>
+                Aircraft Emergency<br />
+                Response Training Simulator
+            </h1>
 
-    private async Task LaunchSimulatorAsync()
-    {
-        if (_checkingSelection)
-        {
-            return;
-        }
+            <p class="hero-text">
+                Experience realistic in-flight emergencies in a fully
+                interactive cockpit environment. Improve your decision-making,
+                procedural skills, and situational awareness when it matters most.
+            </p>
 
-        _checkingSelection = true;
+            <div class="hero-actions">
+                <a class="button button-primary"
+                   href="/membership">
+                    Start Free Trial
+                    <span aria-hidden="true">→</span>
+                </a>
 
-        try
-        {
-            var selection = await SelectionStorage.GetAsync(); 
+                <a class="button button-secondary"
+                   href="/scenarios">
+                    View Scenarios
+                </a>
+            </div>
 
-            if (selection is null || !selection.IsValid)
-            {
-                Navigation.NavigateTo("/simulation/select");
-                return;
-            }
+            <div class="trust-line">
+                <span class="trust-shield" aria-hidden="true">◇</span>
 
-            Navigation.NavigateTo(
-                $"/simulation/" +
-                $"{Uri.EscapeDataString(selection.AircraftKey)}/" +
-                $"{Uri.EscapeDataString(selection.ScenarioType)}");
-        }
-        finally
-        {
-            _checkingSelection = false;
-        }
-    }
-}
+                <span>
+                    Secure
+                    <b>•</b>
+                    Cloud-Based
+                    <b>•</b>
+                    Accessible Anywhere
+                </span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Decorative carousel indicators -->
+    <div class="carousel-indicators" aria-hidden="true">
+        <span class="carousel-indicator indicator-one"></span>
+        <span class="carousel-indicator indicator-two"></span>
+        <span class="carousel-indicator indicator-three"></span>
+        <span class="carousel-indicator indicator-four"></span>
+    </div>
+
+</section>
+
+<section class="stats-wrap home-container"
+         aria-label="Training statistics">
+
+    <div class="stat">
+        <img src="/images/aircraft.png"
+             alt=""
+             class="stat-icon" />
+
+        <div class="stat-text">
+            <strong>4+</strong>
+            <small>Aircraft Types</small>
+        </div>
+    </div>
+
+    <div class="stat">
+        <img src="/images/warning.png"
+             alt=""
+             class="stat-icon" />
+
+        <div class="stat-text">
+            <strong>25+</strong>
+            <small>Emergency Scenarios</small>
+        </div>
+    </div>
+
+    <div class="stat">
+        <img src="/images/users.png"
+             alt=""
+             class="stat-icon" />
+
+        <div class="stat-text">
+            <strong>10,000+</strong>
+            <small>Training Sessions</small>
+        </div>
+    </div>
+
+    <div class="stat">
+        <img src="/images/trophy.png"
+             alt=""
+             class="stat-icon" />
+
+        <div class="stat-text">
+            <strong>95%</strong>
+            <small>User Satisfaction</small>
+        </div>
+    </div>
+
+</section>
+
+<section class="features-section">
+    <div class="home-container">
+
+        <div class="section-heading">
+            <h2>
+                Training That Prepares You for the Unexpected
+            </h2>
+
+            <p>
+                Our simulator combines real-world procedures, interactive
+                controls, and intelligent feedback to help pilots build
+                the skills and confidence they need.
+            </p>
+        </div>
+
+        <div class="feature-grid">
+
+            <article class="feature-card">
+                <div class="feature-icon-wrap">
+                    <img src="/images/cockpit.png"
+                         alt=""
+                         class="feature-icon" />
+                </div>
+
+                <h3>Interactive Cockpit</h3>
+
+                <p>
+                    Realistic instruments and controls that respond
+                    to your actions in real time.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrap">
+                    <img src="/images/warning.png"
+                         alt=""
+                         class="feature-icon" />
+                </div>
+
+                <h3>Emergency Scenarios</h3>
+
+                <p>
+                    Practice critical procedures for a wide range
+                    of in-flight emergency situations.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrap">
+                    <img src="/images/performance-screen.png"
+                         alt=""
+                         class="feature-icon" />
+                </div>
+
+                <h3>Performance Tracking</h3>
+
+                <p>
+                    Detailed analytics and scoring to measure
+                    improvement and track progress.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrap">
+                    <img src="/images/robot.png"
+                         alt=""
+                         class="feature-icon" />
+                </div>
+
+                <h3>AI Flight Instructor</h3>
+
+                <p>
+                    Get intelligent feedback and personalized
+                    recommendations to improve faster.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrap">
+                    <img src="/images/voice-commands.png"
+                         alt=""
+                         class="feature-icon" />
+                </div>
+
+                <div class="feature-title-row">
+                    <h3>Voice Commands</h3>
+
+                    <span class="coming-soon-badge">
+                        Coming Soon
+                    </span>
+                </div>
+
+                <p>
+                    Use natural voice commands to interact with
+                    the cockpit and aircraft systems.
+                </p>
+            </article>
+
+        </div>
+
+        <div class="cta-strip">
+
+            <div class="cta-message">
+                <div class="cta-icon-circle">
+                    <img src="/images/aircraft.png"
+                         alt=""
+                         class="cta-icon-image" />
+                </div>
+
+                <div>
+                    <strong>
+                        Ready to take your training to the next level?
+                    </strong>
+
+                    <small>
+                        Join thousands of pilots who train smarter
+                        with AeroResponse.
+                    </small>
+                </div>
+            </div>
+
+            <a class="button button-primary cta-button"
+               href="/membership">
+                Get Started Today
+                <span aria-hidden="true">→</span>
+            </a>
+
+        </div>
+
+    </div>
+</section>

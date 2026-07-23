@@ -1,0 +1,613 @@
+@page "/reports"
+@rendermode InteractiveServer
+@implements IDisposable
+@using System.IO
+@inject PerformanceDashboardService DashboardService
+@inject IJSRuntime JS
+
+<PageTitle>PILOT RESULTS DASHBOARD</PageTitle>
+
+@if (_loading)
+{
+    <div class="reports-loading">
+        Loading pilot performance…
+    </div>
+}
+else if (_dashboard?.Latest is null)
+{
+    <div class="reports-empty">
+        <h1>No results yet</h1>
+        <p>Complete a practice scenario to populate this dashboard.</p>
+    </div>
+}
+else
+{
+    var report = _dashboard.Latest;
+
+    <main id="pilot-performance-report" class="reports-page">
+
+        <header class="reports-header">
+            <div>
+                <h1>PILOT RESULTS DASHBOARD</h1>
+                <p>Review your performance and achievements</p>
+            </div>
+
+            <div class="pilot-chip">
+                <span class="pilot-avatar">✈</span>
+
+                <div>
+                    <strong>@report.PilotName</strong>
+                    <small>Professional Pilot</small>
+                </div>
+            </div>
+        </header>
+
+        <nav class="reports-tabs">
+            <a class="active" href="#overview">◉ Overview</a>
+            <a href="#scoring">⚙ Scoring</a>
+            <a href="#analytics">▥ Analytics</a>
+            <a href="#feedback">✪ Feedback</a>
+            <a href="#badges">🏆 Badges</a>
+
+            <button id="download-report-button"
+            type="button"
+            @onclick="DownloadReportAsync">
+            ⇩ Download PDF
+        </button>
+    </nav>
+
+    <section id="overview" class="reports-grid top-grid">
+
+        <article class="report-card score-card">
+            <h2>Overall Score</h2>
+
+            <div class="score-main">
+                <div class="score-ring"
+                style="--score:@report.OverallScore">
+
+                <span>@report.OverallScore%</span>
+
+                <small>
+                    @(report.OverallScore >= 70
+                    ? "Great Performance!"
+                    : "Keep Practising")
+                </small>
+            </div>
+
+            <div class="score-copy">
+                <small>Total Score</small>
+                <strong>@(report.OverallScore * 10) / 1000</strong>
+
+                <small>Passing Score</small>
+                <b>70% (700/1000)</b>
+
+                <small>Rank</small>
+                <strong>Top @RankPercent%</strong>
+                <em>of all users</em>
+            </div>
+        </div>
+
+        <div class="pass-banner">
+            🏆
+
+            <span>
+                <strong>
+                    @(report.OverallScore >= 70
+                    ? "You passed this scenario!"
+                    : "Scenario not yet passed")
+                </strong>
+
+                <small>
+                    @(report.OverallScore >= 70
+                    ? "Keep up the great work."
+                    : "Review feedback and try again.")
+                </small>
+            </span>
+        </div>
+    </article>
+
+    <article id="scoring" class="report-card">
+        <h2>Score Breakdown</h2>
+
+        @ScoreRow(
+        "Procedural Accuracy",
+        report.ChecklistAccuracyScore,
+        "blue")
+
+        @ScoreRow(
+        "Decision Making",
+        report.DecisionMakingScore,
+        "green")
+
+        @ScoreRow(
+        "Checklist Usage",
+        report.ChecklistUsageScore,
+        "orange")
+
+        @ScoreRow(
+        "Time Management",
+        report.TimeManagementScore,
+        "purple")
+
+        @ScoreRow(
+        "Communication",
+        report.CommunicationScore,
+        "cyan")
+
+        <a class="card-link" href="#analytics">
+            View scoring details →
+        </a>
+    </article>
+
+    <article class="report-card scenario-summary">
+        <h2>Scenario Summary</h2>
+
+        <div class="scenario-title">
+            <span>✈</span>
+
+            <div>
+                <strong>@report.ScenarioName</strong>
+
+                <small>
+                    Completed on:
+                    @report.CompletedAt
+                    .ToLocalTime()
+                    .ToString("dd MMM yyyy 'at' HH:mm")
+                </small>
+
+                <small>
+                    Scenario Difficulty: @report.Difficulty
+                </small>
+            </div>
+
+            <b>EMERGENCY</b>
+        </div>
+
+        <hr />
+
+        @InfoRow(
+        "◷",
+        "Reaction Time",
+        $"{report.ReactionTimeSeconds}s")
+
+        @InfoRow(
+        "◷",
+        "Total Time",
+        Duration(report))
+
+        @InfoRow(
+        "◷",
+        "Start Time",
+        report.StartedAt
+        .ToLocalTime()
+        .ToString("HH:mm:ss"))
+
+        @InfoRow(
+        "◷",
+        "End Time",
+        report.CompletedAt
+        .ToLocalTime()
+        .ToString("HH:mm:ss"))
+
+        @InfoRow(
+        "☑",
+        "Actions Taken",
+        report.ActionsTaken.ToString())
+
+        @InfoRow(
+        "▣",
+        "Checklist Used",
+        $"{report.ChecklistUsageScore}%")
+    </article>
+
+</section>
+
+<section class="reports-grid bottom-grid">
+
+    <article id="analytics"
+    class="report-card analytics-card">
+
+    <div class="card-heading">
+        <h2>Performance Analytics</h2>
+        <span>Last 10 Scenarios</span>
+    </div>
+
+    <svg class="trend-chart"
+    viewBox="0 0 620 260"
+    role="img"
+    aria-label="Pilot performance trend">
+
+    <g class="grid-lines">
+        @for (var y = 0; y <= 4; y++)
+        {
+            <line x1="45"
+            y1="@(25 + y * 48)"
+            x2="600"
+            y2="@(25 + y * 48)" />
+        }
+    </g>
+
+    <polyline class="average-line"
+    points="@AveragePoints" />
+
+    <polyline class="score-line"
+    points="@ScorePoints" />
+
+    @foreach (var point in ChartPoints)
+    {
+        <circle cx="@point.X"
+        cy="@point.Y"
+        r="4" />
+    }
+</svg>
+
+<div class="chart-legend">
+    <span>● Your Score</span>
+    <span>● Average Score</span>
+</div>
+
+<div class="stat-row">
+    <div>
+        <small>Average Score</small>
+        <strong>@_dashboard.AverageScore%</strong>
+    </div>
+
+    <div>
+        <small>Best Score</small>
+        <strong>@_dashboard.BestScore%</strong>
+    </div>
+
+    <div>
+        <small>Total Scenarios</small>
+        <strong>@_dashboard.Reports.Count</strong>
+    </div>
+
+    <div>
+        <small>Improvement</small>
+        <strong class="positive">
+            @Signed(_dashboard.Improvement)%
+        </strong>
+    </div>
+</div>
+</article>
+
+<article id="feedback"
+class="report-card feedback-card">
+
+<h2>Feedback</h2>
+
+<div class="feedback-tabs">
+    <b>Instructor Feedback</b>
+    <span>AI Feedback</span>
+</div>
+
+<div class="feedback-good">
+    <strong>☆ Great Job!</strong>
+    <p>@report.Feedback</p>
+</div>
+
+<h3>AI Performance Analysis</h3>
+<p>@report.AiFeedback</p>
+
+<h3>Areas to Improve</h3>
+
+<ul>
+    @foreach (var item in ImprovementItems(report))
+    {
+        <li>@item</li>
+    }
+</ul>
+</article>
+
+<article id="badges"
+        class="report-card badges-card">
+
+    <div class="card-heading">
+        <h2>Badges Earned</h2>
+        <span>@_dashboard.Achievements.Count earned</span>
+    </div>
+
+    <div class="badges-grid">
+        @foreach (var badge in _dashboard.Achievements)
+        {
+            <div class="badge">
+                <div class="badge-icon">
+                    @badge.Icon
+                </div>
+
+                <strong>@badge.Name</strong>
+
+                <small>
+                    Earned:
+                    @(badge.EarnedAt
+                        .ToLocalTime()
+                        .ToString("dd MMM yyyy"))
+                </small>
+            </div>
+        }
+
+        <div class="badge locked">
+            <div class="badge-icon">🔒</div>
+
+            <strong>Perfect Score</strong>
+
+            <small>
+                Score 100% in any scenario
+            </small>
+        </div>
+    </div>
+
+</article>
+
+</section>
+
+<p class="live-note">
+    ● Live dashboard — refreshes automatically when a pilot
+    completes a practice scenario.
+</p>
+
+</main>
+}
+
+@code {
+    private const string UserId = "test-pilot";
+
+    private PerformanceDashboardVm? _dashboard;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        PerformanceFeed.ReportSaved += OnReportSaved;
+        await LoadAsync();
+    }
+
+    private async void OnReportSaved(string userId)
+    {
+        if (userId != UserId)
+        {
+            return;
+        }
+
+        await InvokeAsync(async () =>
+        {
+            await LoadAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+            _dashboard =
+                await DashboardService.GetDashboardAsync(UserId);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private int RankPercent =>
+        Math.Max(
+            1,
+            100 - (_dashboard?.Latest?.OverallScore ?? 0));
+
+    private MarkupString ScoreRow(
+        string label,
+        int value,
+        string colour)
+    {
+        value = Math.Clamp(value, 0, 100);
+
+        return new MarkupString(
+            $"""
+            <div class="metric">
+                <div>
+                    <span>{label}</span>
+                    <strong>{value}%</strong>
+                </div>
+
+                <div class="metric-track">
+                    <i class="{colour}" style="width:{value}%"></i>
+                </div>
+            </div>
+            """);
+    }
+
+    private MarkupString InfoRow(
+        string icon,
+        string label,
+        string value)
+    {
+        return new MarkupString(
+            $"""
+            <div class="info-row">
+                <span>{icon}</span>
+                <label>{label}</label>
+                <strong>{value}</strong>
+            </div>
+            """);
+    }
+
+    private static string Duration(SimulationReport report)
+    {
+        var duration = report.CompletedAt - report.StartedAt;
+
+        if (duration < TimeSpan.Zero)
+        {
+            return "00:00";
+        }
+
+        return duration.ToString(@"mm\:ss");
+    }
+
+    private IReadOnlyList<(double X, double Y)> ChartPoints
+    {
+        get
+        {
+            var reports = _dashboard?.ChartReports;
+
+            if (reports is null || reports.Count == 0)
+            {
+                return Array.Empty<(double X, double Y)>();
+            }
+
+            return reports
+                .Select((item, index) =>
+                {
+                    var denominator =
+                        Math.Max(1, reports.Count - 1);
+
+                    var x =
+                        45 +
+                        index *
+                        (555.0 / denominator);
+
+                    var score =
+                        Math.Clamp(item.OverallScore, 0, 100);
+
+                    var y =
+                        217 -
+                        score *
+                        1.8;
+
+                    return (X: x, Y: y);
+                })
+                .ToList();
+        }
+    }
+
+    private string ScorePoints =>
+        string.Join(
+            " ",
+            ChartPoints.Select(
+                point =>
+                    $"{point.X:F1},{point.Y:F1}"));
+
+    private string AveragePoints =>
+        string.Join(
+            " ",
+            ChartPoints.Select(
+                (point, index) =>
+                {
+                    var averageScore =
+                        Math.Clamp(55 + index * 2, 0, 100);
+
+                    var y =
+                        217 -
+                        averageScore *
+                        1.8;
+
+                    return $"{point.X:F1},{y:F1}";
+                }));
+
+    private static string Signed(int number)
+    {
+        return number >= 0
+            ? $"+{number}"
+            : number.ToString();
+    }
+
+    private static IEnumerable<string> ImprovementItems(
+        SimulationReport report)
+    {
+        var hasImprovementItem = false;
+
+        if (report.ReactionTimeSeconds > 10)
+        {
+            hasImprovementItem = true;
+
+            yield return
+                $"Improve time to identify the primary failure " +
+                $"({report.ReactionTimeSeconds - 10}s slower than target).";
+        }
+
+        if (report.CommunicationScore < 90)
+        {
+            hasImprovementItem = true;
+
+            yield return
+                "Consider declaring the emergency and requesting " +
+                "assistance earlier.";
+        }
+
+        if (report.ChecklistAccuracyScore < 95)
+        {
+            hasImprovementItem = true;
+
+            yield return
+                "Maintain checklist discipline when workload increases.";
+        }
+
+        if (report.SafetyCriticalErrors > 0)
+        {
+            hasImprovementItem = true;
+
+            yield return
+                "Review safety-critical actions before the next attempt.";
+        }
+
+        if (!hasImprovementItem)
+        {
+            yield return
+                "Continue maintaining the same high standard in future scenarios.";
+        }
+    }
+
+    private async Task DownloadReportAsync()
+    {
+        if (_dashboard?.Latest is null)
+        {
+            return;
+        }
+
+        var report = _dashboard.Latest;
+
+        var pilotName =
+            MakeFileNameSafe(report.PilotName);
+
+        var scenarioName =
+            MakeFileNameSafe(report.ScenarioName);
+
+        var completedDate =
+            report.CompletedAt
+                .ToLocalTime()
+                .ToString("yyyy-MM-dd");
+
+        var fileName =
+            $"AeroResponse-{pilotName}-{scenarioName}-{completedDate}.pdf";
+
+        await JS.InvokeVoidAsync(
+            "aeroReports.downloadPdf",
+            "pilot-performance-report",
+            fileName);
+    }
+
+    private static string MakeFileNameSafe(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "Report";
+        }
+
+        foreach (var invalidCharacter
+                in Path.GetInvalidFileNameChars())
+        {
+            value =
+                value.Replace(
+                    invalidCharacter,
+                    '-');
+        }
+
+        return value
+            .Replace(' ', '-')
+            .Trim('-');
+    }
+
+    public void Dispose()
+    {
+        PerformanceFeed.ReportSaved -= OnReportSaved;
+    }
+}

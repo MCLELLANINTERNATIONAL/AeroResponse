@@ -26,4 +26,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ScenarioProcedureStep> ScenarioProcedureSteps { get; set; }
 
     public DbSet<SimulationReport> SimulationReports { get; set; }
+
+    public DbSet<PilotAchievement> PilotAchievements { get; set; }
 }

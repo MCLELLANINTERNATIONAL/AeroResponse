@@ -70,9 +70,10 @@ builder.Services.AddScoped<AircraftService>();
 builder.Services.AddScoped<ScenarioService>();
 builder.Services.AddScoped<MembershipService>();
 builder.Services.AddScoped<PerformanceService>();
+builder.Services.AddScoped<PerformanceDashboardService>();
 builder.Services.AddScoped<SimulationService>();
 builder.Services.AddScoped<SimulationSelectionStorage>();
-builder.Services.AddSingleton<ICockpitLayoutProvider, CockpitLayoutProvider>();
+
 builder.Services.AddSingleton<ICockpitLayoutProvider, CockpitLayoutProvider>();
 builder.Services.AddSingleton<SimulationEngine>();
 

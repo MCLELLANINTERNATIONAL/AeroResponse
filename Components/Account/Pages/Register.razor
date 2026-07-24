@@ -1,4 +1,5 @@
 ﻿@page "/Account/Register"
+@layout AeroResponse.Components.Account.Shared.AuthLayout
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
@@ -15,47 +16,334 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Register</PageTitle>
+<PageTitle>Sign up | AeroResponse</PageTitle>
 
-<h1>Register</h1>
+<section class="register-card">
+    <header class="register-heading">
+        <p class="register-eyebrow">
+            Join AeroResponse
+        </p>
 
-<div class="row">
-    <div class="col-lg-6">
-        <StatusMessage Message="@Message" />
-        <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register">
-            <DataAnnotationsValidator />
-            <h2>Create a new account.</h2>
-            <hr />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label for="Input.Email">Email</label>
-                <ValidationMessage For="() => Input.Email" class="text-danger" />
+        <h1>Create Your Account</h1>
+
+        <p>
+            Start building the skills and confidence needed
+            for critical aviation moments.
+        </p>
+    </header>
+
+    <StatusMessage Message="@Message" />
+
+    <EditForm
+        Model="Input"
+        method="post"
+        OnValidSubmit="RegisterUser"
+        FormName="register"
+        class="register-form">
+
+        <DataAnnotationsValidator />
+
+        <ValidationSummary
+            class="validation-summary"
+            role="alert" />
+
+        <div class="name-grid">
+            <div class="auth-field">
+                <label for="Input.FirstName">
+                    First Name
+                </label>
+
+                <div class="auth-input-wrapper">
+                    <InputText
+                        @bind-Value="Input.FirstName"
+                        id="Input.FirstName"
+                        class="auth-input"
+                        autocomplete="given-name"
+                        aria-required="true"
+                        placeholder="Enter your first name" />
+
+                    <svg
+                        class="auth-input-icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
+                    </svg>
+                </div>
+
+                <ValidationMessage
+                    For="() => Input.FirstName"
+                    class="validation-message" />
             </div>
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="Input.Password">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger" />
+
+            <div class="auth-field">
+                <label for="Input.Surname">
+                    Surname
+                </label>
+
+                <div class="auth-input-wrapper">
+                    <InputText
+                        @bind-Value="Input.Surname"
+                        id="Input.Surname"
+                        class="auth-input"
+                        autocomplete="family-name"
+                        aria-required="true"
+                        placeholder="Enter your surname" />
+
+                    <svg
+                        class="auth-input-icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
+                    </svg>
+                </div>
+
+                <ValidationMessage
+                    For="() => Input.Surname"
+                    class="validation-message" />
             </div>
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="Input.ConfirmPassword">Confirm Password</label>
-                <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
+        </div>
+
+        <div class="auth-field">
+            <label for="Input.Email">
+                Email Address
+            </label>
+
+            <div class="auth-input-wrapper">
+                <InputText
+                    @bind-Value="Input.Email"
+                    id="Input.Email"
+                    class="auth-input"
+                    autocomplete="email"
+                    aria-required="true"
+                    placeholder="Enter your email" />
+
+                <svg
+                    class="auth-input-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true">
+                    <path d="M3 5h18v14H3z" />
+                    <path d="m3 7 9 6 9-6" />
+                </svg>
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </EditForm>
-    </div>
-    <div class="col-lg-4 col-lg-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
-    </div>
-</div>
+
+            <ValidationMessage
+                For="() => Input.Email"
+                class="validation-message" />
+        </div>
+
+        <div class="auth-field">
+            <label for="Input.ReferenceCode">
+                Reference Code
+                <span class="optional-label">
+                    Optional
+                </span>
+            </label>
+
+            <div class="auth-input-wrapper">
+                <InputText
+                    @bind-Value="Input.ReferenceCode"
+                    id="Input.ReferenceCode"
+                    class="auth-input"
+                    autocomplete="off"
+                    placeholder="Enter a reference code" />
+
+                <svg
+                    class="auth-input-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true">
+                    <path d="M20 12 12 20 4 12l8-8 8 8Z" />
+                    <circle cx="12" cy="12" r="1.5" />
+                </svg>
+            </div>
+
+            <ValidationMessage
+                For="() => Input.ReferenceCode"
+                class="validation-message" />
+        </div>
+
+        <div class="auth-field">
+            <label for="Input.Password">
+                Password
+            </label>
+
+            <div class="auth-input-wrapper">
+                <InputText
+                    type="@passwordInputType"
+                    @bind-Value="Input.Password"
+                    id="Input.Password"
+                    class="auth-input auth-input-password"
+                    autocomplete="new-password"
+                    aria-required="true"
+                    placeholder="Create a password" />
+
+                <svg
+                    class="auth-input-icon auth-lock-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true">
+                    <rect
+                        x="5"
+                        y="10"
+                        width="14"
+                        height="10"
+                        rx="2" />
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                </svg>
+
+                <button
+                    type="button"
+                    class="password-toggle"
+                    aria-label="@passwordToggleLabel"
+                    title="@passwordToggleLabel"
+                    @onclick="TogglePasswordVisibility">
+                    @if (showPassword)
+                    {
+                        <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true">
+                            <path d="M3 3l18 18" />
+                            <path d="M10.6 10.7a2 2 0 0 0 2.7 2.7" />
+                            <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5.5 0 9 5 9 5a16 16 0 0 1-2.4 2.9" />
+                            <path d="M6.6 6.6C4.3 8.1 3 10 3 10s3.5 5 9 5c1.2 0 2.3-.2 3.3-.6" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true">
+                            <path d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z" />
+                            <circle cx="12" cy="12" r="2.5" />
+                        </svg>
+                    }
+                </button>
+            </div>
+
+            <p class="password-hint">
+                Use at least 6 characters.
+            </p>
+
+            <ValidationMessage
+                For="() => Input.Password"
+                class="validation-message" />
+        </div>
+
+        <div class="auth-field">
+            <label for="Input.ConfirmPassword">
+                Confirm Password
+            </label>
+
+            <div class="auth-input-wrapper">
+                <InputText
+                    type="@confirmPasswordInputType"
+                    @bind-Value="Input.ConfirmPassword"
+                    id="Input.ConfirmPassword"
+                    class="auth-input auth-input-password"
+                    autocomplete="new-password"
+                    aria-required="true"
+                    placeholder="Confirm your password" />
+
+                <svg
+                    class="auth-input-icon auth-lock-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true">
+                    <rect
+                        x="5"
+                        y="10"
+                        width="14"
+                        height="10"
+                        rx="2" />
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                </svg>
+
+                <button
+                    type="button"
+                    class="password-toggle"
+                    aria-label="@confirmPasswordToggleLabel"
+                    title="@confirmPasswordToggleLabel"
+                    @onclick="ToggleConfirmPasswordVisibility">
+                    @if (showConfirmPassword)
+                    {
+                        <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true">
+                            <path d="M3 3l18 18" />
+                            <path d="M10.6 10.7a2 2 0 0 0 2.7 2.7" />
+                            <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5.5 0 9 5 9 5a16 16 0 0 1-2.4 2.9" />
+                            <path d="M6.6 6.6C4.3 8.1 3 10 3 10s3.5 5 9 5c1.2 0 2.3-.2 3.3-.6" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true">
+                            <path d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z" />
+                            <circle cx="12" cy="12" r="2.5" />
+                        </svg>
+                    }
+                </button>
+            </div>
+
+            <ValidationMessage
+                For="() => Input.ConfirmPassword"
+                class="validation-message" />
+        </div>
+
+        <label class="terms-option">
+            <InputCheckbox
+                @bind-Value="Input.AcceptTerms"
+                class="terms-checkbox" />
+
+            <span>
+                I agree to the
+                <a href="/terms" target="_blank">
+                    Terms of Service
+                </a>
+                and
+                <a href="/privacy" target="_blank">
+                    Privacy Policy
+                </a>.
+            </span>
+        </label>
+
+        <ValidationMessage
+            For="() => Input.AcceptTerms"
+            class="validation-message terms-validation" />
+
+        <button
+            type="submit"
+            class="primary-auth-button">
+
+            <img
+                src="/images/aircraft.png"
+                alt=""
+                aria-hidden="true" />
+
+            <span>Create Account</span>
+        </button>
+
+        <div class="auth-divider">
+            <span>or continue with</span>
+        </div>
+
+        <ExternalLoginPicker />
+
+        <p class="auth-switch-message">
+            Already have an account?
+
+            <a href="@LoginUrl">
+                Sign in
+            </a>
+        </p>
+    </EditForm>
+</section>
 
 @code {
     private IEnumerable<IdentityError>? identityErrors;
+    private bool showPassword;
+    private bool showConfirmPassword;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = default!;
@@ -63,21 +351,76 @@
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+    private string? Message =>
+        identityErrors is null
+            ? null
+            : $"Error: {string.Join(
+                ", ",
+                identityErrors.Select(
+                    error => error.Description))}";
+
+    private string passwordInputType =>
+        showPassword ? "text" : "password";
+
+    private string confirmPasswordInputType =>
+        showConfirmPassword ? "text" : "password";
+
+    private string passwordToggleLabel =>
+        showPassword
+            ? "Hide password"
+            : "Show password";
+
+    private string confirmPasswordToggleLabel =>
+        showConfirmPassword
+            ? "Hide confirmation password"
+            : "Show confirmation password";
+
+    private string LoginUrl =>
+        NavigationManager.GetUriWithQueryParameters(
+            "/Account/Login",
+            new Dictionary<string, object?>
+            {
+                ["ReturnUrl"] = ReturnUrl
+            });
 
     protected override void OnInitialized()
     {
-        Input ??= new();
+        Input ??= new InputModel();
     }
 
-    public async Task RegisterUser(EditContext editContext)
+    public async Task RegisterUser(
+        EditContext editContext)
     {
+        identityErrors = null;
+
         var user = CreateUser();
 
-        await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+        user.FirstName = Input.FirstName.Trim();
+        user.Surname = Input.Surname.Trim();
+
+        user.ReferenceCode =
+            string.IsNullOrWhiteSpace(Input.ReferenceCode)
+                ? null
+                : Input.ReferenceCode.Trim();
+
+        var normalisedEmail = Input.Email.Trim();
+
+        await UserStore.SetUserNameAsync(
+            user,
+            normalisedEmail,
+            CancellationToken.None);
+
         var emailStore = GetEmailStore();
-        await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-        var result = await UserManager.CreateAsync(user, Input.Password);
+
+        await emailStore.SetEmailAsync(
+            user,
+            normalisedEmail,
+            CancellationToken.None);
+
+        var result =
+            await UserManager.CreateAsync(
+                user,
+                Input.Password);
 
         if (!result.Succeeded)
         {
@@ -85,68 +428,177 @@
             return;
         }
 
-        Logger.LogInformation("User created a new account with password.");
+        Logger.LogInformation(
+            "User created a new account with password.");
 
-        var userId = await UserManager.GetUserIdAsync(user);
-        var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
-        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
-            NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
-            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = ReturnUrl });
+        var userId =
+            await UserManager.GetUserIdAsync(user);
 
-        await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
+        var code =
+            await UserManager
+                .GenerateEmailConfirmationTokenAsync(user);
 
-        if (UserManager.Options.SignIn.RequireConfirmedAccount)
+        code = WebEncoders.Base64UrlEncode(
+            Encoding.UTF8.GetBytes(code));
+
+        var callbackUrl =
+            NavigationManager.GetUriWithQueryParameters(
+                NavigationManager
+                    .ToAbsoluteUri(
+                        "Account/ConfirmEmail")
+                    .AbsoluteUri,
+                new Dictionary<string, object?>
+                {
+                    ["userId"] = userId,
+                    ["code"] = code,
+                    ["returnUrl"] = ReturnUrl
+                });
+
+        await EmailSender.SendConfirmationLinkAsync(
+            user,
+            normalisedEmail,
+            HtmlEncoder.Default.Encode(callbackUrl));
+
+        if (UserManager.Options
+            .SignIn
+            .RequireConfirmedAccount)
         {
             RedirectManager.RedirectTo(
                 "Account/RegisterConfirmation",
-                new() { ["email"] = Input.Email, ["returnUrl"] = ReturnUrl });
+                new Dictionary<string, object?>
+                {
+                    ["email"] = normalisedEmail,
+                    ["returnUrl"] = ReturnUrl
+                });
         }
         else
         {
-            await SignInManager.SignInAsync(user, isPersistent: false);
+            await SignInManager.SignInAsync(
+                user,
+                isPersistent: false);
+
             RedirectManager.RedirectTo(ReturnUrl);
         }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    private void ToggleConfirmPasswordVisibility()
+    {
+        showConfirmPassword =
+            !showConfirmPassword;
     }
 
     private ApplicationUser CreateUser()
     {
         try
         {
-            return Activator.CreateInstance<ApplicationUser>();
+            return Activator
+                .CreateInstance<ApplicationUser>();
         }
         catch
         {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
+            throw new InvalidOperationException(
+                $"Can't create an instance of " +
+                $"'{nameof(ApplicationUser)}'. " +
+                $"Ensure that '{nameof(ApplicationUser)}' " +
+                "is not an abstract class and has a " +
+                "parameterless constructor.");
         }
     }
 
-    private IUserEmailStore<ApplicationUser> GetEmailStore()
+    private IUserEmailStore<ApplicationUser>
+        GetEmailStore()
     {
         if (!UserManager.SupportsUserEmail)
         {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
+            throw new NotSupportedException(
+                "The default UI requires a user store " +
+                "with email support.");
         }
-        return (IUserEmailStore<ApplicationUser>)UserStore;
+
+        return (IUserEmailStore<ApplicationUser>)
+            UserStore;
     }
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
-        [Display(Name = "Email")]
-        public string Email { get; set; } = "";
+        [Required(
+            ErrorMessage =
+                "Please enter your first name.")]
+        [StringLength(
+            100,
+            ErrorMessage =
+                "First name cannot exceed 100 characters.")]
+        [Display(Name = "First name")]
+        public string FirstName { get; set; } =
+            string.Empty;
 
-        [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [Required(
+            ErrorMessage =
+                "Please enter your surname.")]
+        [StringLength(
+            100,
+            ErrorMessage =
+                "Surname cannot exceed 100 characters.")]
+        [Display(Name = "Surname")]
+        public string Surname { get; set; } =
+            string.Empty;
+
+        [Required(
+            ErrorMessage =
+                "Please enter your email address.")]
+        [EmailAddress(
+            ErrorMessage =
+                "Please enter a valid email address.")]
+        [Display(Name = "Email address")]
+        public string Email { get; set; } =
+            string.Empty;
+
+        [StringLength(
+            100,
+            ErrorMessage =
+                "Reference code cannot exceed 100 characters.")]
+        [Display(Name = "Reference code")]
+        public string? ReferenceCode { get; set; }
+
+        [Required(
+            ErrorMessage =
+                "Please create a password.")]
+        [StringLength(
+            100,
+            ErrorMessage =
+                "The password must be between {2} and " +
+                "{1} characters long.",
+            MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
-        public string Password { get; set; } = "";
+        public string Password { get; set; } =
+            string.Empty;
 
+        [Required(
+            ErrorMessage =
+                "Please confirm your password.")]
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-        public string ConfirmPassword { get; set; } = "";
+        [Compare(
+            nameof(Password),
+            ErrorMessage =
+                "The password and confirmation password " +
+                "do not match.")]
+        public string ConfirmPassword { get; set; } =
+            string.Empty;
+
+        [Range(
+            typeof(bool),
+            "true",
+            "true",
+            ErrorMessage =
+                "You must accept the terms before " +
+                "creating an account.")]
+        public bool AcceptTerms { get; set; }
     }
 }

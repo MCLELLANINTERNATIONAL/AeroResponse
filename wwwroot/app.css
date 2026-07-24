@@ -1699,3 +1699,24 @@ h1:focus {
     width: 100% !important;
     height: 100% !important;
 }
+
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 10000;
+    padding: 0.8rem 1.25rem;
+    color: #1f2937;
+    background: #fff3cd;
+    border-top: 1px solid #ffe69c;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.12);
+}
+
+#blazor-error-ui .dismiss {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.85rem;
+    cursor: pointer;
+}

@@ -1,0 +1,244 @@
+@page "/reports/flight-logs"
+@rendermode InteractiveServer
+@implements IDisposable
+
+@inject PerformanceDashboardService DashboardService
+
+<PageTitle>Flight Logs | AeroResponse</PageTitle>
+
+@if (_loading)
+{
+    <div class="reports-loading">
+        Loading flight logs…
+    </div>
+}
+else if (_dashboard?.Latest is null)
+{
+    <div class="reports-empty">
+        <h1>No flight logs available yet</h1>
+        <p>Complete a practice scenario to create your first flight log.</p>
+    </div>
+}
+else
+{
+    var latestReport = _dashboard.Latest;
+
+    <main class="reports-page">
+
+        <header class="reports-header">
+            <div>
+                <h1>FLIGHT LOGS</h1>
+                <p>Review your completed emergency-response scenarios</p>
+            </div>
+
+            <div class="pilot-chip">
+                <span class="pilot-avatar">✈</span>
+
+                <div>
+                    <strong>@latestReport.PilotName</strong>
+                    <small>Professional Pilot</small>
+                </div>
+            </div>
+        </header>
+
+        <nav class="reports-tabs">
+            <NavLink href="/reports" Match="NavLinkMatch.All">
+                ◉ Overview
+            </NavLink>
+
+            <NavLink href="/reports/flight-logs">
+                ✈ Flight Logs
+            </NavLink>
+
+            <NavLink href="/reports/scoring">
+                ⚙ Scoring
+            </NavLink>
+
+            <NavLink href="/reports/analytics">
+                ▥ Analytics
+            </NavLink>
+
+            <NavLink href="/reports/feedback">
+                ✪ Feedback
+            </NavLink>
+
+            <NavLink href="/reports/badges">
+                🏆 Badges
+            </NavLink>
+        </nav>
+
+        <section class="reports-grid flight-logs-grid">
+
+            <article class="report-card flight-logs-card">
+
+                <div class="card-heading">
+                    <h2>Scenario History</h2>
+                    <span>@_dashboard.Reports.Count completed</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table flight-logs-table">
+
+                        <thead>
+                            <tr>
+                                <th scope="col">Scenario</th>
+                                <th scope="col">Date and Time</th>
+                                <th scope="col">Difficulty</th>
+                                <th scope="col">Score</th>
+                                <th scope="col">Reaction Time</th>
+                                <th scope="col">Checklist</th>
+                                <th scope="col">Result</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var report in _dashboard.Reports
+                                .OrderByDescending(item => item.CompletedAt))
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@report.ScenarioName</strong>
+                                    </td>
+
+                                    <td>
+                                        @(report.CompletedAt
+                                            .ToLocalTime()
+                                            .ToString("dd MMM yyyy HH:mm"))
+                                    </td>
+
+                                    <td>
+                                        @report.Difficulty
+                                    </td>
+
+                                    <td>
+                                        <strong>@report.OverallScore%</strong>
+                                    </td>
+
+                                    <td>
+                                        @report.ReactionTimeSeconds seconds
+                                    </td>
+
+                                    <td>
+                                        @report.ChecklistUsageScore%
+                                    </td>
+
+                                    <td>
+                                        @if (report.OverallScore >= 70)
+                                        {
+                                            <span class="result-status result-passed">
+                                                Passed
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="result-status result-review">
+                                                Review Required
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+
+                    </table>
+                </div>
+            </article>
+
+            <article class="report-card flight-summary-card">
+
+                <h2>Flight Log Summary</h2>
+
+                <div class="stat-row">
+                    <div>
+                        <small>Total Scenarios</small>
+                        <strong>@_dashboard.Reports.Count</strong>
+                    </div>
+
+                    <div>
+                        <small>Average Score</small>
+                        <strong>@_dashboard.AverageScore%</strong>
+                    </div>
+
+                    <div>
+                        <small>Best Score</small>
+                        <strong>@_dashboard.BestScore%</strong>
+                    </div>
+
+                    <div>
+                        <small>Improvement</small>
+
+                        <strong class="@ImprovementClass">
+                            @Signed(_dashboard.Improvement)%
+                        </strong>
+                    </div>
+                </div>
+
+            </article>
+
+        </section>
+
+        <p class="live-note">
+            ● Flight logs update automatically when a pilot completes a scenario.
+        </p>
+
+    </main>
+}
+
+@code {
+    private const string UserId = "test-pilot";
+
+    private PerformanceDashboardVm? _dashboard;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        PerformanceFeed.ReportSaved += OnReportSaved;
+        await LoadAsync();
+    }
+
+    private async void OnReportSaved(string userId)
+    {
+        if (userId != UserId)
+        {
+            return;
+        }
+
+        await InvokeAsync(async () =>
+        {
+            await LoadAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+
+            _dashboard =
+                await DashboardService.GetDashboardAsync(UserId);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private string ImprovementClass =>
+        (_dashboard?.Improvement ?? 0) >= 0
+            ? "positive"
+            : "negative";
+
+    private static string Signed(int number)
+    {
+        return number >= 0
+            ? $"+{number}"
+            : number.ToString();
+    }
+
+    public void Dispose()
+    {
+        PerformanceFeed.ReportSaved -= OnReportSaved;
+    }
+}

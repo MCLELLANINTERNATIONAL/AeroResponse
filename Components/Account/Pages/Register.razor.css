@@ -1,0 +1,588 @@
+.register-card {
+    width: 100%;
+    max-width: 700px;
+    margin: auto;
+    color: #0b1d3a;
+}
+
+.register-heading {
+    margin-bottom: 1.7rem;
+}
+
+.register-eyebrow {
+    margin: 0 0 0.65rem;
+    color: #168cff;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+
+.register-heading h1 {
+    margin: 0;
+    color: #071a38;
+    font-size: clamp(2.15rem, 3.7vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.06;
+}
+
+.register-heading > p:last-child {
+    width: min(560px, 100%);
+    margin: 0.7rem 0 0;
+    color: #6c7890;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.register-form {
+    width: 100%;
+}
+
+.name-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.auth-field {
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 1.05rem;
+}
+
+.auth-field > label {
+    display: block;
+    margin-bottom: 0.48rem;
+    color: #101f3a;
+    font-size: 0.94rem;
+    font-weight: 750;
+}
+
+.optional-label {
+    display: inline-block;
+    margin-left: 0.35rem;
+    color: #8b96a9;
+    font-size: 0.76rem;
+    font-weight: 550;
+}
+
+.auth-input-wrapper {
+    position: relative;
+    width: 100%;
+    display: block;
+}
+
+/*
+    Blazor InputText renders the actual input inside a child component.
+    ::deep ensures this isolated stylesheet reaches that element.
+*/
+.auth-input-wrapper ::deep .auth-input {
+    display: block;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    min-height: 53px;
+    box-sizing: border-box;
+
+    padding: 0.78rem 3.1rem 0.78rem 0.95rem;
+
+    color: #10213e;
+    font-family: inherit;
+    font-size: 0.96rem;
+
+    background: #ffffff;
+    border: 1px solid #d6deea;
+    border-radius: 10px;
+    outline: none;
+
+    box-shadow:
+        0 2px 5px rgba(11, 34, 66, 0.025);
+
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        background-color 0.18s ease;
+}
+
+.auth-input-wrapper ::deep .auth-input::placeholder {
+    color: #9aa6ba;
+    opacity: 1;
+}
+
+.auth-input-wrapper ::deep .auth-input:hover {
+    border-color: #b7c5d8;
+}
+
+.auth-input-wrapper ::deep .auth-input:focus {
+    border-color: #168cff;
+    background: #ffffff;
+
+    box-shadow:
+        0 0 0 4px rgba(22, 140, 255, 0.12);
+}
+
+.auth-input-wrapper ::deep .auth-input-password {
+    padding-right: 6rem;
+}
+
+.auth-input-wrapper ::deep .auth-input.invalid {
+    border-color: #d94355;
+    outline: none;
+}
+
+.auth-input-wrapper ::deep .auth-input.invalid:focus {
+    border-color: #d94355;
+
+    box-shadow:
+        0 0 0 4px rgba(217, 67, 85, 0.12);
+}
+
+.auth-input-wrapper ::deep .auth-input.valid.modified {
+    border-color: #12b76a;
+}
+
+.auth-input-icon {
+    position: absolute;
+    top: 50%;
+    right: 0.95rem;
+    z-index: 2;
+
+    width: 21px;
+    height: 21px;
+
+    fill: none;
+    stroke: #8b98ac;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.auth-lock-icon {
+    right: 3.3rem;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    z-index: 3;
+
+    width: 34px;
+    height: 34px;
+
+    display: grid;
+    place-items: center;
+
+    padding: 0;
+
+    color: #8b98ac;
+    background: transparent;
+    border: 0;
+    border-radius: 7px;
+
+    cursor: pointer;
+    transform: translateY(-50%);
+
+    transition:
+        color 0.18s ease,
+        background-color 0.18s ease;
+}
+
+.password-toggle:hover {
+    color: #168cff;
+    background: #edf6ff;
+}
+
+.password-toggle:focus-visible {
+    outline: 3px solid rgba(22, 140, 255, 0.25);
+}
+
+.password-toggle svg {
+    width: 21px;
+    height: 21px;
+
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.password-hint {
+    margin: 0.38rem 0 0;
+    color: #8a95a7;
+    font-size: 0.79rem;
+}
+
+.terms-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+
+    margin: 0.2rem 0 1.25rem;
+
+    color: #68758a;
+    font-size: 0.88rem;
+    line-height: 1.45;
+
+    cursor: pointer;
+}
+
+/*
+    InputCheckbox is also a child Blazor component.
+*/
+.terms-option ::deep .terms-checkbox {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+
+    margin: 0.05rem 0 0;
+
+    accent-color: #168cff;
+    border: 1px solid #b9c5d5;
+    border-radius: 5px;
+
+    cursor: pointer;
+}
+
+.terms-option ::deep .terms-checkbox:focus-visible {
+    outline: 3px solid rgba(22, 140, 255, 0.25);
+    outline-offset: 2px;
+}
+
+.terms-option a {
+    color: #167ff0;
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.terms-option a:hover {
+    text-decoration: underline;
+}
+
+.terms-option a:focus-visible {
+    outline: 3px solid rgba(22, 140, 255, 0.22);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+.primary-auth-button {
+    width: 100%;
+    min-height: 56px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+
+    box-sizing: border-box;
+    padding: 0.82rem 1.2rem;
+
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 750;
+
+    background:
+        linear-gradient(
+            100deg,
+            #168cff 0%,
+            #0874ec 100%);
+
+    border: 0;
+    border-radius: 10px;
+
+    box-shadow:
+        0 12px 22px rgba(15, 122, 235, 0.2);
+
+    cursor: pointer;
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        filter 0.18s ease;
+}
+
+.primary-auth-button:hover {
+    filter: brightness(1.04);
+
+    box-shadow:
+        0 15px 28px rgba(15, 122, 235, 0.28);
+
+    transform: translateY(-1px);
+}
+
+.primary-auth-button:active {
+    transform: translateY(0);
+}
+
+.primary-auth-button:focus-visible {
+    outline: 4px solid rgba(22, 140, 255, 0.25);
+    outline-offset: 2px;
+}
+
+.primary-auth-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    filter: none;
+    transform: none;
+    box-shadow: none;
+}
+
+.primary-auth-button img {
+    width: 25px;
+    height: 25px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+}
+
+.button-aircraft-icon {
+    width: 23px;
+    height: 23px;
+    flex: 0 0 auto;
+
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    margin: 1.65rem 0 1.15rem;
+
+    color: #8a95a8;
+    font-size: 0.88rem;
+    white-space: nowrap;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    height: 1px;
+    flex: 1;
+
+    content: "";
+
+    background: #dfe5ee;
+}
+
+.auth-divider span {
+    display: inline-block;
+}
+
+.auth-switch-message {
+    margin: 1.8rem 0 0;
+    color: #738096;
+    text-align: center;
+}
+
+.auth-switch-message a {
+    margin-left: 0.35rem;
+    color: #167ff0;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.auth-switch-message a:hover {
+    text-decoration: underline;
+}
+
+.auth-switch-message a:focus-visible {
+    outline: 3px solid rgba(22, 140, 255, 0.22);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+::deep .validation-summary {
+    margin: 0 0 1.1rem;
+    padding: 0.85rem 1rem;
+
+    color: #a51d2d;
+    font-size: 0.86rem;
+
+    background: #fff3f4;
+    border: 1px solid #f2c5cb;
+    border-radius: 9px;
+}
+
+::deep .validation-summary ul {
+    margin: 0;
+    padding-left: 1.15rem;
+}
+
+::deep .validation-summary li + li {
+    margin-top: 0.3rem;
+}
+
+::deep .validation-message {
+    display: block;
+    margin-top: 0.35rem;
+    color: #c52b3d;
+    font-size: 0.8rem;
+}
+
+::deep .terms-validation {
+    margin-top: -0.8rem;
+    margin-bottom: 1rem;
+}
+
+/*
+    Optional styles for external-provider buttons rendered
+    by ExternalLoginPicker.
+*/
+::deep .external-login-section {
+    width: 100%;
+}
+
+::deep .external-login-buttons {
+    width: 100%;
+
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+::deep .external-login-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 54px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+
+    box-sizing: border-box;
+    padding: 0.8rem 1rem;
+
+    color: #344054;
+    font-family: inherit;
+    font-size: 0.93rem;
+    font-weight: 650;
+
+    background: #ffffff;
+    border: 1px solid #d0d5dd;
+    border-radius: 11px;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+::deep .external-login-button:hover {
+    background: #f8fafc;
+    border-color: #aeb8c6;
+
+    box-shadow:
+        0 8px 20px rgba(16, 24, 40, 0.08);
+
+    transform: translateY(-1px);
+}
+
+::deep .external-login-button:active {
+    transform: translateY(0);
+}
+
+::deep .external-login-button:focus-visible {
+    outline: none;
+    border-color: #168cff;
+
+    box-shadow:
+        0 0 0 4px rgba(22, 140, 255, 0.12);
+}
+
+::deep .external-login-button img,
+::deep .external-login-button svg {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+    object-fit: contain;
+}
+
+@media (max-width: 620px) {
+    .name-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
+
+@media (max-width: 520px) {
+    .register-card {
+        padding: 1.5rem 1.15rem;
+
+        background: #ffffff;
+        border: 1px solid #e5ebf3;
+        border-radius: 18px;
+
+        box-shadow:
+            0 18px 55px rgba(4, 31, 59, 0.12);
+    }
+
+    .register-heading {
+        text-align: center;
+    }
+
+    .register-heading h1 {
+        font-size: 2rem;
+    }
+
+    .register-heading > p:last-child {
+        font-size: 0.95rem;
+    }
+
+    .auth-input-wrapper ::deep .auth-input {
+        min-height: 52px;
+        font-size: 0.94rem;
+    }
+
+    .primary-auth-button {
+        min-height: 54px;
+    }
+
+    ::deep .external-login-buttons {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 390px) {
+    .register-card {
+        padding-right: 1rem;
+        padding-left: 1rem;
+    }
+
+    .register-heading h1 {
+        font-size: 1.85rem;
+    }
+
+    .auth-divider {
+        gap: 0.7rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-input-wrapper ::deep .auth-input,
+    .password-toggle,
+    .primary-auth-button,
+    ::deep .external-login-button {
+        transition: none;
+    }
+
+    .primary-auth-button:hover,
+    ::deep .external-login-button:hover {
+        transform: none;
+    }
+}

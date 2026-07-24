@@ -1,0 +1,795 @@
+/* =========================================================
+    REPORTS PAGE
+   ========================================================= */
+
+.reports-page {
+    background: linear-gradient(100deg,
+            #143a64 0%,
+            #2871c0 100%);
+
+    color: black;
+    min-height: 100vh;
+    padding: 26px 30px 50px;
+    font-family: Inter, system-ui, sans-serif;
+}
+
+/* =========================================================
+    SHARED FLEX LAYOUTS
+   ========================================================= */
+
+.reports-header,
+.reports-tabs,
+.card-heading,
+.score-main,
+.scenario-title,
+.info-row,
+.stat-row,
+.feedback-tabs {
+    display: flex;
+    align-items: center;
+}
+
+
+/* =========================================================
+    PAGE HEADER
+   ========================================================= */
+
+.reports-header {
+    justify-content: space-between;
+}
+
+.reports-header h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+}
+
+.reports-header p {
+    color: #88b1e9;
+    margin: 0.25rem 0;
+    font-weight: 800;
+    font-size: 1.25rem;
+}
+
+
+/* =========================================================
+    PILOT PROFILE
+   ========================================================= */
+
+.pilot-chip {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.pilot-chip div {
+    display: flex;
+    flex-direction: column;
+}
+
+.pilot-chip small {
+    color: #ffffff;
+}
+
+.pilot-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #8dace6;
+}
+
+/* ==========================================
+    Pilot Name
+   ========================================== */
+
+.pilot-chip strong {
+    color: #8dace6;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+/* =========================================================
+    REPORT NAVIGATION TABS
+   ========================================================= */
+
+.reports-tabs {
+    gap: 34px;
+    border-bottom: 1px solid #3b78da;
+    margin: 26px 0 16px;
+    cursor: pointer;
+}
+
+.reports-tabs a {
+    padding: 14px 8px;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 650;
+}
+
+.reports-tabs a.active {
+    color: #ffffff;
+    border-bottom: 3px solid #2575f5;
+}
+
+
+/* =========================================================
+    DOWNLOAD PDF BUTTON
+   ========================================================= */
+
+.reports-tabs button {
+    margin-left: auto;
+    margin-bottom: 9px;
+    background: rgba(31, 223, 10, 0.922);
+    border: 1px solid #1558de;
+    color: #0b61e2;
+    border-radius: 9px;
+    padding: 11px 16px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+#download-report-button:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+
+/* =========================================================
+    DASHBOARD GRID LAYOUT
+   ========================================================= */
+
+.reports-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.top-grid {
+    grid-template-columns: 1fr 1.08fr 1fr;
+}
+
+.bottom-grid {
+    grid-template-columns: 1.35fr 0.8fr 1.05fr;
+    margin-top: 16px;
+}
+
+
+/* =========================================================
+    REPORT CARDS
+   ========================================================= */
+
+.report-card {
+    background: #ffffff;
+    border: 1px solid #5187f4;
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: 0 4px 20px rgba(24, 49, 83, 0.045);
+    min-width: 0;
+}
+
+.report-card h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #2e73c8;
+    margin: 0 0 20px;
+}
+
+.report-card p {
+    color: #151617;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin: 0;
+}
+
+/* =========================================================
+    OVERALL SCORE CARD
+   ========================================================= */
+
+.score-main {
+    gap: 30px;
+}
+
+.score-ring {
+    --score: 0;
+    width: 170px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background:
+        radial-gradient(closest-side,
+            #ffffff 76%,
+            transparent 77% 99%),
+        conic-gradient(#16a34a calc(var(--score) * 1%),
+            #e8edf4 0);
+}
+
+.score-ring span {
+    font-size: 2.45rem;
+    color: #16a34a;
+}
+
+.score-ring small {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #0b2545;
+    text-align: center;
+    line-height: 1.3;
+    text-shadow:
+        0 0 2px #fff,
+        0 0 4px #fff,
+        0 0 6px rgba(255, 255, 255, .8);
+}
+
+.score-copy {
+    display: grid;
+    gap: 7px;
+}
+
+.score-copy small,
+.score-copy em {
+    color: #185abc;
+    font-style: normal;
+    font-weight: 800;
+}
+
+.score-copy strong {
+    font-size: 1.5rem;
+}
+
+.score-copy b {
+    color: #16a34a;
+}
+
+
+/* =========================================================
+    PASS OR FAIL BANNER
+   ========================================================= */
+
+.pass-banner {
+    display: flex;
+    gap: 12px;
+    background: #effaf3;
+    color: #15803d;
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 22px;
+}
+
+.pass-banner span {
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================================================
+    SCORE BREAKDOWN
+   ========================================================= */
+
+.metric {
+    display: block;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+.metric-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.metric-result span {
+    color: #475569;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.metric-result strong {
+    color: #14213d;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.metric-track {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 10px;
+    min-height: 10px;
+    background-color: #e8edf4;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+/* =========================================================
+    SCORE BAR COLOURS
+   ========================================================= */
+
+.metric-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    height: 100%;
+    min-width: 2px;
+    border-radius: 999px;
+}
+
+.metric-fill.blue {
+    background-color: #1677ff;
+}
+
+.metric-fill.green {
+    background-color: #16a34a;
+}
+
+.metric-fill.orange {
+    background-color: #f59e0b;
+}
+
+.metric-fill.purple {
+    background-color: #8b5cf6;
+}
+
+.metric-fill.cyan {
+    background-color: #06b6d4;
+}
+
+/* =========================================================
+    CARD LINKS
+   ========================================================= */
+
+.card-link {
+    display: block;
+    text-align: right;
+    color: #1677ff;
+    text-decoration: none;
+    margin-top: 25px;
+    cursor: pointer;
+}
+
+/* =========================================================
+    SCENARIO SUMMARY
+   ========================================================= */
+
+.scenario-title {
+    gap: 12px;
+    color: #3067b3;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.scenario-title>span {
+    font-size: 1.7rem;
+    background: #fff0f0;
+    border-radius: 50%;
+    padding: 12px;
+    color: #ef4444;
+}
+
+.scenario-title div {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.scenario-title small {
+    color: #718096;
+    margin-top: 5px;
+}
+
+.scenario-title b {
+    font-size: 0.68rem;
+    background: #fff0f0;
+    color: #ef4444;
+    padding: 7px;
+    border-radius: 15px;
+}
+
+.scenario-summary hr {
+    border: 0;
+    border-top: 1px solid #e6ebf2;
+    margin: 20px 0;
+}
+
+
+/* =========================================================
+    SCENARIO INFORMATION ROWS
+   ========================================================= */
+
+.info-row {
+    gap: 10px;
+    padding: 7px 0;
+}
+
+.info-row label {
+    flex: 1;
+    color: #52617a;
+}
+
+
+/* =========================================================
+    CARD HEADINGS
+   ========================================================= */
+
+.card-heading {
+    justify-content: space-between;
+}
+
+.card-heading span {
+    color: #1677ff;
+    font-size: 0.86rem;
+}
+
+
+/* =========================================================
+    PERFORMANCE ANALYTICS CHART
+   ========================================================= */
+
+.trend-chart {
+    width: 100%;
+    height: 260px;
+}
+
+.grid-lines line {
+    stroke: #e9eef5;
+}
+
+.score-line {
+    fill: none;
+    stroke: #1677ff;
+    stroke-width: 3;
+}
+
+.average-line {
+    fill: none;
+    stroke: #cbd5e1;
+    stroke-width: 2;
+    stroke-dasharray: 6 5;
+}
+
+.trend-chart circle {
+    fill: #1677ff;
+}
+
+
+/* =========================================================
+    CHART LEGEND
+   ========================================================= */
+
+.chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 26px;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.chart-legend span:first-child {
+    color: #1677ff;
+}
+
+
+/* =========================================================
+    PERFORMANCE STATISTICS
+   ========================================================= */
+
+.stat-row {
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.stat-row div {
+    flex: 1;
+    border: 1px solid #e7edf5;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-row small {
+    color: #718096;
+}
+
+.stat-row strong {
+    font-size: 1.25rem;
+    margin-top: 8px;
+}
+
+.positive {
+    color: #16a34a;
+}
+
+
+/* =========================================================
+    FEEDBACK CARD
+   ========================================================= */
+
+.feedback-tabs {
+    gap: 25px;
+    border-bottom: 1px solid #e4eaf2;
+}
+
+.feedback-tabs b {
+    color: #1677ff;
+    border-bottom: 2px solid #1677ff;
+    padding-bottom: 8px;
+}
+
+.feedback-tabs span {
+    color: #64748b;
+}
+
+.feedback-good {
+    background: #effaf3;
+    border-radius: 10px;
+    padding: 14px;
+    margin: 14px 0;
+    color: #177337;
+}
+
+.feedback-card h3 {
+    font-size: 0.9rem;
+    color: #a33a2a;
+    margin-top: 18px;
+}
+
+.feedback-card p,
+.feedback-card li {
+    color: #52617a;
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+
+
+/* =========================================================
+    BADGES
+   ========================================================= */
+
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 18px;
+    width: 100%;
+    text-align: center;
+}
+
+.badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 0;
+    padding: 10px;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.badge-icon {
+    width: 68px;
+    height: 68px;
+    display: grid;
+    place-items: center;
+    border-radius: 20px;
+    background: linear-gradient(145deg, #17375e, #0d2341);
+    border: 5px solid #d7a92e;
+    color: #ffffff;
+    font-size: 1.7rem;
+    clip-path: polygon(50% 0,
+            90% 20%,
+            90% 75%,
+            50% 100%,
+            10% 75%,
+            10% 20%);
+}
+
+.badge strong {
+    display: block;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    line-height: 1.3;
+}
+
+.badge small {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: #718096;
+    white-space: normal;
+}
+
+.badge.locked {
+    opacity: 0.45;
+}
+
+/* =========================================================
+    LIVE DASHBOARD NOTE
+   ========================================================= */
+
+.live-note {
+    text-align: right;
+    color: #09ef5d;
+    font-weight: 800;
+    font-size: 1rem;
+}
+
+
+/* =========================================================
+    LOADING AND EMPTY STATES
+   ========================================================= */
+
+.reports-loading,
+.reports-empty {
+    padding: 60px;
+    text-align: center;
+}
+
+
+/* =========================================================
+    TABLET AND SMALL DESKTOP RESPONSIVE LAYOUT
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+    .top-grid,
+    .bottom-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .reports-tabs {
+        overflow-x: auto;
+    }
+
+    .badges-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+
+/* =========================================================
+    MOBILE RESPONSIVE LAYOUT
+   ========================================================= */
+
+@media (max-width: 600px) {
+    .reports-page {
+        padding: 16px;
+    }
+
+    .reports-header {
+        align-items: flex-start;
+    }
+
+    .reports-header h1 {
+        font-size: 2rem;
+    }
+
+    .pilot-chip {
+        display: none;
+    }
+
+    .reports-tabs {
+        gap: 15px;
+    }
+
+    .reports-tabs button {
+        position: absolute;
+        right: 16px;
+        top: 92px;
+    }
+
+    .score-main {
+        flex-direction: column;
+    }
+
+    .stat-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .badges-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+
+/* =========================================================
+    PRINT AND PDF STYLES
+   ========================================================= */
+
+@media print {
+    body {
+        background: #ffffff !important;
+    }
+
+    #pilot-performance-report {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+    }
+
+    #download-report-button,
+    .live-note {
+        display: none !important;
+    }
+
+    .report-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}
+
+.metric {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 24px !important;
+}
+
+.metric-result {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin-bottom: 10px !important;
+}
+
+.metric-result span {
+    display: block !important;
+}
+
+.metric-result strong {
+    display: block !important;
+    margin-left: 20px !important;
+    white-space: nowrap !important;
+}
+
+.metric-track {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    height: 10px !important;
+    min-height: 10px !important;
+    background-color: #e8edf4 !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
+}
+
+.metric-fill {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100% !important;
+    min-width: 2px !important;
+    border-radius: 999px !important;
+}
+
+.metric-fill.blue {
+    background-color: #1677ff !important;
+}
+
+.metric-fill.green {
+    background-color: #16a34a !important;
+}
+
+.metric-fill.orange {
+    background-color: #f59e0b !important;
+}
+
+.metric-fill.purple {
+    background-color: #8b5cf6 !important;
+}
+
+.metric-fill.cyan {
+    background-color: #06b6d4 !important;
+}

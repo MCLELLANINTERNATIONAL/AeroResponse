@@ -1,0 +1,647 @@
+@page "/checkout"
+@layout MainLayout
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+
+<PageTitle>Secure Checkout | AeroResponse</PageTitle>
+
+<div class="checkout-page">
+    <main class="checkout-main">
+        <section class="payment-card">
+            <a class="back-link"
+               href="/membership">
+                <i class="fa-solid fa-arrow-left"
+                   aria-hidden="true"></i>
+
+                Back to Membership
+            </a>
+
+            <div class="payment-title">
+                <h1>Payment Details</h1>
+                <p>Complete your purchase securely</p>
+            </div>
+
+            @if (PaymentSubmitted)
+            {
+                <div class="payment-success"
+                     role="status">
+                    <div class="payment-success-icon">
+                        <i class="fa-solid fa-check"
+                           aria-hidden="true"></i>
+                    </div>
+
+                    <div>
+                        <strong>Payment details received</strong>
+
+                        <p>
+                            This demonstration checkout has not charged
+                            your card. Connect a payment provider to
+                            process real payments.
+                        </p>
+                    </div>
+                </div>
+            }
+
+            <EditForm Model="Payment"
+                      OnValidSubmit="SubmitPayment"
+                      FormName="checkout-payment-form">
+
+                <DataAnnotationsValidator />
+
+                <div class="payment-methods">
+                    <span class="field-heading">
+                        Accepted Payment Methods
+                    </span>
+
+                    <div class="payment-method-list"
+                         aria-label="Accepted payment methods">
+                        <div class="payment-method visa">
+                            VISA
+                        </div>
+
+                        <div class="payment-method mastercard"
+                             aria-label="Mastercard">
+                            <span></span>
+                            <span></span>
+                        </div>
+
+                        <div class="payment-method amex">
+                            <small>AMERICAN</small>
+                            <strong>EXPRESS</strong>
+                        </div>
+
+                        <div class="payment-method discover">
+                            DISC<span>O</span>VER
+                        </div>
+
+                        <div class="payment-method paypal">
+                            Pay<span>Pal</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-field full-width">
+                        <label for="card-number">
+                            Card Number
+                        </label>
+
+                        <div class="input-shell">
+                            <InputText id="card-number"
+                                       class="form-control"
+                                       @bind-Value="Payment.CardNumber"
+                                       autocomplete="cc-number"
+                                       inputmode="numeric"
+                                       placeholder="4242 4242 4242 4242" />
+
+                            <span class="input-card-brand">
+                                VISA
+                            </span>
+
+                            <span class="valid-icon">
+                                <i class="fa-solid fa-check"
+                                   aria-hidden="true"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="expiry-date">
+                            Expiry Date
+                        </label>
+
+                        <div class="input-shell">
+                            <InputText id="expiry-date"
+                                       class="form-control"
+                                       @bind-Value="Payment.ExpiryDate"
+                                       autocomplete="cc-exp"
+                                       inputmode="numeric"
+                                       placeholder="MM / YY" />
+
+                            <span class="valid-icon">
+                                <i class="fa-solid fa-check"
+                                   aria-hidden="true"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="cvc">
+                            CVC
+
+                            <span class="information-icon"
+                                  title="The three or four digit security code on your card">
+                                <i class="fa-regular fa-circle-question"
+                                   aria-hidden="true"></i>
+                            </span>
+                        </label>
+
+                        <div class="input-shell">
+                            <InputText id="cvc"
+                                       class="form-control"
+                                       @bind-Value="Payment.Cvc"
+                                       autocomplete="cc-csc"
+                                       inputmode="numeric"
+                                       placeholder="123" />
+
+                            <span class="valid-icon">
+                                <i class="fa-solid fa-check"
+                                   aria-hidden="true"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-field full-width">
+                        <label for="cardholder-name">
+                            Cardholder Name
+                        </label>
+
+                        <div class="input-shell">
+                            <InputText id="cardholder-name"
+                                       class="form-control"
+                                       @bind-Value="Payment.CardholderName"
+                                       autocomplete="cc-name"
+                                       placeholder="John Doe" />
+
+                            <span class="valid-icon">
+                                <i class="fa-solid fa-check"
+                                   aria-hidden="true"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="country">
+                            Billing Address
+                        </label>
+
+                        <div class="select-shell">
+                            <InputSelect id="country"
+                                         class="form-control"
+                                         @bind-Value="Payment.Country"
+                                         autocomplete="country-name">
+                                <option value="United Kingdom">
+                                    United Kingdom
+                                </option>
+
+                                <option value="United States">
+                                    United States
+                                </option>
+
+                                <option value="Ireland">
+                                    Ireland
+                                </option>
+
+                                <option value="Canada">
+                                    Canada
+                                </option>
+
+                                <option value="Australia">
+                                    Australia
+                                </option>
+
+                                <option value="New Zealand">
+                                    New Zealand
+                                </option>
+                            </InputSelect>
+
+                            <i class="fa-solid fa-chevron-down"
+                               aria-hidden="true"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="postal-code">
+                            Postcode / ZIP Code
+                        </label>
+
+                        <div class="input-shell">
+                            <InputText id="postal-code"
+                                       class="form-control"
+                                       @bind-Value="Payment.PostalCode"
+                                       autocomplete="postal-code"
+                                       placeholder="SW1A 1AA" />
+
+                            <span class="valid-icon">
+                                <i class="fa-solid fa-check"
+                                   aria-hidden="true"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-field full-width">
+                        <label class="visually-hidden"
+                               for="address-line-one">
+                            Address line one
+                        </label>
+
+                        <div class="input-shell">
+                            <InputText id="address-line-one"
+                                       class="form-control"
+                                       @bind-Value="Payment.AddressLineOne"
+                                       autocomplete="address-line1"
+                                       placeholder="123 Aviation Way" />
+
+                            <span class="valid-icon">
+                                <i class="fa-solid fa-check"
+                                   aria-hidden="true"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="visually-hidden"
+                               for="city">
+                            City
+                        </label>
+
+                        <div class="input-shell">
+                            <InputText id="city"
+                                       class="form-control"
+                                       @bind-Value="Payment.City"
+                                       autocomplete="address-level2"
+                                       placeholder="London" />
+
+                            <span class="valid-icon">
+                                <i class="fa-solid fa-check"
+                                   aria-hidden="true"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="visually-hidden"
+                               for="region">
+                            County, state or region
+                        </label>
+
+                        <div class="select-shell">
+                            <InputSelect id="region"
+                                         class="form-control"
+                                         @bind-Value="Payment.Region"
+                                         autocomplete="address-level1">
+                                <option value="">
+                                    County / State / Region
+                                </option>
+
+                                <option value="Greater London">
+                                    Greater London
+                                </option>
+
+                                <option value="England">
+                                    England
+                                </option>
+
+                                <option value="Scotland">
+                                    Scotland
+                                </option>
+
+                                <option value="Wales">
+                                    Wales
+                                </option>
+
+                                <option value="Northern Ireland">
+                                    Northern Ireland
+                                </option>
+
+                                <option value="Other">
+                                    Other
+                                </option>
+                            </InputSelect>
+
+                            <i class="fa-solid fa-chevron-down"
+                               aria-hidden="true"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="save-card-option">
+
+                    <InputCheckbox class="save-checkbox"
+                                @bind-Value="Payment.SaveCard" />
+
+                    <span class="save-card-text">
+                        <strong>Save card for future payments</strong>
+                        <small>Pay faster on your next purchase</small>
+                    </span>
+
+                </label>
+
+                <button class="pay-button"
+                        type="submit">
+                    <i class="fa-solid fa-lock"
+                       aria-hidden="true"></i>
+
+                    Pay @FormatMoney(TotalDue)
+                </button>
+
+                <p class="payment-terms">
+                    <i class="fa-solid fa-shield-halved"
+                       aria-hidden="true"></i>
+
+                    <span>
+                        By completing this payment, you agree to our
+
+                        <a href="/terms">
+                            Terms of Service
+                        </a>
+
+                        and
+
+                        <a href="/privacy">
+                            Privacy Policy
+                        </a>.
+                    </span>
+                </p>
+            </EditForm>
+        </section>
+
+        <aside class="checkout-sidebar">
+            <section class="order-summary-card">
+                <div class="order-summary-heading">
+                    <h2>Order Summary</h2>
+
+                    <a href="/membership">
+                        <i class="fa-solid fa-pen"
+                           aria-hidden="true"></i>
+
+                        Edit Plan
+                    </a>
+                </div>
+
+                <div class="selected-plan">
+                    <div class="selected-plan-icon @PlanAccentClass">
+                        <i class="@SelectedPlan.Icon"
+                           aria-hidden="true"></i>
+                    </div>
+
+                    <div class="selected-plan-details">
+                        <strong>@SelectedPlan.Name Plan</strong>
+
+                        <span>
+                            @(IsAnnual
+                                ? "Annual Subscription"
+                                : "Monthly Subscription")
+                        </span>
+                    </div>
+
+                    <div class="selected-plan-price">
+                        <strong>@FormatMoney(DisplayedMonthlyPrice)</strong>
+
+                        <span>
+                            per month
+                        </span>
+                    </div>
+                </div>
+
+                @if (IsAnnual)
+                {
+                    <div class="annual-payment-notice">
+                        <i class="fa-solid fa-calendar-check"
+                           aria-hidden="true"></i>
+
+                        <span>
+                            Charged as one annual payment of
+                            <strong>@FormatMoney(AnnualTotal)</strong>
+                        </span>
+                    </div>
+                }
+
+                <div class="summary-totals">
+                    <div>
+                        <span>Subtotal</span>
+                        <strong>@FormatMoney(Subtotal)</strong>
+                    </div>
+
+                    <div>
+                        <span>Tax (0%)</span>
+                        <strong>@FormatMoney(Tax)</strong>
+                    </div>
+                </div>
+
+                <div class="summary-total">
+                    <strong>Total Due Today</strong>
+                    <strong>@FormatMoney(TotalDue)</strong>
+                </div>
+            </section>
+
+            <section class="assurance-card"
+                     aria-label="Checkout assurances">
+                <div class="assurance-item">
+                    <div class="assurance-icon guarantee-icon">
+                        <i class="fa-solid fa-shield-halved"
+                           aria-hidden="true"></i>
+                    </div>
+
+                    <div>
+                        <strong>30-Day Money Back Guarantee</strong>
+                        <span>Cancel anytime. No questions asked.</span>
+                    </div>
+                </div>
+
+                <div class="assurance-item">
+                    <div class="assurance-icon encrypted-icon">
+                        <i class="fa-solid fa-lock"
+                           aria-hidden="true"></i>
+                    </div>
+
+                    <div>
+                        <strong>Secure &amp; Encrypted</strong>
+                        <span>
+                            Your payment information is safe with us.
+                        </span>
+                    </div>
+                </div>
+
+                <div class="assurance-item">
+                    <div class="assurance-icon support-icon">
+                        <i class="fa-solid fa-headset"
+                           aria-hidden="true"></i>
+                    </div>
+
+                    <div>
+                        <strong>24/7 Customer Support</strong>
+                        <span>
+                            We are here to help whenever you need us.
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="trusted-companies"
+                     aria-label="Trusted aviation companies">
+                <p>
+                    Trusted by aviation professionals worldwide
+                </p>
+
+                <div class="company-list">
+                    <span>
+                        <i class="fa-solid fa-plane-up"
+                           aria-hidden="true"></i>
+                        AIRBUS
+                    </span>
+
+                    <span class="boeing-name">
+                        BOEING
+                    </span>
+
+                    <span>
+                        <i class="fa-solid fa-plane"
+                           aria-hidden="true"></i>
+                        EMBRAER
+                    </span>
+
+                    <span class="cae-name">
+                        CAE
+                    </span>
+                </div>
+            </section>
+        </aside>
+    </main>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "plan")]
+    public string? PlanName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "billing")]
+    public string? BillingFrequency { get; set; }
+
+    private bool PaymentSubmitted;
+
+    private PaymentFormModel Payment { get; } = new()
+    {
+        CardNumber = "4242 4242 4242 4242",
+        ExpiryDate = "06 / 27",
+        Cvc = "123",
+        CardholderName = "John Doe",
+        Country = "United Kingdom",
+        PostalCode = "SW1A 1AA",
+        AddressLineOne = "123 Aviation Way",
+        City = "London",
+        Region = "Greater London",
+        SaveCard = true
+    };
+
+    private bool IsAnnual =>
+        string.Equals(
+            BillingFrequency,
+            "annual",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+    private CheckoutPlan SelectedPlan
+    {
+        get
+        {
+            if (string.Equals(
+                PlanName,
+                "Small Commercial",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return Plans[1];
+            }
+
+            if (string.Equals(
+                PlanName,
+                "Large Commercial",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return Plans[2];
+            }
+
+            return Plans[0];
+        }
+    }
+
+    private decimal DisplayedMonthlyPrice =>
+        IsAnnual
+            ? Math.Round(
+                SelectedPlan.MonthlyPrice * 0.8m,
+                0,
+                MidpointRounding.AwayFromZero
+            )
+            : SelectedPlan.MonthlyPrice;
+
+    private decimal AnnualTotal =>
+        DisplayedMonthlyPrice * 12m;
+
+    private decimal Subtotal =>
+        IsAnnual
+            ? AnnualTotal
+            : DisplayedMonthlyPrice;
+
+    private decimal Tax => 0m;
+
+    private decimal TotalDue =>
+        Subtotal + Tax;
+
+    private string PlanAccentClass =>
+        SelectedPlan.Name switch
+        {
+            "Small Commercial" => "commercial-accent",
+            "Large Commercial" => "enterprise-accent",
+            _ => "private-accent"
+        };
+
+    private static string FormatMoney(decimal amount)
+    {
+        return $"${amount:N2}";
+    }
+
+    private void SubmitPayment()
+    {
+        PaymentSubmitted = true;
+    }
+
+    private static readonly CheckoutPlan[] Plans =
+    [
+        new(
+            Name: "Private",
+            MonthlyPrice: 99m,
+            Icon: "fa-regular fa-paper-plane"
+        ),
+
+        new(
+            Name: "Small Commercial",
+            MonthlyPrice: 399m,
+            Icon: "fa-regular fa-star"
+        ),
+
+        new(
+            Name: "Large Commercial",
+            MonthlyPrice: 999m,
+            Icon: "fa-solid fa-crown"
+        )
+    ];
+
+    private sealed record CheckoutPlan(
+        string Name,
+        decimal MonthlyPrice,
+        string Icon
+    );
+
+    private sealed class PaymentFormModel
+    {
+        public string CardNumber { get; set; } = string.Empty;
+
+        public string ExpiryDate { get; set; } = string.Empty;
+
+        public string Cvc { get; set; } = string.Empty;
+
+        public string CardholderName { get; set; } = string.Empty;
+
+        public string Country { get; set; } = string.Empty;
+
+        public string PostalCode { get; set; } = string.Empty;
+
+        public string AddressLineOne { get; set; } = string.Empty;
+
+        public string City { get; set; } = string.Empty;
+
+        public string Region { get; set; } = string.Empty;
+
+        public bool SaveCard { get; set; }
+    }
+}

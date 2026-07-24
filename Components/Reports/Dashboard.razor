@@ -65,18 +65,38 @@ else
         ===================================================== *@
 
         <nav class="reports-tabs">
-            <a class="active" href="#overview">◉ Overview</a>
-            <a href="#scoring">⚙ Scoring</a>
-            <a href="#analytics">▥ Analytics</a>
-            <a href="#feedback">✪ Feedback</a>
-            <a href="#badges">🏆 Badges</a>
+
+            <NavLink href="/reports" Match="NavLinkMatch.All">
+                ◉ Overview
+            </NavLink>
+
+            <NavLink href="/reports/flight-logs">
+                ✈ Flight Logs
+            </NavLink>
+
+            <NavLink href="/reports/scoring">
+                ⚙ Scoring
+            </NavLink>
+
+            <NavLink href="/reports/analytics">
+                ▥ Analytics
+            </NavLink>
+
+            <NavLink href="/reports/feedback">
+                ✪ Feedback
+            </NavLink>
+
+            <NavLink href="/reports/badges">
+                🏆 Badges
+            </NavLink>
 
             <button id="download-report-button"
-            type="button"
-            @onclick="DownloadReportAsync">
-            ⇩ Download PDF
-        </button>
-    </nav>
+                    type="button"
+                    @onclick="DownloadReportAsync">
+                ⬇ Download PDF
+            </button>
+
+        </nav>
 
     @* =====================================================
     TOP DASHBOARD GRID

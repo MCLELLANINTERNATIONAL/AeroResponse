@@ -97,22 +97,36 @@
    ========================================================= */
 
 .reports-tabs {
+    display: flex;
+    align-items: center;
     gap: 34px;
     border-bottom: 1px solid #3b78da;
     margin: 26px 0 16px;
     cursor: pointer;
 }
 
-.reports-tabs a {
+.reports-tabs ::deep a {
+    display: inline-flex;
+    align-items: center;
     padding: 14px 8px;
-    color: #ffffff;
-    text-decoration: none;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    font-size: 16px;
     font-weight: 650;
+    line-height: 1.2;
+    border-bottom: 3px solid transparent;
 }
 
-.reports-tabs a.active {
-    color: #ffffff;
-    border-bottom: 3px solid #2575f5;
+.reports-tabs ::deep a:hover,
+.reports-tabs ::deep a:visited,
+.reports-tabs ::deep a:focus {
+    color: #ffffff !important;
+    text-decoration: none !important;
+}
+
+.reports-tabs ::deep a.active {
+    color: #ffffff !important;
+    border-bottom-color: #2575f5;
 }
 
 

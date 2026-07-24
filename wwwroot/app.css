@@ -1647,3 +1647,55 @@ h1:focus {
         white-space: normal;
     }
 }
+
+/* ======================================================
+   Prevent aircraft instrument SVG distortion
+====================================================== */
+
+.airspeed-svg,
+.attitude-svg,
+.altimeter-svg,
+.turn-coordinator-svg,
+.heading-indicator-svg,
+.vsi-svg {
+    display: block !important;
+
+    width: 100% !important;
+    height: 100% !important;
+
+    max-width: none !important;
+    max-height: none !important;
+
+    aspect-ratio: 1 / 1 !important;
+
+    overflow: hidden !important;
+
+    object-fit: contain !important;
+}
+
+.instrument,
+.instrument-bezel,
+.instrument-face,
+.instrument-content {
+    min-width: 0;
+    min-height: 0;
+
+    box-sizing: border-box;
+}
+
+.instrument-bezel,
+.instrument-face,
+.instrument-content {
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 50% !important;
+}
+
+.instrument-bezel {
+    overflow: hidden !important;
+}
+
+.instrument-face,
+.instrument-content {
+    width: 100% !important;
+    height: 100% !important;
+}

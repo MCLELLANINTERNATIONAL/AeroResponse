@@ -3,53 +3,83 @@ using AeroResponse.Repositories;
 
 namespace AeroResponse.Services;
 
-public class ScenarioService(ScenarioRepository repository)
+public class ScenarioService(
+    ScenarioRepository repository)
 {
-    public Task<IReadOnlyList<EmergencyScenario>> GetAllAsync()
+    public Task<IReadOnlyList<EmergencyScenario>>
+        GetAllAsync()
     {
         return repository.GetAllAsync();
     }
 
-    public async Task<IReadOnlyList<EmergencyScenario>> GetActiveAsync()
+    public async Task<IReadOnlyList<EmergencyScenario>>
+        GetActiveAsync()
     {
-        var scenarios = await repository.GetAllAsync();
+        var scenarios =
+            await repository.GetAllAsync();
 
-        return
-        [
-            .. scenarios
-                .Where(scenario => scenario.IsActive)
-                .OrderBy(scenario => scenario.Title)
-        ];
+        return scenarios
+            .Where(scenario =>
+                scenario.IsActive)
+            .OrderBy(scenario =>
+                scenario.Title)
+            .ToList();
     }
 
-    public Task<EmergencyScenario?> GetByIdAsync(int id)
+    public async Task<EmergencyScenario?>
+        GetByEmergencyTypeAsync(
+            string emergencyType)
+    {
+        var scenarios =
+            await repository.GetAllAsync();
+
+        return scenarios.FirstOrDefault(
+            scenario =>
+                scenario.IsActive &&
+                scenario.EmergencyType.Equals(
+                    emergencyType,
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    public Task<EmergencyScenario?>
+        GetByIdAsync(
+            int id)
     {
         return repository.GetByIdAsync(id);
     }
 
-    public Task<EmergencyScenario> CreateAsync(
+    public Task<EmergencyScenario>
+        CreateAsync(
+            EmergencyScenario scenario)
+    {
+        ArgumentNullException.ThrowIfNull(
+            scenario);
+
+        scenario.CreatedAt =
+            DateTime.UtcNow;
+
+        return repository.AddAsync(
+            scenario);
+    }
+
+    public Task UpdateAsync(
         EmergencyScenario scenario)
     {
-        ArgumentNullException.ThrowIfNull(scenario);
+        ArgumentNullException.ThrowIfNull(
+            scenario);
 
-        scenario.CreatedAt = DateTime.UtcNow;
-
-        return repository.AddAsync(scenario);
+        return repository.UpdateAsync(
+            scenario);
     }
 
-    public Task UpdateAsync(EmergencyScenario scenario)
-    {
-        ArgumentNullException.ThrowIfNull(scenario);
-
-        return repository.UpdateAsync(scenario);
-    }
-
-    public Task<bool> DeleteAsync(int id)
+    public Task<bool> DeleteAsync(
+        int id)
     {
         return repository.DeleteAsync(id);
     }
 
-    public Task<bool> ExistsAsync(int id)
+    public Task<bool> ExistsAsync(
+        int id)
     {
         return repository.ExistsAsync(id);
     }

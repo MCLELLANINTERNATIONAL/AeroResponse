@@ -1,9 +1,165 @@
 .cockpit-layout {
     display: grid;
-    gap: 1rem;
+    align-items: start;
+    justify-items: center;
+
+    gap:
+        clamp(2rem, 3vw, 3.25rem)
+        clamp(1.25rem, 2.5vw, 2.75rem);
 
     width: 100%;
-    padding: 1rem;
+    padding:
+        clamp(1.5rem, 2.5vw, 2.5rem)
+        clamp(1rem, 2vw, 2rem)
+        clamp(2rem, 3vw, 3rem);
 
-    align-items: start;
+    box-sizing: border-box;
+
+    background:
+        linear-gradient(
+            135deg,
+            #071a2d 0%,
+            #0a2c4c 55%,
+            #0c477c 100%
+        );
+}
+
+/*
+    InstrumentRenderer creates each direct grid item.
+*/
+.cockpit-layout > * {
+    display: flex;
+    justify-content: center;
+
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+
+    overflow: visible;
+
+    box-sizing: border-box;
+}
+
+/*
+    Reach through InstrumentRenderer and InstrumentBase.
+*/
+.cockpit-layout ::deep .instrument-position {
+    display: flex;
+    justify-content: center;
+
+    width: 100%;
+    min-width: 0;
+}
+
+.cockpit-layout ::deep .instrument {
+    width: min(100%, 300px);
+    max-width: 300px;
+    min-width: 0;
+}
+
+.cockpit-layout ::deep .instrument-bezel {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+
+    border-radius: 50%;
+}
+
+.cockpit-layout ::deep .instrument-face,
+.cockpit-layout ::deep .instrument-content {
+    border-radius: 50%;
+}
+
+.cockpit-layout ::deep svg {
+    display: block;
+
+    width: 100% !important;
+    height: 100% !important;
+
+    aspect-ratio: 1 / 1;
+
+    overflow: hidden;
+}
+
+.cockpit-layout ::deep svg text {
+    fill: #ffffff;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-weight: 800;
+
+    paint-order: stroke fill;
+    stroke: #050505;
+    stroke-width: 1.25px;
+    stroke-linejoin: round;
+
+    text-rendering: geometricPrecision;
+}
+
+@media (max-width: 1300px) {
+    .cockpit-layout {
+        gap:
+            2.25rem
+            1rem;
+
+        padding:
+            1.5rem
+            0.75rem
+            2rem;
+    }
+
+    .cockpit-layout ::deep .instrument {
+        width: min(100%, 270px);
+        max-width: 270px;
+    }
+}
+
+@media (max-width: 1100px) {
+    .cockpit-layout {
+        gap:
+            2rem
+            0.75rem;
+    }
+
+    .cockpit-layout ::deep .instrument {
+        width: min(100%, 245px);
+        max-width: 245px;
+    }
+}
+
+@media (max-width: 900px) {
+    .cockpit-layout {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr)) !important;
+
+        grid-template-rows: none !important;
+
+        gap: 2rem 1rem;
+    }
+
+    .cockpit-layout ::deep .instrument {
+        width: min(100%, 285px);
+        max-width: 285px;
+    }
+}
+
+@media (max-width: 560px) {
+    .cockpit-layout {
+        grid-template-columns: 1fr !important;
+
+        gap: 2rem;
+
+        padding:
+            1rem
+            0.75rem
+            2rem;
+    }
+
+    .cockpit-layout ::deep .instrument {
+        width: min(100%, 270px);
+        max-width: 270px;
+    }
 }

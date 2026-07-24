@@ -73,7 +73,7 @@ builder.Services.AddScoped<PerformanceService>();
 builder.Services.AddScoped<PerformanceDashboardService>();
 builder.Services.AddScoped<SimulationService>();
 builder.Services.AddScoped<SimulationSelectionStorage>();
-
+builder.Services.AddScoped<SimulationScenarioDataService>();
 builder.Services.AddSingleton<ICockpitLayoutProvider, CockpitLayoutProvider>();
 builder.Services.AddSingleton<SimulationEngine>();
 

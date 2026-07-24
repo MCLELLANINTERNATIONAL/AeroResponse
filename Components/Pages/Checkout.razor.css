@@ -1,0 +1,928 @@
+.checkout-page {
+    --navy-950: #07152d;
+    --navy-900: #10213f;
+    --navy-700: #334564;
+
+    --text-muted: #6d7c96;
+
+    --blue-700: #006be6;
+    --blue-600: #087cf0;
+    --blue-500: #178cff;
+    --blue-100: #dcecff;
+    --blue-50: #f1f7ff;
+
+    --green-700: #02966c;
+    --green-600: #08ad78;
+    --green-100: #ddf7ed;
+
+    --purple-700: #6532d8;
+    --purple-100: #eee4ff;
+
+    --border: #dfe6ef;
+    --border-light: #e9eef5;
+
+    min-height: calc(100vh - 80px);
+    padding: 2rem 0 3rem;
+    color: var(--navy-950);
+    background:
+        radial-gradient(
+            circle at 48% 0%,
+            rgba(31, 128, 245, 0.045),
+            transparent 34%
+        ),
+        #f8fafc;
+}
+
+.checkout-main {
+    width: min(1480px, calc(100% - 2.4rem));
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1.08fr)
+        minmax(390px, 0.92fr);
+    gap: 2rem;
+    align-items: start;
+}
+
+.payment-card,
+.order-summary-card,
+.assurance-card {
+    border: 1px solid var(--border-light);
+    border-radius: 15px;
+    background: #ffffff;
+    box-shadow:
+        0 10px 32px rgba(25, 49, 83, 0.055),
+        0 2px 7px rgba(25, 49, 83, 0.025);
+}
+
+.payment-card {
+    padding: 1.85rem 2rem 1.55rem;
+}
+
+.back-link {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--blue-600);
+    font-size: 0.82rem;
+    line-height: 1.2;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.back-link i {
+    font-size: 0.72rem;
+}
+
+.payment-title {
+    margin: 1.65rem 0 1.5rem;
+}
+
+.payment-title h1 {
+    margin: 0;
+    color: #080f21;
+    font-size: clamp(1.8rem, 3vw, 2.2rem);
+    line-height: 1.12;
+    font-weight: 850;
+    letter-spacing: -0.035em;
+}
+
+.payment-title p {
+    margin: 0.4rem 0 0;
+    color: #6d7b94;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.payment-success {
+    margin: 0 0 1.4rem;
+    padding: 1rem;
+    border: 1px solid #bdebd9;
+    border-radius: 10px;
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+    color: #075b44;
+    background: #effbf7;
+}
+
+.payment-success-icon {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #ffffff;
+    background: var(--green-600);
+    font-size: 0.78rem;
+}
+
+.payment-success strong {
+    display: block;
+    margin-bottom: 0.18rem;
+    font-size: 0.86rem;
+}
+
+.payment-success p {
+    margin: 0;
+    color: #34705e;
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
+.payment-methods {
+    margin-bottom: 1.45rem;
+}
+
+.field-heading {
+    display: block;
+    margin-bottom: 0.65rem;
+    color: #53627a;
+    font-size: 0.76rem;
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.payment-method-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+}
+
+.payment-method {
+    width: 70px;
+    height: 40px;
+    border: 1px solid #dce4ee;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(23, 43, 72, 0.025);
+    font-size: 0.75rem;
+    font-weight: 900;
+}
+
+.payment-method.visa {
+    color: #123ca3;
+    font-size: 1rem;
+    font-style: italic;
+}
+
+.payment-method.mastercard {
+    position: relative;
+}
+
+.payment-method.mastercard span {
+    width: 21px;
+    height: 21px;
+    border-radius: 50%;
+}
+
+.payment-method.mastercard span:first-child {
+    margin-right: -6px;
+    background: #ed1c24;
+}
+
+.payment-method.mastercard span:last-child {
+    background: #f79e1b;
+}
+
+.payment-method.amex {
+    padding: 0.25rem;
+    display: grid;
+    align-content: center;
+    gap: 0;
+    color: #ffffff;
+    background: #2a74ba;
+    font-size: 0.52rem;
+    text-align: center;
+}
+
+.payment-method.amex small,
+.payment-method.amex strong {
+    font-size: inherit;
+    line-height: 1;
+}
+
+.payment-method.discover {
+    color: #2c3546;
+    font-size: 0.65rem;
+    letter-spacing: -0.02em;
+}
+
+.payment-method.discover span {
+    color: #f58328;
+}
+
+.payment-method.paypal {
+    color: #193e91;
+    font-style: italic;
+    font-size: 0.88rem;
+}
+
+.payment-method.paypal span {
+    color: #1689cc;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.05rem 1.35rem;
+}
+
+.form-field {
+    min-width: 0;
+}
+
+.form-field.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-field label {
+    display: block;
+    margin: 0 0 0.48rem;
+    color: #3e4d66;
+    font-size: 0.76rem;
+    line-height: 1.2;
+    font-weight: 720;
+}
+
+.information-icon {
+    margin-left: 0.35rem;
+    color: #7f8da2;
+    cursor: help;
+}
+
+.input-shell,
+.select-shell {
+    position: relative;
+}
+
+.form-control {
+    width: 100%;
+    height: 43px;
+    border: 1px solid #d9e1eb;
+    border-radius: 7px;
+    padding: 0 2.7rem 0 1rem;
+    color: #263650;
+    outline: none;
+    background: #ffffff;
+    font: inherit;
+    font-size: 0.79rem;
+    line-height: 1.2;
+    font-weight: 620;
+    box-shadow: inset 0 1px 2px rgba(20, 39, 66, 0.015);
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.form-control::placeholder {
+    color: #8793a5;
+    opacity: 1;
+}
+
+.form-control:focus {
+    border-color: var(--blue-500);
+    box-shadow: 0 0 0 3px rgba(23, 140, 255, 0.12);
+}
+
+select.form-control {
+    padding-right: 2.6rem;
+    appearance: none;
+    cursor: pointer;
+}
+
+.select-shell > i {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    color: #6e7d94;
+    font-size: 0.67rem;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.valid-icon {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #ffffff;
+    background: #12b76a;
+    font-size: 0.58rem;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.input-card-brand {
+    position: absolute;
+    top: 50%;
+    right: 3rem;
+    color: #183fa2;
+    font-size: 0.76rem;
+    font-style: italic;
+    font-weight: 900;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+ 
+.save-card-option {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin: 1.5rem 0;
+    cursor: pointer;
+}
+
+.save-checkbox {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: #087cf0;
+    flex-shrink: 0;
+}
+
+.save-card-text {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.save-card-text strong {
+    font-size: .82rem;
+    font-weight: 700;
+    color: #263650;
+}
+
+.save-card-text small {
+    font-size: .74rem;
+    color: #7d8ca4;
+}
+
+@media (max-width: 600px) {
+    .save-card-text {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .1rem;
+    }
+}
+
+.pay-button {
+    width: 100%;
+    min-height: 54px;
+    border: 0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    color: #ffffff;
+    background:
+        linear-gradient(
+            100deg,
+            #0870e9,
+            #087cf0 52%,
+            #0669e6
+        );
+    box-shadow: 0 8px 20px rgba(8, 114, 232, 0.21);
+    font: inherit;
+    font-size: 1rem;
+    line-height: 1.2;
+    font-weight: 820;
+    cursor: pointer;
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        filter 0.18s ease;
+}
+
+.pay-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(8, 114, 232, 0.27);
+    filter: brightness(1.02);
+}
+
+.pay-button:active {
+    transform: translateY(0);
+}
+
+.pay-button:focus-visible {
+    outline: 3px solid rgba(23, 140, 255, 0.3);
+    outline-offset: 3px;
+}
+
+.payment-terms {
+    margin: 0.9rem auto 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.55rem;
+    color: #7c899d;
+    font-size: 0.67rem;
+    line-height: 1.45;
+    text-align: center;
+}
+
+.payment-terms i {
+    margin-top: 0.14rem;
+    color: #70809a;
+}
+
+.payment-terms a {
+    color: var(--blue-600);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.payment-terms a:hover {
+    text-decoration: underline;
+}
+
+.checkout-sidebar {
+    min-width: 0;
+    display: grid;
+    gap: 1.45rem;
+}
+
+.order-summary-card {
+    padding: 1.8rem 2rem 1.65rem;
+}
+
+.order-summary-heading {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.order-summary-heading h2 {
+    margin: 0;
+    color: #0a1122;
+    font-size: 1.45rem;
+    line-height: 1.2;
+    font-weight: 850;
+    letter-spacing: -0.025em;
+}
+
+.order-summary-heading a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--blue-600);
+    font-size: 0.77rem;
+    line-height: 1.2;
+    font-weight: 750;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.order-summary-heading a:hover {
+    text-decoration: underline;
+}
+
+.selected-plan {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--border-light);
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    gap: 1.05rem;
+    align-items: center;
+}
+
+.selected-plan-icon {
+    width: 72px;
+    height: 64px;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    color: var(--blue-600);
+    background: var(--blue-100);
+    font-size: 1.65rem;
+}
+
+.selected-plan-icon.private-accent {
+    color: var(--blue-600);
+    background: var(--blue-100);
+}
+
+.selected-plan-icon.commercial-accent {
+    color: var(--blue-600);
+    background: var(--blue-100);
+}
+
+.selected-plan-icon.enterprise-accent {
+    color: var(--purple-700);
+    background: var(--purple-100);
+}
+
+.selected-plan-details {
+    min-width: 0;
+    display: grid;
+    gap: 0.25rem;
+}
+
+.selected-plan-details strong {
+    color: #15213a;
+    font-size: 0.96rem;
+    line-height: 1.3;
+    font-weight: 800;
+}
+
+.selected-plan-details span {
+    color: #66758d;
+    font-size: 0.76rem;
+    line-height: 1.3;
+}
+
+.selected-plan-price {
+    display: grid;
+    gap: 0.25rem;
+    text-align: right;
+}
+
+.selected-plan-price strong {
+    color: #111a2d;
+    font-size: 0.97rem;
+    line-height: 1.2;
+    font-weight: 850;
+}
+
+.selected-plan-price span {
+    color: #6c7990;
+    font-size: 0.7rem;
+    line-height: 1.3;
+}
+
+.annual-payment-notice {
+    margin-top: 1rem;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid #cfe5ff;
+    border-radius: 8px;
+    display: flex;
+    gap: 0.65rem;
+    align-items: center;
+    color: #245b91;
+    background: #f2f8ff;
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+
+.annual-payment-notice i {
+    color: var(--blue-600);
+}
+
+.annual-payment-notice strong {
+    color: #124e8a;
+}
+
+.summary-totals {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--border-light);
+    display: grid;
+    gap: 1.05rem;
+}
+
+.summary-totals > div,
+.summary-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.summary-totals span {
+    color: #263650;
+    font-size: 0.78rem;
+    line-height: 1.3;
+    font-weight: 650;
+}
+
+.summary-totals strong {
+    color: #131d31;
+    font-size: 0.82rem;
+    line-height: 1.3;
+    font-weight: 800;
+}
+
+.summary-total {
+    padding-top: 1.25rem;
+}
+
+.summary-total strong:first-child {
+    color: #111a2d;
+    font-size: 1.02rem;
+    line-height: 1.2;
+    font-weight: 850;
+}
+
+.summary-total strong:last-child {
+    color: var(--blue-600);
+    font-size: 1.22rem;
+    line-height: 1.2;
+    font-weight: 900;
+}
+
+.assurance-card {
+    padding: 1.4rem 1.8rem;
+    border-color: #d5e6fa;
+    display: grid;
+    gap: 1.35rem;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(247, 251, 255, 0.96),
+            rgba(255, 255, 255, 0.98)
+        );
+}
+
+.assurance-item {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 1rem;
+    align-items: center;
+}
+
+.assurance-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 1.15rem;
+}
+
+.guarantee-icon {
+    color: var(--green-700);
+    background: var(--green-100);
+}
+
+.encrypted-icon {
+    color: var(--blue-600);
+    background: var(--blue-100);
+}
+
+.support-icon {
+    color: var(--purple-700);
+    background: var(--purple-100);
+}
+
+.assurance-item > div:last-child {
+    min-width: 0;
+    display: grid;
+    gap: 0.22rem;
+}
+
+.assurance-item strong {
+    color: #1c2b47;
+    font-size: 0.82rem;
+    line-height: 1.3;
+    font-weight: 820;
+}
+
+.assurance-item span {
+    color: #6e7d94;
+    font-size: 0.73rem;
+    line-height: 1.4;
+}
+
+.trusted-companies {
+    padding: 0.3rem 1rem 0;
+    text-align: center;
+}
+
+.trusted-companies p {
+    margin: 0 0 1.1rem;
+    color: #7c8ba3;
+    font-size: 0.72rem;
+    line-height: 1.3;
+}
+
+.company-list {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 1.2rem;
+    color: #8c9bb2;
+    opacity: 0.9;
+}
+
+.company-list span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.82rem;
+    line-height: 1;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+.company-list i {
+    font-size: 0.8rem;
+}
+
+.company-list .boeing-name {
+    font-style: italic;
+}
+
+.company-list .cae-name {
+    font-size: 1.3rem;
+    letter-spacing: -0.06em;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    white-space: nowrap !important;
+}
+
+@media (max-width: 1100px) {
+    .checkout-main {
+        grid-template-columns:
+            minmax(0, 1fr)
+            400px;
+        gap: 1.25rem;
+    }
+
+    .payment-card,
+    .order-summary-card {
+        padding-right: 1.4rem;
+        padding-left: 1.4rem;
+    }
+
+    .selected-plan {
+        grid-template-columns: 58px minmax(0, 1fr);
+    }
+
+    .selected-plan-icon {
+        width: 58px;
+        height: 56px;
+    }
+
+    .selected-plan-price {
+        grid-column: 2;
+        text-align: left;
+    }
+}
+
+@media (max-width: 880px) {
+    .checkout-page {
+        padding-top: 1.5rem;
+    }
+
+    .checkout-main {
+        width: min(720px, calc(100% - 2rem));
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-sidebar {
+        order: -1;
+    }
+
+    .order-summary-card {
+        order: 1;
+    }
+
+    .assurance-card {
+        order: 2;
+    }
+
+    .trusted-companies {
+        order: 3;
+    }
+
+    .selected-plan {
+        grid-template-columns: 64px minmax(0, 1fr) auto;
+    }
+
+    .selected-plan-icon {
+        width: 64px;
+        height: 60px;
+    }
+
+    .selected-plan-price {
+        grid-column: auto;
+        text-align: right;
+    }
+}
+
+@media (max-width: 620px) {
+    .checkout-page {
+        padding: 1rem 0 2rem;
+    }
+
+    .checkout-main {
+        width: min(100% - 1rem, 580px);
+        gap: 1rem;
+    }
+
+    .payment-card,
+    .order-summary-card,
+    .assurance-card {
+        border-radius: 11px;
+    }
+
+    .payment-card,
+    .order-summary-card {
+        padding: 1.2rem 1rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 0.95rem;
+    }
+
+    .form-field.full-width {
+        grid-column: auto;
+    }
+
+    .payment-method-list {
+        gap: 0.45rem;
+    }
+
+    .payment-method {
+        width: 59px;
+        height: 37px;
+    }
+
+    .selected-plan {
+        grid-template-columns: 56px minmax(0, 1fr);
+    }
+
+    .selected-plan-icon {
+        width: 56px;
+        height: 54px;
+    }
+
+    .selected-plan-price {
+        grid-column: 2;
+        text-align: left;
+    }
+
+    .company-list {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 400px) {
+    .payment-title h1 {
+        font-size: 1.65rem;
+    }
+
+    .order-summary-heading {
+        align-items: flex-start;
+    }
+
+    .order-summary-heading h2 {
+        font-size: 1.25rem;
+    }
+
+    .payment-terms {
+        text-align: left;
+    }
+
+    .assurance-card {
+        padding-right: 1rem;
+        padding-left: 1rem;
+    }
+
+    .assurance-item {
+        grid-template-columns: 44px minmax(0, 1fr);
+        gap: 0.75rem;
+    }
+
+    .assurance-icon {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .form-control,
+    .custom-checkbox,
+    .pay-button {
+        transition: none;
+    }
+}

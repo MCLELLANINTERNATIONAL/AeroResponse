@@ -1,0 +1,978 @@
+.membership-page {
+    --navy-950: #031529;
+    --navy-900: #06213d;
+    --navy-850: #082a4c;
+    --navy-800: #0a345d;
+
+    --blue-700: #006be6;
+    --blue-600: #087cf0;
+    --blue-500: #168cff;
+    --blue-400: #3fa1ff;
+    --blue-100: #dceeff;
+    --blue-50: #eef7ff;
+
+    --purple-700: #6239dd;
+    --purple-600: #7047e8;
+    --purple-100: #e9e0ff;
+    --purple-50: #f4efff;
+
+    --green-700: #278943;
+    --green-100: #daf5df;
+
+    --text-950: #07172e;
+    --text-800: #1d2d44;
+    --text-700: #34435a;
+    --text-600: #5d6a80;
+    --text-500: #778398;
+
+    --border: #e1e7ef;
+    --border-soft: #edf1f6;
+
+    min-height: calc(100vh - 92px);
+    display: grid;
+    grid-template-columns: 305px minmax(0, 1fr);
+    overflow: hidden;
+    color: var(--text-950);
+    background: #ffffff;
+}
+
+
+/* =========================================================
+   Left sidebar
+   ========================================================= */
+
+.membership-sidebar {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    color: #ffffff;
+    background:
+        linear-gradient(
+            180deg,
+            #0a365f 0%,
+            #082c51 45%,
+            #061f3c 100%
+        );
+    box-shadow: 10px 0 35px rgba(2, 21, 43, 0.08);
+}
+
+.sidebar-aircraft {
+    position: relative;
+    height: 200px;
+    flex: 0 0 auto;
+    background:
+        linear-gradient(
+            180deg,
+            rgba(3, 20, 38, 0.02) 0%,
+            rgba(3, 20, 38, 0.12) 50%,
+            rgba(3, 20, 38, 0.65) 100%
+        ),
+        url("/images/hero5.png") center center / cover no-repeat;
+}
+
+.sidebar-aircraft::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-content {
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.75rem 2rem 2rem;
+}
+
+.sidebar-content > h2 {
+    margin: 0 0 1.65rem;
+    font-size: 1rem;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.benefit-list {
+    display: grid;
+    gap: 1.22rem;
+}
+
+.benefit-item {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 0.78rem;
+    align-items: start;
+}
+
+.benefit-icon {
+    width: 31px;
+    height: 31px;
+    margin-top: 0.05rem;
+    border: 2px solid #168cff;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    color: #2ca0ff;
+    background: rgba(19, 133, 242, 0.06);
+    font-size: 0.86rem;
+    box-shadow: inset 0 0 12px rgba(35, 153, 255, 0.07);
+}
+
+.benefit-item h3 {
+    margin: 0 0 0.18rem;
+    color: #ffffff;
+    font-size: 0.86rem;
+    line-height: 1.25;
+    font-weight: 800;
+}
+
+.benefit-item p {
+    margin: 0;
+    color: #c8d8e9;
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+
+.help-card {
+    margin-top: auto;
+    padding: 1rem 0.95rem;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 11px;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    gap: 0.72rem;
+    align-items: center;
+    color: #ffffff;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(47, 115, 178, 0.36),
+            rgba(38, 94, 148, 0.23)
+        );
+    text-decoration: none;
+    transition:
+        transform 0.18s ease,
+        background-color 0.18s ease;
+}
+
+.help-card:hover {
+    transform: translateY(-2px);
+    background:
+        linear-gradient(
+            135deg,
+            rgba(55, 129, 198, 0.44),
+            rgba(43, 104, 162, 0.3)
+        );
+}
+
+.help-card > i:first-child {
+    color: #43aaff;
+    font-size: 1.3rem;
+}
+
+.help-card > i:last-child {
+    color: #63baff;
+    font-size: 0.72rem;
+}
+
+.help-card span {
+    min-width: 0;
+    display: grid;
+    gap: 0.22rem;
+}
+
+.help-card strong {
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.help-card small {
+    color: #64b9ff;
+    font-size: 0.74rem;
+}
+
+
+/* =========================================================
+   Main membership content
+   ========================================================= */
+
+.membership-main {
+    min-width: 0;
+    padding:
+        1.8rem
+        clamp(1.2rem, 2.7vw, 3rem)
+        1.8rem;
+    background:
+        radial-gradient(
+            circle at 50% -10%,
+            rgba(30, 126, 241, 0.07),
+            transparent 34%
+        ),
+        linear-gradient(
+            180deg,
+            #ffffff 0%,
+            #ffffff 72%,
+            #fbfcfe 100%
+        );
+}
+
+.membership-heading {
+    margin: 0 auto 1.65rem;
+    text-align: center;
+}
+
+.membership-heading h1 {
+    margin: 0;
+    color: var(--text-950);
+    font-size: clamp(2rem, 3vw, 2.62rem);
+    line-height: 1.08;
+    font-weight: 850;
+    letter-spacing: -0.045em;
+}
+
+.membership-heading p {
+    max-width: 700px;
+    margin: 0.48rem auto 1.2rem;
+    color: #68758d;
+    font-size: 0.98rem;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   Monthly / annual toggle
+   ========================================================= */
+
+.billing-toggle {
+    width: fit-content;
+    min-height: 40px;
+    margin: 0 auto;
+    border: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    background: transparent;
+}
+
+.billing-toggle button {
+    position: relative;
+    min-width: 158px;
+    min-height: 38px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    padding: 0.58rem 0.95rem;
+    color: #5f6a7e;
+    background: transparent;
+    font: inherit;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    font-weight: 750;
+    cursor: pointer;
+    transition:
+        color 0.18s ease,
+        border-color 0.18s ease,
+        background-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.billing-toggle button:hover {
+    color: var(--blue-600);
+    background: #f6faff;
+}
+
+.billing-toggle button.active {
+    border-color: #248cff;
+    color: var(--blue-700);
+    background: #ffffff;
+    box-shadow:
+        0 0 0 1px rgba(22, 140, 255, 0.13),
+        0 4px 12px rgba(30, 92, 162, 0.08);
+}
+
+.billing-toggle span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.38rem;
+    padding: 0.17rem 0.42rem;
+    border-radius: 999px;
+    color: var(--green-700);
+    background: var(--green-100);
+    font-size: 0.64rem;
+    line-height: 1;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   Plan cards
+   ========================================================= */
+
+.plan-grid {
+    width: 100%;
+    max-width: 1110px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.45rem;
+    align-items: stretch;
+}
+
+.plan-card {
+    position: relative;
+    min-width: 0;
+    min-height: 590px;
+    padding: 1.52rem 1.45rem 1.28rem;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    text-align: center;
+    background: #ffffff;
+    box-shadow:
+        0 8px 24px rgba(19, 43, 76, 0.07),
+        0 2px 6px rgba(19, 43, 76, 0.025);
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.plan-card:hover {
+    transform: translateY(-3px);
+    border-color: #d4deea;
+    box-shadow:
+        0 15px 35px rgba(19, 43, 76, 0.11),
+        0 3px 8px rgba(19, 43, 76, 0.04);
+}
+
+.plan-card.featured {
+    z-index: 2;
+    border: 1.5px solid var(--blue-500);
+    box-shadow:
+        0 14px 36px rgba(8, 112, 231, 0.14),
+        0 3px 9px rgba(8, 112, 231, 0.05);
+}
+
+.plan-card.featured:hover {
+    border-color: var(--blue-600);
+    box-shadow:
+        0 18px 42px rgba(8, 112, 231, 0.18),
+        0 4px 10px rgba(8, 112, 231, 0.06);
+}
+
+.popular-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    min-width: 128px;
+    padding: 0.29rem 0.78rem;
+    border-radius: 999px;
+    color: #ffffff;
+    background:
+        linear-gradient(
+            90deg,
+            #006de5,
+            #087cf0
+        );
+    box-shadow: 0 4px 10px rgba(0, 107, 230, 0.2);
+    font-size: 0.66rem;
+    line-height: 1;
+    font-weight: 850;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
+    transform: translateX(-50%);
+}
+
+
+/* =========================================================
+   Plan icons
+   ========================================================= */
+
+.plan-icon {
+    width: 58px;
+    height: 58px;
+    margin: 0.08rem auto 0.72rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--blue-600);
+    background:
+        linear-gradient(
+            145deg,
+            #dceeff,
+            #edf7ff
+        );
+    font-size: 1.62rem;
+}
+
+.private-plan .plan-icon {
+    color: var(--blue-600);
+    background:
+        linear-gradient(
+            145deg,
+            #d7ebff,
+            #edf7ff
+        );
+}
+
+.commercial-plan .plan-icon {
+    color: #ffffff;
+    background:
+        linear-gradient(
+            145deg,
+            #46a7ff,
+            #0877e7
+        );
+    box-shadow: 0 6px 16px rgba(8, 124, 240, 0.2);
+}
+
+.enterprise-plan .plan-icon {
+    color: var(--purple-600);
+    background:
+        linear-gradient(
+            145deg,
+            #e8deff,
+            #f3eeff
+        );
+}
+
+
+/* =========================================================
+   Card typography and pricing
+   ========================================================= */
+
+.plan-card h2 {
+    margin: 0;
+    color: var(--text-950);
+    font-size: 1.33rem;
+    line-height: 1.2;
+    font-weight: 850;
+    letter-spacing: -0.025em;
+}
+
+.plan-summary {
+    min-height: 52px;
+    max-width: 250px;
+    margin: 0.4rem auto 0.74rem;
+    color: #5f6b7e;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.price-row {
+    min-height: 56px;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.currency {
+    color: var(--text-950);
+    font-size: 1.22rem;
+    line-height: 1;
+    font-weight: 850;
+}
+
+.price {
+    color: var(--text-950);
+    font-size: 2.42rem;
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: -0.055em;
+}
+
+.period {
+    margin-left: 0.32rem;
+    color: var(--text-950);
+    font-size: 0.82rem;
+    line-height: 1;
+    font-weight: 750;
+}
+
+.commercial-plan .currency,
+.commercial-plan .price {
+    color: var(--blue-600);
+}
+
+.billing-note {
+    min-height: 18px;
+    margin: 0.32rem 0 0;
+    color: #7b8596;
+    font-size: 0.7rem;
+    line-height: 1.35;
+}
+
+
+/* =========================================================
+   Annual billing totals
+   CSS-only: shown when the Annual Billing button is active.
+   ========================================================= */
+
+.membership-page:has(
+    .billing-toggle button:nth-child(2).active
+) .billing-note::after {
+    margin-left: 0.3rem;
+    color: #536176;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.membership-page:has(
+    .billing-toggle button:nth-child(2).active
+) .private-plan .billing-note::after {
+    content: "• $948 total for the year";
+}
+
+.membership-page:has(
+    .billing-toggle button:nth-child(2).active
+) .commercial-plan .billing-note::after {
+    content: "• $3,828 total for the year";
+}
+
+.membership-page:has(
+    .billing-toggle button:nth-child(2).active
+) .enterprise-plan .billing-note::after {
+    content: "• $9,588 total for the year";
+}
+
+
+/* =========================================================
+   Features
+   ========================================================= */
+
+.plan-divider {
+    width: 100%;
+    height: 1px;
+    margin: 0.9rem 0 1rem;
+    background: var(--border);
+}
+
+.plan-card ul {
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.62rem;
+    text-align: left;
+    list-style: none;
+}
+
+.plan-card li {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 15px minmax(0, 1fr);
+    gap: 0.52rem;
+    align-items: start;
+    color: #27364d;
+    font-size: 0.76rem;
+    line-height: 1.38;
+}
+
+.plan-card li i {
+    margin-top: 0.13rem;
+    color: var(--blue-600);
+    font-size: 0.75rem;
+}
+
+.enterprise-plan li i {
+    color: var(--purple-600);
+}
+
+
+/* =========================================================
+   Plan buttons
+   ========================================================= */
+
+.plan-button {
+    min-height: 47px;
+    margin-top: auto;
+    border: 1.5px solid var(--blue-600);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    padding: 0.7rem 1rem;
+    color: var(--blue-600);
+    background: #ffffff;
+    font-size: 0.83rem;
+    line-height: 1.25;
+    font-weight: 850;
+    text-align: center;
+    text-decoration: none;
+    transition:
+        transform 0.18s ease,
+        color 0.18s ease,
+        border-color 0.18s ease,
+        background-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.plan-button:hover {
+    transform: translateY(-2px);
+    color: #ffffff;
+    background: var(--blue-600);
+    box-shadow: 0 8px 20px rgba(8, 124, 240, 0.2);
+}
+
+.commercial-plan .plan-button {
+    border-color: var(--blue-600);
+    color: #ffffff;
+    background:
+        linear-gradient(
+            90deg,
+            #0870e4,
+            #0789f9
+        );
+    box-shadow: 0 8px 18px rgba(7, 124, 240, 0.23);
+}
+
+.commercial-plan .plan-button:hover {
+    background:
+        linear-gradient(
+            90deg,
+            #0067d8,
+            #007ff0
+        );
+    box-shadow: 0 10px 24px rgba(7, 124, 240, 0.3);
+}
+
+.enterprise-plan .plan-button {
+    border-color: var(--purple-600);
+    color: var(--purple-600);
+    background: #ffffff;
+}
+
+.enterprise-plan .plan-button:hover {
+    color: #ffffff;
+    background: var(--purple-600);
+    box-shadow: 0 8px 20px rgba(112, 71, 232, 0.22);
+}
+
+
+/* =========================================================
+   Trust strip
+   ========================================================= */
+
+.trust-strip {
+    width: 100%;
+    max-width: 1110px;
+    margin: 1.42rem auto 0;
+    padding: 1rem 1.35rem;
+    border: 1px solid #e5eaf1;
+    border-radius: 11px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    background: #ffffff;
+    box-shadow:
+        0 7px 22px rgba(20, 42, 74, 0.055),
+        0 2px 5px rgba(20, 42, 74, 0.02);
+}
+
+.trust-strip > div {
+    min-width: 0;
+    padding: 0 1.08rem;
+    display: flex;
+    gap: 0.82rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.trust-strip > div + div {
+    border-left: 1px solid #e5eaf0;
+}
+
+.trust-strip i {
+    flex: 0 0 auto;
+    color: var(--blue-600);
+    font-size: 1.7rem;
+}
+
+.trust-strip span {
+    min-width: 0;
+    display: grid;
+    gap: 0.14rem;
+    text-align: left;
+}
+
+.trust-strip strong {
+    color: var(--text-950);
+    font-size: 0.8rem;
+    line-height: 1.25;
+    font-weight: 850;
+}
+
+.trust-strip small {
+    color: #778398;
+    font-size: 0.68rem;
+    line-height: 1.35;
+}
+
+
+/* =========================================================
+   Keyboard accessibility
+   ========================================================= */
+
+.billing-toggle button:focus-visible,
+.plan-button:focus-visible,
+.help-card:focus-visible {
+    outline: 3px solid rgba(22, 140, 255, 0.3);
+    outline-offset: 3px;
+}
+
+
+/* =========================================================
+   Medium desktop and laptop sizes
+   ========================================================= */
+
+@media (max-width: 1250px) {
+    .membership-page {
+        grid-template-columns: 270px minmax(0, 1fr);
+    }
+
+    .sidebar-content {
+        padding-right: 1.45rem;
+        padding-left: 1.45rem;
+    }
+
+    .membership-main {
+        padding-right: 1.4rem;
+        padding-left: 1.4rem;
+    }
+
+    .plan-grid {
+        gap: 1rem;
+    }
+
+    .plan-card {
+        padding-right: 1.15rem;
+        padding-left: 1.15rem;
+    }
+}
+
+@media (max-width: 1080px) {
+    .membership-page {
+        grid-template-columns: 235px minmax(0, 1fr);
+    }
+
+    .sidebar-content {
+        padding-right: 1.15rem;
+        padding-left: 1.15rem;
+    }
+
+    .benefit-item {
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 0.6rem;
+    }
+
+    .benefit-icon {
+        width: 29px;
+        height: 29px;
+    }
+
+    .plan-grid {
+        gap: 0.75rem;
+    }
+
+    .plan-card {
+        padding-right: 0.9rem;
+        padding-left: 0.9rem;
+    }
+
+    .plan-card li {
+        font-size: 0.72rem;
+    }
+
+    .plan-button {
+        font-size: 0.77rem;
+    }
+
+    .membership-page:has(
+        .billing-toggle button:nth-child(2).active
+    ) .billing-note::after {
+        display: block;
+        margin-top: 0.08rem;
+        margin-left: 0;
+    }
+}
+
+
+/* =========================================================
+   Tablet
+   ========================================================= */
+
+@media (max-width: 900px) {
+    .membership-page {
+        min-height: auto;
+        display: block;
+        overflow: visible;
+    }
+
+    .membership-sidebar {
+        display: none;
+    }
+
+    .membership-main {
+        padding:
+            1.8rem
+            clamp(1rem, 4vw, 2rem)
+            2rem;
+    }
+
+    .plan-grid {
+        max-width: 590px;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .plan-card {
+        min-height: 0;
+        padding: 1.6rem 1.5rem 1.35rem;
+    }
+
+    .plan-summary {
+        min-height: 0;
+    }
+
+    .plan-card ul {
+        margin-bottom: 1.5rem;
+    }
+
+    .trust-strip {
+        max-width: 590px;
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .trust-strip > div {
+        padding: 0.65rem 0;
+        justify-content: flex-start;
+    }
+
+    .trust-strip > div + div {
+        border-top: 1px solid #e5eaf0;
+        border-left: 0;
+    }
+
+    .membership-page:has(
+        .billing-toggle button:nth-child(2).active
+    ) .billing-note::after {
+        display: inline;
+        margin-top: 0;
+        margin-left: 0.3rem;
+    }
+}
+
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media (max-width: 560px) {
+    .membership-main {
+        padding:
+            1.35rem
+            0.78rem
+            1.5rem;
+    }
+
+    .membership-heading {
+        margin-bottom: 1.35rem;
+    }
+
+    .membership-heading h1 {
+        font-size: 1.8rem;
+    }
+
+    .membership-heading p {
+        margin-top: 0.4rem;
+        font-size: 0.86rem;
+    }
+
+    .billing-toggle {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.4rem;
+    }
+
+    .billing-toggle button {
+        min-width: 0;
+        width: 100%;
+        padding-right: 0.45rem;
+        padding-left: 0.45rem;
+        font-size: 0.74rem;
+    }
+
+    .billing-toggle span {
+        display: block;
+        width: fit-content;
+        margin: 0.22rem auto 0;
+    }
+
+    .plan-card {
+        padding:
+            1.5rem
+            1.05rem
+            1.15rem;
+        border-radius: 12px;
+    }
+
+    .price {
+        font-size: 2.2rem;
+    }
+
+    .plan-card li {
+        font-size: 0.74rem;
+    }
+
+    .membership-page:has(
+        .billing-toggle button:nth-child(2).active
+    ) .billing-note::after {
+        display: block;
+        margin-top: 0.12rem;
+        margin-left: 0;
+    }
+
+    .trust-strip {
+        padding: 0.7rem 1rem;
+    }
+}
+
+
+/* =========================================================
+   Very small screens
+   ========================================================= */
+
+@media (max-width: 380px) {
+    .billing-toggle {
+        grid-template-columns: 1fr;
+    }
+
+    .billing-toggle button {
+        min-height: 40px;
+    }
+
+    .membership-heading h1 {
+        font-size: 1.65rem;
+    }
+}
+
+
+/* =========================================================
+   Reduced motion
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .plan-card,
+    .plan-button,
+    .help-card,
+    .billing-toggle button {
+        transition: none;
+    }
+}

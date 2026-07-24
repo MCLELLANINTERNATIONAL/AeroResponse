@@ -1,28 +1,295 @@
 @page "/membership"
+@rendermode InteractiveServer
 
 <PageTitle>Membership | AeroResponse</PageTitle>
 
-<section class="scenario-page">
-    <div class="scenario-header">
-        <div>
-            <span class="scenario-eyebrow">
-                Training access
-            </span>
+<div class="membership-page">
+    <aside class="membership-sidebar" aria-label="Membership benefits">
+        <div class="sidebar-aircraft"
+             role="img"
+             aria-label="Passenger aircraft on a runway">
+        </div>
 
-            <h1>Membership</h1>
+        <div class="sidebar-content">
+            <h2>All Plans Include</h2>
+
+            <div class="benefit-list">
+                @foreach (var benefit in Benefits)
+                {
+                    <div class="benefit-item">
+                        <div class="benefit-icon">
+                            <i class="@benefit.Icon" aria-hidden="true"></i>
+                        </div>
+
+                        <div>
+                            <h3>@benefit.Title</h3>
+                            <p>@benefit.Description</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <a class="help-card" href="mailto:support@aeroresponse.com">
+                <i class="fa-solid fa-headset" aria-hidden="true"></i>
+
+                <span>
+                    <strong>Need help choosing?</strong>
+                    <small>Contact our team</small>
+                </span>
+
+                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </a>
+        </div>
+    </aside>
+
+    <main class="membership-main">
+        <header class="membership-heading">
+            <h1>Choose Your Plan</h1>
 
             <p>
-                Choose the training plan that fits your aviation goals.
+                Flexible membership options for private pilots,
+                aviation businesses and large commercial operators.
             </p>
-        </div>
-    </div>
 
-    <div class="scenario-content-card page-placeholder-card">
-        <h2>Membership options are coming soon.</h2>
+            <div class="billing-toggle"
+                 role="group"
+                 aria-label="Billing frequency">
 
-        <p>
-            Use this page for subscription tiers, billing,
-            and access management.
-        </p>
-    </div>
-</section>
+                <button class="@(!IsAnnual ? "active" : null)"
+                        type="button"
+                        aria-pressed="@(!IsAnnual)"
+                        @onclick="() => IsAnnual = false">
+                    Monthly Billing
+                </button>
+
+                <button class="@(IsAnnual ? "active" : null)"
+                        type="button"
+                        aria-pressed="@IsAnnual"
+                        @onclick="() => IsAnnual = true">
+                    Annual Billing
+                    <span>Save 20%</span>
+                </button>
+            </div>
+        </header>
+
+        <section class="plan-grid" aria-label="Membership plans">
+            @foreach (var plan in Plans)
+            {
+                <article class="plan-card @(plan.Featured ? "featured" : null) @plan.AccentClass">
+                    @if (plan.Featured)
+                    {
+                        <div class="popular-badge">Most Popular</div>
+                    }
+
+                    <div class="plan-icon">
+                        <i class="@plan.Icon" aria-hidden="true"></i>
+                    </div>
+
+                    <h2>@plan.Name</h2>
+
+                    <p class="plan-summary">@plan.Summary</p>
+
+                    <div class="price-row">
+                        <span class="currency">$</span>
+                        <span class="price">@GetPrice(plan)</span>
+                        <span class="period">/month</span>
+                    </div>
+
+                    <p class="billing-note">
+                        @(IsAnnual ? "Billed annually" : "Billed monthly")
+                    </p>
+
+                    <div class="plan-divider"></div>
+
+                    <ul>
+                        @foreach (var feature in plan.Features)
+                        {
+                            <li>
+                                <i class="fa-solid fa-circle-check"
+                                   aria-hidden="true"></i>
+
+                                <span>@feature</span>
+                            </li>
+                        }
+                    </ul>
+
+                    <a class="plan-button" href="@GetCheckoutLink(plan)">
+                        @plan.ButtonText
+                    </a>
+                </article>
+            }
+        </section>
+
+        <section class="trust-strip" aria-label="Membership assurances">
+            <div>
+                <i class="fa-solid fa-shield-halved"
+                   aria-hidden="true"></i>
+
+                <span>
+                    <strong>Secure &amp; Trusted</strong>
+                    <small>Your data is encrypted and secure</small>
+                </span>
+            </div>
+
+            <div>
+                <i class="fa-solid fa-arrows-rotate"
+                   aria-hidden="true"></i>
+
+                <span>
+                    <strong>Cancel Anytime</strong>
+                    <small>No long-term contracts. Ever.</small>
+                </span>
+            </div>
+
+            <div>
+                <i class="fa-solid fa-award"
+                   aria-hidden="true"></i>
+
+                <span>
+                    <strong>Money Back Guarantee</strong>
+                    <small>30-day money back guarantee</small>
+                </span>
+            </div>
+        </section>
+    </main>
+</div>
+
+@code {
+    private bool IsAnnual;
+
+    private decimal GetPrice(Plan plan)
+    {
+        return IsAnnual
+            ? Math.Round(plan.MonthlyPrice * 0.8m, 0)
+            : plan.MonthlyPrice;
+    }
+
+    private string GetCheckoutLink(Plan plan)
+    {
+        var encodedPlanName = Uri.EscapeDataString(plan.Name);
+        var billing = IsAnnual ? "annual" : "monthly";
+
+        return $"/checkout?plan={encodedPlanName}&billing={billing}";
+    }
+
+    private static readonly Benefit[] Benefits =
+    [
+        new(
+            "fa-solid fa-shield",
+            "Realistic Scenarios",
+            "Industry-expert designed emergency scenarios"
+        ),
+        new(
+            "fa-solid fa-gauge-high",
+            "Performance Tracking",
+            "Detailed metrics and progress monitoring"
+        ),
+        new(
+            "fa-solid fa-cube",
+            "Interactive Learning",
+            "Checklists, guides and best practices"
+        ),
+        new(
+            "fa-solid fa-chart-line",
+            "Analytics & Reports",
+            "Advanced insights and performance analytics"
+        ),
+        new(
+            "fa-solid fa-certificate",
+            "Certificate of Completion",
+            "Earn certificates for completed training"
+        ),
+        new(
+            "fa-solid fa-desktop",
+            "Multi-Device Access",
+            "Train anytime, anywhere on any device"
+        )
+    ];
+
+    private static readonly Plan[] Plans =
+    [
+        new(
+            Name: "Private",
+            Summary: "Personal emergency training for private pilots.",
+            MonthlyPrice: 99m,
+            Icon: "fa-regular fa-paper-plane",
+            AccentClass: "private-plan",
+            Features:
+            [
+                "10 Training Scenarios per Month",
+                "General Aviation Aircraft Access",
+                "Personal Performance Tracking",
+                "Interactive Emergency Checklists",
+                "Training History & Progress Reports",
+                "Certificates of Completion",
+                "Email Support",
+                "Mobile & Web Access"
+            ],
+            ButtonText: "Start Private Plan",
+            Link: "/signup",
+            Featured: false
+        ),
+        new(
+            Name: "Small Commercial",
+            Summary: "Team training for flight schools, charter operators and small aviation companies.",
+            MonthlyPrice: 399m,
+            Icon: "fa-regular fa-star",
+            AccentClass: "commercial-plan",
+            Features:
+            [
+                "Everything in Private",
+                "Team Management for Up to 25 Pilots",
+                "Commercial & Turboprop Aircraft Access",
+                "Team Performance Dashboard",
+                "Scenario Assignment to Pilots",
+                "Shared Training Records",
+                "Custom Procedures & Checklists",
+                "Priority Email Support"
+            ],
+            ButtonText: "Start Small Commercial Plan",
+            Link: "/signup",
+            Featured: true
+        ),
+        new(
+            Name: "Large Commercial",
+            Summary: "Enterprise training management for airlines and large aviation organisations.",
+            MonthlyPrice: 999m,
+            Icon: "fa-solid fa-crown",
+            AccentClass: "enterprise-plan",
+            Features:
+            [
+                "Everything in Small Commercial",
+                "Unlimited Pilot Accounts",
+                "Fleet-Wide Training Management",
+                "Multi-Aircraft Fleet Support",
+                "Custom Emergency Scenarios",
+                "Instructor & Administrator Accounts",
+                "Compliance & Advanced Analytics Reports",
+                "API & System Integration Access",
+                "Dedicated Account Manager",
+                "Priority Support Available 24/7"
+            ],
+            ButtonText: "Start Large Commercial Plan",
+            Link: "/contact",
+            Featured: false
+        )
+    ];
+
+    private sealed record Benefit(
+        string Icon,
+        string Title,
+        string Description
+    );
+
+    private sealed record Plan(
+        string Name,
+        string Summary,
+        decimal MonthlyPrice,
+        string Icon,
+        string AccentClass,
+        string[] Features,
+        string ButtonText,
+        string Link,
+        bool Featured
+    );
+}

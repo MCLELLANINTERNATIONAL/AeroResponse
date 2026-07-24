@@ -7,12 +7,21 @@
 
 <PageTitle>PILOT RESULTS DASHBOARD</PageTitle>
 
+@* =========================================================
+LOADING STATE
+========================================================= *@
+
 @if (_loading)
 {
     <div class="reports-loading">
         Loading pilot performance…
     </div>
 }
+
+@* =========================================================
+EMPTY DASHBOARD STATE
+========================================================= *@
+
 else if (_dashboard?.Latest is null)
 {
     <div class="reports-empty">
@@ -20,11 +29,20 @@ else if (_dashboard?.Latest is null)
         <p>Complete a practice scenario to populate this dashboard.</p>
     </div>
 }
+
+@* =========================================================
+MAIN DASHBOARD
+========================================================= *@
+
 else
 {
     var report = _dashboard.Latest;
 
     <main id="pilot-performance-report" class="reports-page">
+
+        @* =====================================================
+        DASHBOARD HEADER
+        ===================================================== *@
 
         <header class="reports-header">
             <div>
@@ -42,6 +60,10 @@ else
             </div>
         </header>
 
+        @* =====================================================
+        DASHBOARD NAVIGATION
+        ===================================================== *@
+
         <nav class="reports-tabs">
             <a class="active" href="#overview">◉ Overview</a>
             <a href="#scoring">⚙ Scoring</a>
@@ -56,12 +78,21 @@ else
         </button>
     </nav>
 
+    @* =====================================================
+    TOP DASHBOARD GRID
+    ===================================================== *@
+
     <section id="overview" class="reports-grid top-grid">
+
+        @* =================================================
+        OVERALL SCORE CARD
+        ================================================= *@
 
         <article class="report-card score-card">
             <h2>Overall Score</h2>
 
             <div class="score-main">
+
                 <div class="score-ring"
                 style="--score:@report.OverallScore">
 
@@ -106,103 +137,160 @@ else
         </div>
     </article>
 
+    @* =================================================
+    SCORE BREAKDOWN CARD
+    ================================================= *@
+
     <article id="scoring" class="report-card">
         <h2>Score Breakdown</h2>
 
-        @ScoreRow(
-        "Procedural Accuracy",
-        report.ChecklistAccuracyScore,
-        "blue")
-
-        @ScoreRow(
-        "Decision Making",
-        report.DecisionMakingScore,
-        "green")
-
-        @ScoreRow(
-        "Checklist Usage",
-        report.ChecklistUsageScore,
-        "orange")
-
-        @ScoreRow(
-        "Time Management",
-        report.TimeManagementScore,
-        "purple")
-
-        @ScoreRow(
-        "Communication",
-        report.CommunicationScore,
-        "cyan")
-
-        <a class="card-link" href="#analytics">
-            View scoring details →
-        </a>
-    </article>
-
-    <article class="report-card scenario-summary">
-        <h2>Scenario Summary</h2>
-
-        <div class="scenario-title">
-            <span>✈</span>
-
-            <div>
-                <strong>@report.ScenarioName</strong>
-
-                <small>
-                    Completed on:
-                    @report.CompletedAt
-                    .ToLocalTime()
-                    .ToString("dd MMM yyyy 'at' HH:mm")
-                </small>
-
-                <small>
-                    Scenario Difficulty: @report.Difficulty
-                </small>
+        <div class="metric">
+            <div class="metric-result">
+                <span>Procedural Accuracy</span>
+                <strong>@report.ChecklistAccuracyScore%</strong>
             </div>
 
-            <b>EMERGENCY</b>
+            <div class="metric-track">
+                <div class="metric-fill blue"
+                style="width: @report.ChecklistAccuracyScore%;">
+            </div>
+        </div>
+    </div>
+
+    <div class="metric">
+        <div class="metric-result">
+            <span>Decision Making</span>
+            <strong>@report.DecisionMakingScore%</strong>
         </div>
 
-        <hr />
+        <div class="metric-track">
+            <div class="metric-fill green"
+            style="width: @report.DecisionMakingScore%;">
+        </div>
+    </div>
+</div>
 
-        @InfoRow(
-        "◷",
-        "Reaction Time",
-        $"{report.ReactionTimeSeconds}s")
+<div class="metric">
+    <div class="metric-result">
+        <span>Checklist Usage</span>
+        <strong>@report.ChecklistUsageScore%</strong>
+    </div>
 
-        @InfoRow(
-        "◷",
-        "Total Time",
-        Duration(report))
+    <div class="metric-track">
+        <div class="metric-fill orange"
+        style="width: @report.ChecklistUsageScore%;">
+    </div>
+</div>
+</div>
 
-        @InfoRow(
-        "◷",
-        "Start Time",
-        report.StartedAt
-        .ToLocalTime()
-        .ToString("HH:mm:ss"))
+<div class="metric">
+    <div class="metric-result">
+        <span>Time Management</span>
+        <strong>@report.TimeManagementScore%</strong>
+    </div>
 
-        @InfoRow(
-        "◷",
-        "End Time",
-        report.CompletedAt
-        .ToLocalTime()
-        .ToString("HH:mm:ss"))
+    <div class="metric-track">
+        <div class="metric-fill purple"
+        style="width: @report.TimeManagementScore%;">
+    </div>
+</div>
+</div>
 
-        @InfoRow(
-        "☑",
-        "Actions Taken",
-        report.ActionsTaken.ToString())
+<div class="metric">
+    <div class="metric-result">
+        <span>Communication</span>
+        <strong>@report.CommunicationScore%</strong>
+    </div>
 
-        @InfoRow(
-        "▣",
-        "Checklist Used",
-        $"{report.ChecklistUsageScore}%")
-    </article>
+    <div class="metric-track">
+        <div class="metric-fill cyan"
+        style="width: @report.CommunicationScore%;">
+    </div>
+</div>
+</div>
+
+<a class="card-link" href="#analytics">
+    View scoring details →
+</a>
+</article>
+
+
+@* =================================================
+SCENARIO SUMMARY CARD
+================================================= *@
+
+<article class="report-card scenario-summary">
+    <h2>Scenario Summary</h2>
+
+    <div class="scenario-title">
+        <span>✈</span>
+
+        <div>
+            <strong>@report.ScenarioName</strong>
+
+            <small>
+                Completed on:
+                @(report.CompletedAt
+                .ToLocalTime()
+                .ToString("dd MMM yyyy 'at' HH:mm"))
+            </small>
+
+            <small>
+                Scenario Difficulty: @report.Difficulty
+            </small>
+        </div>
+
+        <b>EMERGENCY</b>
+    </div>
+
+    <hr />
+
+    @InfoRow(
+    "◷",
+    "Reaction Time",
+    $"{report.ReactionTimeSeconds}s")
+
+    @InfoRow(
+    "◷",
+    "Total Time",
+    Duration(report))
+
+    @InfoRow(
+    "◷",
+    "Start Time",
+    report.StartedAt
+    .ToLocalTime()
+    .ToString("HH:mm:ss"))
+
+    @InfoRow(
+    "◷",
+    "End Time",
+    report.CompletedAt
+    .ToLocalTime()
+    .ToString("HH:mm:ss"))
+
+    @InfoRow(
+    "☑",
+    "Actions Taken",
+    report.ActionsTaken.ToString())
+
+    @InfoRow(
+    "▣",
+    "Checklist Used",
+    $"{report.ChecklistUsageScore}%")
+</article>
 
 </section>
 
+@* =====================================================
+BOTTOM DASHBOARD GRID
+===================================================== *@
+
 <section class="reports-grid bottom-grid">
+
+    @* =================================================
+    PERFORMANCE ANALYTICS CARD
+    ================================================= *@
 
     <article id="analytics"
     class="report-card analytics-card">
@@ -264,12 +352,17 @@ else
 
     <div>
         <small>Improvement</small>
+
         <strong class="positive">
             @Signed(_dashboard.Improvement)%
         </strong>
     </div>
 </div>
 </article>
+
+@* =================================================
+FEEDBACK CARD
+================================================= *@
 
 <article id="feedback"
 class="report-card feedback-card">
@@ -299,47 +392,55 @@ class="report-card feedback-card">
 </ul>
 </article>
 
+@* =================================================
+BADGES AND ACHIEVEMENTS CARD
+================================================= *@
+
 <article id="badges"
-        class="report-card badges-card">
+class="report-card badges-card">
 
-    <div class="card-heading">
-        <h2>Badges Earned</h2>
-        <span>@_dashboard.Achievements.Count earned</span>
-    </div>
+<div class="card-heading">
+    <h2>Badges Earned</h2>
+    <span>@_dashboard.Achievements.Count earned</span>
+</div>
 
-    <div class="badges-grid">
-        @foreach (var badge in _dashboard.Achievements)
-        {
-            <div class="badge">
-                <div class="badge-icon">
-                    @badge.Icon
-                </div>
+<div class="badges-grid">
 
-                <strong>@badge.Name</strong>
-
-                <small>
-                    Earned:
-                    @(badge.EarnedAt
-                        .ToLocalTime()
-                        .ToString("dd MMM yyyy"))
-                </small>
+    @foreach (var badge in _dashboard.Achievements)
+    {
+        <div class="badge">
+            <div class="badge-icon">
+                @badge.Icon
             </div>
-        }
 
-        <div class="badge locked">
-            <div class="badge-icon">🔒</div>
-
-            <strong>Perfect Score</strong>
+            <strong>@badge.Name</strong>
 
             <small>
-                Score 100% in any scenario
+                Earned:
+                @(badge.EarnedAt
+                .ToLocalTime()
+                .ToString("dd MMM yyyy"))
             </small>
         </div>
-    </div>
+    }
 
+    <div class="badge locked">
+        <div class="badge-icon">🔒</div>
+
+        <strong>Perfect Score</strong>
+
+        <small>
+            Score 100% in any scenario
+        </small>
+    </div>
+</div>
 </article>
 
 </section>
+
+@* =====================================================
+LIVE DASHBOARD STATUS
+===================================================== *@
 
 <p class="live-note">
     ● Live dashboard — refreshes automatically when a pilot
@@ -353,6 +454,7 @@ class="report-card feedback-card">
     private const string UserId = "test-pilot";
 
     private PerformanceDashboardVm? _dashboard;
+
     private bool _loading = true;
 
     protected override async Task OnInitializedAsync()
@@ -380,6 +482,7 @@ class="report-card feedback-card">
         try
         {
             _loading = true;
+
             _dashboard =
                 await DashboardService.GetDashboardAsync(UserId);
         }
@@ -394,29 +497,7 @@ class="report-card feedback-card">
             1,
             100 - (_dashboard?.Latest?.OverallScore ?? 0));
 
-    private MarkupString ScoreRow(
-        string label,
-        int value,
-        string colour)
-    {
-        value = Math.Clamp(value, 0, 100);
-
-        return new MarkupString(
-            $"""
-            <div class="metric">
-                <div>
-                    <span>{label}</span>
-                    <strong>{value}%</strong>
-                </div>
-
-                <div class="metric-track">
-                    <i class="{colour}" style="width:{value}%"></i>
-                </div>
-            </div>
-            """);
-    }
-
-    private MarkupString InfoRow(
+    private static MarkupString InfoRow(
         string icon,
         string label,
         string value)
@@ -433,7 +514,8 @@ class="report-card feedback-card">
 
     private static string Duration(SimulationReport report)
     {
-        var duration = report.CompletedAt - report.StartedAt;
+        var duration =
+            report.CompletedAt - report.StartedAt;
 
         if (duration < TimeSpan.Zero)
         {
@@ -493,7 +575,10 @@ class="report-card feedback-card">
                 (point, index) =>
                 {
                     var averageScore =
-                        Math.Clamp(55 + index * 2, 0, 100);
+                        Math.Clamp(
+                            55 + index * 2,
+                            0,
+                            100);
 
                     var y =
                         217 -
@@ -593,7 +678,7 @@ class="report-card feedback-card">
         }
 
         foreach (var invalidCharacter
-                in Path.GetInvalidFileNameChars())
+                 in Path.GetInvalidFileNameChars())
         {
             value =
                 value.Replace(

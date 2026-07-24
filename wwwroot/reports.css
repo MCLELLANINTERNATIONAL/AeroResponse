@@ -496,6 +496,8 @@
 
 .stat-row small {
     color: #718096;
+    font-weight: 800;
+    font-size: 0.9rem;
 }
 
 .stat-row strong {
@@ -600,9 +602,10 @@
 .badge small {
     display: block;
     margin-top: 6px;
-    font-size: 0.75rem;
+    font-size: 1rem;
+    font-weight: 800;
     line-height: 1.35;
-    color: #718096;
+    color: rgb(11, 181, 88);
     white-space: normal;
 }
 

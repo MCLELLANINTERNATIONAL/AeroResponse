@@ -1,0 +1,406 @@
+@page "/admin/aircraftmanagement"
+@rendermode InteractiveServer
+
+@using AeroResponse.Models
+@using AeroResponse.Services
+@using AeroResponse.Simulation.Layouts
+@using System.Linq
+
+@inject AircraftService AircraftService
+@inject ICockpitLayoutProvider LayoutProvider
+
+<PageTitle>Aircraft Management | AeroResponse</PageTitle>
+
+<section class="aircraft-management-page">
+    <header>
+        <p class="eyebrow">Administration</p>
+        <h1>Aircraft Management</h1>
+        <p>Create, view, edit, and delete aircraft records.</p>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(statusMessage))
+    {
+        <p role="status">@statusMessage</p>
+    }
+
+    @if (isLoading)
+    {
+        <p>Loading aircraft...</p>
+    }
+    else
+    {
+        <div class="aircraft-management-grid">
+
+            <section class="aircraft-list-panel">
+                <div class="panel-heading">
+                    <h2>Aircraft</h2>
+
+                    <button type="button"
+                            @onclick="StartNewAircraft">
+                        New Aircraft
+                    </button>
+                </div>
+
+                @if (aircraftList.Count == 0)
+                {
+                    <p>No aircraft have been created.</p>
+                }
+                else
+                {
+                    <select value="@selectedAircraftId"
+                            @onchange="SelectAircraftAsync">
+
+                        <option value="0">
+                            Select an aircraft
+                        </option>
+
+                        @foreach (var aircraft in aircraftList)
+                        {
+                            <option value="@aircraft.Id">
+                                @aircraft.Name
+                            </option>
+                        }
+
+                    </select>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Manufacturer</th>
+                                <th>Type</th>
+                                <th>Active</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var aircraft in aircraftList)
+                            {
+                                <tr>
+                                    <td>@aircraft.Name</td>
+                                    <td>@aircraft.Manufacturer</td>
+                                    <td>@aircraft.AircraftType</td>
+                                    <td>@(aircraft.IsActive ? "Yes" : "No")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </section>
+
+            <section class="aircraft-form-panel">
+                <h2>
+                    @(selectedAircraft.Id == 0
+                        ? "Create Aircraft"
+                        : "Edit Aircraft")
+                </h2>
+
+                  <EditForm Model="@selectedAircraft"
+                      OnValidSubmit="SaveAircraftAsync">
+
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="form-field">
+                        <label for="aircraft-name">Name</label>
+
+                        <InputText id="aircraft-name"
+                                   @bind-Value="selectedAircraft.Name" />
+                    </div>
+
+                    <div class="form-field">
+                        <label for="manufacturer">Manufacturer</label>
+
+                        <InputText id="manufacturer"
+                                   @bind-Value="selectedAircraft.Manufacturer" />
+                    </div>
+
+                    <div class="form-field">
+                        <label for="aircraft-type">Aircraft Type</label>
+
+                        <InputText id="aircraft-type"
+                                   @bind-Value="selectedAircraft.AircraftType" />
+                    </div>
+
+                    <div class="form-field">
+                        <label for="description">Description</label>
+
+                        <InputTextArea id="description"
+                                       @bind-Value="selectedAircraft.Description" />
+                    </div>
+
+                    <div class="form-field">
+                        <label for="max-altitude">Maximum Altitude</label>
+
+                        <InputNumber id="max-altitude"
+                                     @bind-Value="selectedAircraft.MaxAltitude" />
+                    </div>
+
+                    <div class="form-field">
+                        <label for="cruise-speed">Cruise Speed</label>
+
+                        <InputNumber id="cruise-speed"
+                                     @bind-Value="selectedAircraft.CruiseSpeed" />
+                    </div>
+
+                    <div class="form-field">
+                        <label for="engine-count">Engine Count</label>
+
+                        <InputNumber id="engine-count"
+                                     @bind-Value="selectedAircraft.EngineCount" />
+                    </div>
+
+                    <div class="form-field">
+                        <label for="cockpit-layout">
+                            Cockpit Layout
+                        </label>
+
+                        <InputSelect id="cockpit-layout"
+                                    @bind-Value="selectedAircraft.CockpitLayoutKey">
+
+                            <option value="">
+                                Select a cockpit layout
+                            </option>
+
+                            @if (!string.IsNullOrWhiteSpace(
+                                    selectedAircraft.CockpitLayoutKey) &&
+                                !LayoutExists(selectedAircraft.CockpitLayoutKey))
+                            {
+                                <option value="@selectedAircraft.CockpitLayoutKey">
+                                    Missing:
+                                    @selectedAircraft.CockpitLayoutKey
+                                </option>
+                            }
+
+                            @foreach (var layout in availableLayouts)
+                            {
+                                <option value="@(layout.Key)">
+                                    @(layout.Name)
+                                </option>
+                            }
+
+                        </InputSelect>
+
+                        @if (!string.IsNullOrWhiteSpace(
+                                selectedAircraft.CockpitLayoutKey) &&
+                            !LayoutExists(selectedAircraft.CockpitLayoutKey))
+                        {
+                            <p class="field-warning">
+                                This aircraft references a cockpit layout that is not
+                                installed on this system. Select another layout before
+                                saving unless the missing layout will be restored.
+                            </p>
+                        }
+                    </div>
+
+                    <div class="form-field" id="active-form-div">
+                        <label for="is-active">Active</label>
+                        <InputCheckbox id="is-active"
+                                       @bind-Value="selectedAircraft.IsActive" />
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit"
+                                disabled="@isSaving">
+                            @(selectedAircraft.Id == 0
+                                ? "Create Aircraft"
+                                : "Save Changes")
+                        </button>
+
+                        <button type="button"
+                                @onclick="StartNewAircraft">
+                            Clear
+                        </button>
+
+                        @if (selectedAircraft.Id != 0)
+                        {
+                            <button type="button"
+                                    @onclick="DeleteAircraftAsync">
+                                Delete Aircraft
+                            </button>
+                        }
+                    </div>
+
+                </EditForm>
+            </section>
+
+        </div>
+    }
+</section>
+
+@code {
+    private IReadOnlyList<Aircraft> aircraftList = [];
+    private IReadOnlyList<CockpitLayoutDefinition> availableLayouts = [];
+
+    private Aircraft selectedAircraft = CreateEmptyAircraft();
+
+    private int selectedAircraftId;
+
+    private bool isLoading = true;
+    private bool isSaving;
+
+    private string? statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        availableLayouts = LayoutProvider.GetLayouts();
+
+        await LoadAircraftAsync();
+
+        isLoading = false;
+    }
+
+    private async Task LoadAircraftAsync()
+    {
+        aircraftList = await AircraftService.GetAllAsync();
+    }
+
+    private async Task SelectAircraftAsync(ChangeEventArgs args)
+    {
+        if (!int.TryParse(
+                args.Value?.ToString(),
+                out var aircraftId))
+        {
+            return;
+        }
+
+        selectedAircraftId = aircraftId;
+        statusMessage = null;
+
+        if (aircraftId == 0)
+        {
+            StartNewAircraft();
+            return;
+        }
+
+        var aircraft =
+            await AircraftService.GetByIdAsync(aircraftId);
+
+        if (aircraft is null)
+        {
+            statusMessage = "Aircraft not found.";
+            await LoadAircraftAsync();
+            return;
+        }
+
+        selectedAircraft = aircraft;
+    }
+
+    private void StartNewAircraft()
+    {
+        selectedAircraftId = 0;
+        selectedAircraft = CreateEmptyAircraft();
+        statusMessage = null;
+    }
+
+    private async Task SaveAircraftAsync(EditContext editContext)
+    {
+        if (string.IsNullOrWhiteSpace(
+            selectedAircraft.CockpitLayoutKey))
+        {
+            statusMessage =
+                "Select a cockpit layout before saving.";
+
+            return;
+        }
+
+        if (!LayoutExists(
+                selectedAircraft.CockpitLayoutKey))
+        {
+            statusMessage =
+                "The selected cockpit layout is not installed.";
+
+            return;
+        }
+        isSaving = true;
+        statusMessage = null;
+
+        try
+        {
+            if (selectedAircraft.Id == 0)
+            {
+                selectedAircraft =
+                    await AircraftService.CreateAsync(
+                        selectedAircraft);
+
+                selectedAircraftId =
+                    selectedAircraft.Id;
+
+                statusMessage =
+                    $"{selectedAircraft.Name} was created.";
+            }
+            else
+            {
+                await AircraftService.UpdateAsync(
+                    selectedAircraft);
+
+                statusMessage =
+                    $"{selectedAircraft.Name} was updated.";
+            }
+
+            await LoadAircraftAsync();
+        }
+        catch (Exception exception)
+        {
+            statusMessage =
+                $"Aircraft could not be saved: {exception.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteAircraftAsync()
+    {
+        if (selectedAircraft.Id == 0)
+        {
+            return;
+        }
+
+        var aircraftName = selectedAircraft.Name;
+
+        try
+        {
+            var deleted =
+                await AircraftService.DeleteAsync(
+                    selectedAircraft.Id);
+
+            if (!deleted)
+            {
+                statusMessage =
+                    "Aircraft could not be found.";
+                return;
+            }
+
+            await LoadAircraftAsync();
+            StartNewAircraft();
+
+            statusMessage =
+                $"{aircraftName} was deleted.";
+        }
+        catch (Exception exception)
+        {
+            statusMessage =
+                $"Aircraft could not be deleted: {exception.Message}";
+        }
+    }
+
+    private static Aircraft CreateEmptyAircraft()
+    {
+        return new Aircraft
+        {
+            EngineCount = 1,
+            IsActive = true
+        };
+    }
+
+    private bool LayoutExists(string layoutKey)
+    {
+        return availableLayouts.Any(layout =>
+            string.Equals(
+                layout.Key,
+                layoutKey,
+                StringComparison.OrdinalIgnoreCase));
+    }
+}

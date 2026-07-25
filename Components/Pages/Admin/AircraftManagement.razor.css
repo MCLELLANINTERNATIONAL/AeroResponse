@@ -57,14 +57,15 @@
 .panel-heading {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 1rem;
     padding: 1.25rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .panel-heading h2 {
-    margin: 0;
+    text-align: center;
+    margin: 0.5rem 0 0;
 }
 
 .aircraft-list {
@@ -87,6 +88,7 @@
 }
 
 .aircraft-list-item:hover {
+    border-color: rgba(74, 160, 255, 0.6);
     background: rgba(255, 255, 255, 0.05);
 }
 
@@ -98,6 +100,16 @@
 .aircraft-list-item span,
 .aircraft-list-item small {
     opacity: 0.7;
+}
+
+.selection-panel {
+    display: grid;
+    place-items: center;
+}
+
+.selection-panel table {
+    justify-content: space-between;
+    gap: 0.25em;
 }
 
 .empty-message {
@@ -146,14 +158,25 @@ fieldset {
     padding: 0.7rem 0.8rem;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 0.55rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 1);
     color: inherit;
+}
+
+.form-control select option {
+    color: rgba(255, 255, 255, 1);
 }
 
 #active-form-div {
     text-align: left;
     align-items: left;
     justify-content: left;
+}
+
+#aircraft-titles, #aircraft-specifications {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+    gap: 0.65rem;
 }
 
 .description-input {
@@ -268,6 +291,259 @@ input #is-active {
 .button-danger {
     background: #a92d2d;
     color: white;
+}
+.layout-overlay {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+}
+
+.layout-overlay span {
+    color: rgba(0, 255, 255, 0.5);
+}
+
+.layout-overlay label, h3 {
+    color: rgba(0, 255, 255, 0.8);
+}
+
+.layout-overlay-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+}
+
+#layout-editor-title {
+    color: rgba(255, 255, 255, 1);
+}
+
+.layout-editor-panel {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: min(1100px, 100%);
+    max-height: calc(100vh - 3rem);
+    flex-direction: column;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 1rem;
+    background: #101820;
+    overflow: hidden;
+}
+
+.layout-editor-header,
+.layout-editor-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+}
+
+.layout-editor-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.layout-editor-header h2 {
+    margin: 0.5rem 0 0;
+}
+
+.layout-editor-actions {
+    justify-content: flex-end;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.overlay-close-button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.layout-editor-content {
+    display: grid;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.layout-editor-error {
+    margin: 1rem 1.5rem 0;
+    padding: 0.85rem 1rem;
+    border-left: 4px solid #ef6c6c;
+    border-radius: 0.5rem;
+    background: rgba(220, 60, 60, 0.14);
+    color: rgba(255, 255, 255, 1);
+}
+
+.dimension-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.section-heading-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.section-heading-row h3,
+.section-heading-row p {
+    margin-top: 0;
+    color: aqua;
+}
+
+.grid-size-badge {
+    flex: 0 0 auto;
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: aqua;
+    font-weight: 700;
+}
+
+.instrument-editor-list {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(250px, 1fr));
+    gap: 0.75rem;
+}
+
+.instrument-editor {
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.7rem;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.instrument-editor.selected {
+    border-color: rgba(80, 160, 255, 0.7);
+    background: rgba(80, 160, 255, 0.1);
+}
+
+.instrument-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.instrument-position-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.layout-preview {
+    display: grid;
+    gap: 0.5rem;
+    min-height: 180px;
+    padding: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.layout-preview-instrument {
+    display: grid;
+    place-content: center;
+    padding: 0.6rem;
+    border: 1px solid rgba(80, 160, 255, 0.7);
+    border-radius: 0.6rem;
+    background: rgba(80, 160, 255, 0.14);
+    text-align: center;
+    overflow: hidden;
+    color: rgba(0, 255, 255, 0.7);
+}
+
+.layout-preview-instrument small {
+    margin-top: 0.25rem;
+    opacity: 0.7;
+}
+.delete-layout-panel {
+    width: min(850px, 100%);
+}
+
+.delete-layout-warning {
+    padding: 1rem;
+    border-left: 4px solid currentColor;
+    border-radius: 0.6rem;
+    background: rgba(255, 180, 70, 0.1);
+    color: rgba(255, 255, 255, 1);
+}
+
+.delete-layout-warning p {
+    margin-bottom: 0;
+}
+
+.affected-aircraft-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.affected-aircraft {
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.7rem;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.affected-aircraft h3 {
+    margin-top: 0;
+}
+
+.affected-aircraft fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 0 0 1rem;
+    padding: 0;
+    border: 0;
+}
+
+.affected-aircraft legend {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 1);
+}
+
+.resolution-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+
+@media (max-width: 700px) {
+    .layout-overlay {
+        padding: 0;
+    }
+
+    .layout-editor-panel {
+        width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .dimension-grid,
+    .instrument-position-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-heading-row {
+        flex-direction: column;
+    }
 }
 
 @media (max-width: 850px) {

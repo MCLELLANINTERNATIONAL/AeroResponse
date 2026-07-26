@@ -134,7 +134,7 @@ fieldset {
     gap: 1rem;
 }
 
-.form-field {
+.form-field, .editor-form-field {
     display: grid;
     gap: 0.4rem;
 }
@@ -142,6 +142,10 @@ fieldset {
 .form-field label {
     font-weight: 700;
     color:black;
+}
+
+.editor-form-field label {
+    font-weight: 200;
 }
 
 .form-field small {
@@ -280,6 +284,10 @@ input #is-active {
     margin: 0.35rem 0 0;
 }
 
+button {
+    padding: 1rem;
+}
+
 .text-button {
     border: 0;
     background: transparent;
@@ -291,6 +299,12 @@ input #is-active {
 .button-danger {
     background: #a92d2d;
     color: white;
+}
+.button-secondary {
+    background: rgba(0, 255, 120, 0.7);
+    color: black;
+    box-shadow: 1px 1px 0px 0px #888888;
+    border: 0.5px solid rgba(010, 010, 010, 1);
 }
 .layout-overlay {
     position: fixed;

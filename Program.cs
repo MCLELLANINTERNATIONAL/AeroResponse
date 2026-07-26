@@ -62,11 +62,13 @@ builder.Services.AddScoped(
 
 // Entity-specific repositories.
 builder.Services.AddScoped<AircraftRepository>();
+builder.Services.AddScoped<CockpitLayoutRepository>();
 builder.Services.AddScoped<ScenarioRepository>();
 builder.Services.AddScoped<MembershipRepository>();
 
 // Application services.
 builder.Services.AddScoped<AircraftService>();
+builder.Services.AddScoped<CockpitLayoutService>();
 builder.Services.AddScoped<ScenarioService>();
 builder.Services.AddScoped<MembershipService>();
 builder.Services.AddScoped<PerformanceService>();

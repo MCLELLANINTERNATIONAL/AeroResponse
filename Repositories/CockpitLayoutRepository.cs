@@ -52,7 +52,7 @@ public class CockpitLayoutRepository(
         {
             CockpitLayout savedLayout;
 
-            if (existingLayoutId.HasValue)
+           if (existingLayoutId.HasValue)
             {
                 savedLayout =
                     await context.CockpitLayouts
@@ -66,17 +66,21 @@ public class CockpitLayoutRepository(
 
                 savedLayout.Key = layout.Key;
                 savedLayout.Name = layout.Name;
-                savedLayout.Rows = layout.Rows;
-                savedLayout.Columns = layout.Columns;
+                savedLayout.IsBuiltIn = layout.IsBuiltIn;
+                savedLayout.UpdatedAt = DateTime.UtcNow;
 
-                savedLayout.Instruments =
-                    CloneInstruments(layout.Instruments);
-
-                savedLayout.IsBuiltIn =
-                    layout.IsBuiltIn;
-
-                savedLayout.UpdatedAt =
-                    DateTime.UtcNow;
+                savedLayout.Details = new CockpitLayoutDetails
+                {
+                    AircraftId = layout.Details.AircraftId,
+                    Rows = layout.Details.Rows,
+                    Columns = layout.Details.Columns,
+                    Instruments = CloneInstruments(layout.Details.Instruments),
+                    EngineCount = layout.Details.EngineCount,
+                    Airspeed = layout.Details.Airspeed,
+                    ArtificialHorizon = layout.Details.ArtificialHorizon,
+                    VSI = layout.Details.VSI,
+                    DefaultState = layout.Details.DefaultState
+                };
             }
             else
             {
@@ -86,20 +90,25 @@ public class CockpitLayoutRepository(
                 {
                     Key = layout.Key,
                     Name = layout.Name,
-                    Rows = layout.Rows,
-                    Columns = layout.Columns,
-
-                    Instruments =
-                        CloneInstruments(
-                            layout.Instruments),
-
                     IsBuiltIn = layout.IsBuiltIn,
                     CreatedAt = now,
-                    UpdatedAt = now
+                    UpdatedAt = now,
+
+                    Details = new CockpitLayoutDetails
+                    {
+                        AircraftId = layout.Details.AircraftId,
+                        Rows = layout.Details.Rows,
+                        Columns = layout.Details.Columns,
+                        Instruments = CloneInstruments(layout.Details.Instruments),
+                        EngineCount = layout.Details.EngineCount,
+                        Airspeed = layout.Details.Airspeed,
+                        ArtificialHorizon = layout.Details.ArtificialHorizon,
+                        VSI = layout.Details.VSI,
+                        DefaultState = layout.Details.DefaultState
+                    }
                 };
 
-                await context.CockpitLayouts.AddAsync(
-                    savedLayout);
+                await context.CockpitLayouts.AddAsync(savedLayout);
             }
 
             var keyChanged = !string.Equals(

@@ -11,6 +11,7 @@
 @inject SimulationEngine SimulationEngine
 @inject SimulationSelectionStorage SelectionStorage
 @inject NavigationManager Navigation
+@inject AircraftService AircraftService
 
 <PageTitle>Select Simulation</PageTitle>
 
@@ -93,27 +94,27 @@
                         @foreach (var aircraft in _aircraftOptions)
                         {
                             var isSelected =
-                                aircraft.Key == _selectedAircraftKey;
+                                aircraft.Id == _selectedAircraftId;
 
                             <button type="button"
                                     class="option-card @(isSelected ? "selected" : null)"
-                                    @onclick="() => SelectAircraft(aircraft)">
+                                    @onclick="() => SelectAircraftAsync(aircraft)">
 
                                 <span class="option-title">
                                     @aircraft.Name
                                 </span>
 
                                 <span class="option-detail">
-                                     | 
+                                    | 
                                     @aircraft.EngineCount
                                     @(aircraft.EngineCount == 1
                                         ? " engine"
                                         : " engines")
-                                     | 
+                                    | 
                                 </span>
 
                                 <span class="option-detail">
-                                    @aircraft.Instruments.Count total instruments.
+                                    @aircraft.Manufacturer
                                 </span>
 
                             </button>
@@ -187,13 +188,13 @@
                     <dl class="aircraft-details">
 
                         <div>
-                            <dt>Aircraft ID</dt>
-                            <dd>@SelectedAircraft.AircraftId</dd>
+                            <dt>Manufacturer</dt>
+                            <dd>@SelectedAircraft.Manufacturer</dd>
                         </div>
 
                         <div>
                             <dt>Layout Key</dt>
-                            <dd>@SelectedAircraft.Key</dd>
+                            <dd>@SelectedAircraft.CockpitLayoutKey</dd>
                         </div>
 
                         <div>
@@ -201,18 +202,21 @@
                             <dd>@SelectedAircraft.EngineCount</dd>
                         </div>
 
-                        <div>
-                            <dt>Panel</dt>
-                            <dd>
-                                @SelectedAircraft.Columns ×
-                                @SelectedAircraft.Rows
-                            </dd>
-                        </div>
+                        @if (_selectedAircraftLayout is not null)
+                        {
+                            <div>
+                                <dt>Panel</dt>
+                                <dd>
+                                    @_selectedAircraftLayout.Columns ×
+                                    @_selectedAircraftLayout.Rows
+                                </dd>
+                            </div>
 
-                        <div>
-                            <dt>Instruments</dt>
-                            <dd>@SelectedAircraft.Instruments.Count</dd>
-                        </div>
+                            <div>
+                                <dt>Instruments</dt>
+                                <dd>@_selectedAircraftLayout.Instruments.Count</dd>
+                            </div>
+                        }
 
                     </dl>
                 }
@@ -239,11 +243,11 @@
                         scoring rules.
                     </p>
 
-                    @if (SelectedAircraft is not null)
+                    @if (_selectedAircraftLayout is not null)
                     {
                         var previewSteps =
                             SelectedScenario.GetProcedureSteps(
-                                SelectedAircraft,
+                                _selectedAircraftLayout,
                                 scenarioId: 0);
 
                         <h3>Training Objectives</h3>
@@ -303,15 +307,17 @@
 </main>
 
 @code {
-    private IReadOnlyList<CockpitLayoutDefinition> _aircraftOptions =
+    private IReadOnlyList<Aircraft> _aircraftOptions =
         [];
 
     private IReadOnlyList<ISimulationScenario> _scenarioOptions =
         [];
 
+    private CockpitLayoutDefinition? _selectedAircraftLayout;
+
     private SimulationSelectionModel? _savedSelection;
 
-    private string? _selectedAircraftKey;
+    private int? _selectedAircraftId;
     private string? _selectedScenarioType;
 
     private string? _validationMessage;
@@ -319,10 +325,10 @@
     private bool _isLoaded;
     private bool _isStarting;
 
-    private CockpitLayoutDefinition? SelectedAircraft =>
+    private Aircraft? SelectedAircraft =>
         _aircraftOptions.FirstOrDefault(
             aircraft =>
-                aircraft.Key == _selectedAircraftKey);
+                aircraft.Id == _selectedAircraftId);
 
     private ISimulationScenario? SelectedScenario =>
         _scenarioOptions.FirstOrDefault(
@@ -332,7 +338,8 @@
 
     private bool CanStart =>
         SelectedAircraft is not null &&
-        SelectedScenario is not null;
+        SelectedScenario is not null &&
+        _selectedAircraftLayout is not null;
 
     protected override async Task OnAfterRenderAsync(
         bool firstRender)
@@ -343,7 +350,7 @@
         }
 
         _aircraftOptions =
-            LayoutProvider.GetLayouts();
+            await AircraftService.GetAllAsync();
 
         _scenarioOptions =
             SimulationEngine.GetScenarios();
@@ -351,13 +358,15 @@
         _savedSelection =
             await SelectionStorage.GetAsync();
 
-        if (_savedSelection?.IsValid == true)
+        if (_savedSelection?.IsValid == true &&
+            int.TryParse(
+                _savedSelection.AircraftKey,
+                out var savedAircraftId))
         {
-            var savedAircraftExists =
-                _aircraftOptions.Any(
+            var savedAircraft =
+                _aircraftOptions.FirstOrDefault(
                     aircraft =>
-                        aircraft.Key ==
-                        _savedSelection.AircraftKey);
+                        aircraft.Id == savedAircraftId);
 
             var savedScenarioExists =
                 _scenarioOptions.Any(
@@ -365,11 +374,10 @@
                         scenario.ScenarioType ==
                         _savedSelection.ScenarioType);
 
-            if (savedAircraftExists &&
+            if (savedAircraft is not null &&
                 savedScenarioExists)
             {
-                _selectedAircraftKey =
-                    _savedSelection.AircraftKey;
+                await SelectAircraftAsync(savedAircraft);
 
                 _selectedScenarioType =
                     _savedSelection.ScenarioType;
@@ -386,11 +394,29 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private void SelectAircraft(
-        CockpitLayoutDefinition aircraft)
+    private async Task SelectAircraftAsync(
+        Aircraft aircraft)
     {
-        _selectedAircraftKey = aircraft.Key;
+        _selectedAircraftId = aircraft.Id;
         _validationMessage = null;
+
+        try
+        {
+            _selectedAircraftLayout =
+                await LayoutProvider.GetLayout(
+                    aircraft.CockpitLayoutKey);
+
+            // Aircraft.EngineCount is the source of truth, not the layout's.
+            _selectedAircraftLayout.EngineCount = aircraft.EngineCount;
+        }
+        catch (KeyNotFoundException)
+        {
+            _selectedAircraftLayout = null;
+
+            _validationMessage =
+                $"'{aircraft.Name}' has no cockpit layout " +
+                "configured and cannot be used yet.";
+        }
     }
 
     private void SelectScenario(
@@ -425,7 +451,9 @@
         {
             var selection = new SimulationSelectionModel
             {
-                AircraftKey = SelectedAircraft.Key,
+                AircraftKey =
+                    SelectedAircraft.Id.ToString(),
+
                 ScenarioType = SelectedScenario.ScenarioType
             };
 
@@ -445,12 +473,6 @@
     private void NavigateToSimulation(
         SimulationSelectionModel selection)
     {
-        // The route is /simulation/{aircraftId}/{simulationType}, but this
-        // model only tracks AircraftKey — there's no separate AircraftId
-        // to route on. So AircraftKey fills the {aircraftId} route segment.
-        // The receiving page's route parameter name doesn't need to match
-        // this property name; it just needs a value that identifies the
-        // aircraft, and Key is the only one this model has.
         var aircraftKey =
             Uri.EscapeDataString(
                 selection.AircraftKey);
@@ -480,10 +502,15 @@
 
     private string GetAircraftName(string aircraftKey)
     {
+        if (!int.TryParse(aircraftKey, out var aircraftId))
+        {
+            return aircraftKey;
+        }
+
         return _aircraftOptions
                    .FirstOrDefault(
                        aircraft =>
-                           aircraft.Key == aircraftKey)
+                           aircraft.Id == aircraftId)
                    ?.Name
                ?? aircraftKey;
     }

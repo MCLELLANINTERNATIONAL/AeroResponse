@@ -16,6 +16,7 @@
 @inject SimulationSelectionStorage SelectionStorage
 @inject SimulationScenarioDataService ScenarioDataService
 @inject NavigationManager Navigation
+@inject AircraftService AircraftService
 
 <PageTitle>Simulation | AeroResponse</PageTitle>
 
@@ -81,12 +82,12 @@ else
 
                         <span class="selection-details">
                             <strong>
-                                @cockpitLayout.Name
+                                @selectedAircraft.Name
                             </strong>
 
                             <small>
-                                @cockpitLayout.EngineCount
-                                @(cockpitLayout.EngineCount == 1
+                                @selectedAircraft.EngineCount
+                                @(selectedAircraft.EngineCount == 1
                                     ? "engine"
                                     : "engines")
                             </small>
@@ -109,12 +110,12 @@ else
                             @foreach (var aircraft in _aircraftOptions)
                             {
                                 var isSelected =
-                                    aircraft.Key ==
-                                    cockpitLayout.Key;
+                                    aircraft.Id ==
+                                    selectedAircraft.Id;
 
                                 <button type="button"
                                         class="selector-dropdown-option
-                                               @(isSelected ? "selected" : null)"
+                                            @(isSelected ? "selected" : null)"
                                         role="menuitem"
                                         @onclick="() =>
                                             ChangeAircraftAsync(aircraft)">
@@ -578,8 +579,6 @@ else
     private readonly HashSet<int>
         _completedProcedureStepOrders = [];
 
-    private IReadOnlyList<CockpitLayoutDefinition>
-        _aircraftOptions = [];
 
     private IReadOnlyList<EmergencyScenario>
         _scenarioRecords = [];
@@ -596,6 +595,11 @@ else
     private bool _needsStorageCheck;
     private bool _isAircraftMenuOpen;
     private bool _isScenarioMenuOpen;
+    private IReadOnlyList<Aircraft>
+        _aircraftOptions = [];
+
+    private Aircraft
+        selectedAircraft = default!;
 
     [Parameter]
     public string? AircraftKey { get; set; }
@@ -625,8 +629,21 @@ else
         _isReady = false;
         _loadFailed = false;
 
-        _aircraftOptions =
-            LayoutProvider.GetLayouts();
+        var allAircraft =
+            await AircraftService.GetAllAsync();
+
+        var availableLayoutKeys =
+            (await LayoutProvider.GetLayouts())
+                .Select(layout => layout.Key)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        _aircraftOptions = allAircraft
+            .Where(aircraft =>
+                !string.IsNullOrWhiteSpace(
+                    aircraft.CockpitLayoutKey) &&
+                availableLayoutKeys.Contains(
+                    aircraft.CockpitLayoutKey))
+            .ToArray();
 
         _scenarioRecords =
             await ScenarioDataService
@@ -660,8 +677,11 @@ else
         var savedSelection =
             await SelectionStorage.GetAsync();
 
-        if (savedSelection?.IsValid != true)
+        if (savedSelection?.IsValid != true ||
+            !int.TryParse(savedSelection.AircraftKey, out _))
         {
+            await SelectionStorage.ClearAsync();
+
             Navigation.NavigateTo(
                 "/simulation/select");
 
@@ -677,33 +697,47 @@ else
     }
 
     private async Task LoadSelectionAsync(
-        string aircraftKey,
-        string scenarioType)
+    string aircraftKey,
+    string scenarioType)
+{
+    try
     {
-        try
+        if (!int.TryParse(aircraftKey, out var aircraftId))
         {
-            cockpitLayout =
-                LayoutProvider.GetLayout(
-                    aircraftKey);
-
-            selectedScenarioRecord =
-                FindScenarioRecord(
-                    scenarioType)
-                ?? throw new InvalidOperationException(
-                    $"Database scenario '{scenarioType}' was not found.");
-
-            selectedRuntimeScenario =
-                SimulationEngine.GetScenario(
-                    selectedScenarioRecord.EmergencyType);
-
-            await InitializeSimulationStateAsync();
+            throw new InvalidOperationException(
+                $"'{aircraftKey}' is not a valid aircraft identifier.");
         }
-        catch
-        {
-            _loadFailed = true;
-            _isReady = false;
-        }
+
+        selectedAircraft =
+            await AircraftService.GetByIdAsync(aircraftId)
+            ?? throw new KeyNotFoundException(
+                $"Aircraft {aircraftId} was not found.");
+
+        cockpitLayout =
+            await LayoutProvider.GetLayout(
+                selectedAircraft.CockpitLayoutKey);
+
+        cockpitLayout.EngineCount = selectedAircraft.EngineCount;
+
+        selectedScenarioRecord =
+            FindScenarioRecord(
+                scenarioType)
+            ?? throw new InvalidOperationException(
+                $"Database scenario '{scenarioType}' was not found.");
+
+        selectedRuntimeScenario =
+            SimulationEngine.GetScenario(
+                selectedScenarioRecord.EmergencyType);
+
+        await InitializeSimulationStateAsync();
     }
+    catch (Exception ex)
+    {
+        _loadFailed = true;
+        _isReady = false;
+        Console.WriteLine($"LoadSelectionAsync failed: {ex}");
+    }
+}
 
     private EmergencyScenario?
         FindScenarioRecord(
@@ -746,17 +780,24 @@ else
     }
 
     private async Task ChangeAircraftAsync(
-        CockpitLayoutDefinition aircraft)
+        Aircraft aircraft)
     {
         CloseSelectorMenus();
 
-        if (aircraft.Key ==
-            cockpitLayout.Key)
+        if (aircraft.Id ==
+            selectedAircraft.Id)
         {
             return;
         }
 
-        cockpitLayout = aircraft;
+        selectedAircraft = aircraft;
+
+        cockpitLayout =
+            await LayoutProvider.GetLayout(
+                aircraft.CockpitLayoutKey);
+
+        // Aircraft.EngineCount is the source of truth, not the layout's.
+        cockpitLayout.EngineCount = selectedAircraft.EngineCount;
 
         await InitializeSimulationStateAsync();
         await SaveCurrentSelectionAsync();
@@ -803,7 +844,7 @@ else
             new SimulationSelectionModel
             {
                 AircraftKey =
-                    cockpitLayout.Key,
+                    selectedAircraft.Id.ToString(),
 
                 ScenarioType =
                     selectedScenarioRecord.EmergencyType
@@ -814,7 +855,7 @@ else
     {
         var aircraftKey =
             Uri.EscapeDataString(
-                cockpitLayout.Key);
+                selectedAircraft.Id.ToString());
 
         var scenarioType =
             Uri.EscapeDataString(

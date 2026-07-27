@@ -694,6 +694,7 @@
     private bool showDeleteLayoutOverlay;
 
     private CockpitLayoutDefinition? layoutPendingDeletion;
+    private CockpitLayoutDefinition? layoutBeingEdited;
 
     private List<AffectedAircraftEditor> affectedAircraft = [];
 
@@ -752,7 +753,7 @@
     private async Task LoadLayoutsAsync()
     {
         var builtInLayouts =
-            LayoutProvider.GetLayouts();
+            await LayoutProvider.GetLayouts();
 
         var savedLayouts =
             await CockpitLayoutService.GetAllAsync();
@@ -767,7 +768,7 @@
                 new AvailableLayout
                 {
                     DatabaseId = null,
-                    Definition = CloneLayoutDefinition(builtIn),
+                    Definition = builtIn,
                     IsBuiltIn = true
                 };
         }
@@ -798,10 +799,10 @@
         {
             Key = layout.Key,
             Name = layout.Name,
-            Rows = layout.Rows,
-            Columns = layout.Columns,
+            Rows = layout.Details.Rows,
+            Columns = layout.Details.Columns,
 
-            Instruments = layout.Instruments
+            Instruments = layout.Details.Instruments
                 .Select(instrument =>
                     new InstrumentDefinition
                     {
@@ -1082,6 +1083,7 @@
         originalLayoutKey = null;
         editingLayoutDatabaseId = null;
         editingLayoutIsBuiltIn = false;
+        layoutBeingEdited = null;
 
         layoutEditor =
             CreateEmptyLayoutEditor();
@@ -1120,6 +1122,9 @@
 
         editingLayoutIsBuiltIn =
             availableLayout.IsBuiltIn;
+
+        layoutBeingEdited =
+            currentLayout;
 
         layoutEditor =
             CreateEditorFromLayout(currentLayout);
@@ -1184,6 +1189,7 @@
         originalLayoutKey = null;
         editingLayoutDatabaseId = null;
         editingLayoutIsBuiltIn = false;
+        layoutBeingEdited = null;
     }
     private void DimensionsChanged()
     {
@@ -1424,7 +1430,29 @@
                     RowSpan = instrument.RowSpan,
                     ColumnSpan = instrument.ColumnSpan
                 })
-                .ToList()
+                .ToList(),
+
+            AircraftId =
+                layoutBeingEdited?.AircraftId ?? 0,
+
+            EngineCount =
+                layoutBeingEdited?.EngineCount ?? 1,
+
+            Airspeed =
+                layoutBeingEdited?.Airspeed ??
+                CreateDefaultAirspeedLayout(),
+
+            ArtificialHorizon =
+                layoutBeingEdited?.ArtificialHorizon ??
+                CreateDefaultArtificialHorizonLayout(),
+
+            VSI =
+                layoutBeingEdited?.VSI ??
+                CreateDefaultVsiLayout(),
+
+            DefaultState =
+                layoutBeingEdited?.DefaultState ??
+                CreateDefaultAircraftState()
         };
 
         var oldLayoutKey = originalLayoutKey;
@@ -1913,21 +1941,99 @@
         {
             Key = definition.Key,
             Name = definition.Name,
-            Rows = definition.Rows,
-            Columns = definition.Columns,
+            IsBuiltIn = false,
 
-            Instruments = definition.Instruments
-                .Select(instrument => new InstrumentDefinition
-                {
-                    Type = instrument.Type,
-                    GridRow = instrument.GridRow,
-                    GridColumn = instrument.GridColumn,
-                    RowSpan = instrument.RowSpan,
-                    ColumnSpan = instrument.ColumnSpan
-                })
-                .ToList(),
+            Details = new CockpitLayoutDetails
+            {
+                AircraftId = definition.AircraftId,
+                Rows = definition.Rows,
+                Columns = definition.Columns,
 
-            IsBuiltIn = false
+                Instruments = definition.Instruments
+                    .Select(instrument => new InstrumentDefinition
+                    {
+                        Type = instrument.Type,
+                        GridRow = instrument.GridRow,
+                        GridColumn = instrument.GridColumn,
+                        RowSpan = instrument.RowSpan,
+                        ColumnSpan = instrument.ColumnSpan
+                    })
+                    .ToList(),
+
+                EngineCount = definition.EngineCount,
+                Airspeed = definition.Airspeed,
+                ArtificialHorizon = definition.ArtificialHorizon,
+                VSI = definition.VSI,
+                DefaultState = definition.DefaultState
+            }
+        };
+    }
+    <!-- Default "Factory" Aircraft Methods -->
+    private static AirspeedIndicatorLayout CreateDefaultAirspeedLayout()
+    {
+        return new AirspeedIndicatorLayout
+        {
+            MinimumSpeed = 0,
+            MaximumSpeed = 200,
+            MinAirspeedAngle = -120,
+            MaxAirspeedAngle = 120,
+            WhiteArcStart = 40,
+            WhiteArcEnd = 85,
+            GreenArcStart = 48,
+            GreenArcEnd = 129,
+            YellowArcStart = 129,
+            YellowArcEnd = 163,
+            NeverExceedSpeed = 163
+        };
+    }
+
+    private static ArtificialHorizonLayout CreateDefaultArtificialHorizonLayout()
+    {
+        return new ArtificialHorizonLayout
+        {
+            MinimumPitch = -30,
+            MaximumPitch = 30,
+            MinimumBank = -100,
+            MaximumBank = 100
+        };
+    }
+
+<!-- Also in the VSI Layout constructor -->
+    private static VerticalSpeedIndicatorLayout CreateDefaultVsiLayout()
+    {
+        return new VerticalSpeedIndicatorLayout
+        {
+            MinimumVerticalSpeed = -2000,
+            MaximumVerticalSpeed = 2000,
+            LagSeconds = 6,
+
+            CalibrationPoints =
+            [
+                new(-2000, -235),
+                new(-1500, -200),
+                new(-1000, -160),
+                new(-500, -125),
+                new(0, -90),
+                new(500, -55),
+                new(1000, -20),
+                new(1500, 20),
+                new(2000, 55)
+            ]
+        };
+    }
+
+    private static AircraftStateDefaults CreateDefaultAircraftState()
+    {
+        return new AircraftStateDefaults
+        {
+            CruiseAirspeed = 115,
+            CruiseAltitude = 3000,
+            DefaultHeading = 240,
+            DefaultVerticalSpeed = 0,
+            DefaultPitch = 2,
+            DefaultBank = 0,
+            NormalEnginePower = 75,
+            FuelPercentage = 75
         };
     }
 }

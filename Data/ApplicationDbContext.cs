@@ -47,24 +47,24 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             }
         };
 
-        var instrumentComparer =
-            new ValueComparer<List<InstrumentDefinition>>(
+        var detailsComparer =
+            new ValueComparer<CockpitLayoutDetails>(
                 (left, right) =>
                     JsonSerializer.Serialize(left, jsonOptions) ==
                     JsonSerializer.Serialize(right, jsonOptions),
 
-                instruments =>
+                details =>
                     JsonSerializer.Serialize(
-                        instruments,
+                        details,
                         jsonOptions)
                     .GetHashCode(),
 
-                instruments =>
-                    JsonSerializer.Deserialize<List<InstrumentDefinition>>(
+                details =>
+                    JsonSerializer.Deserialize<CockpitLayoutDetails>(
                         JsonSerializer.Serialize(
-                            instruments,
+                            details,
                             jsonOptions),
-                        jsonOptions) ?? new List<InstrumentDefinition>());
+                        jsonOptions) ?? new CockpitLayoutDetails());
 
         builder.Entity<CockpitLayout>(layout =>
         {
@@ -73,19 +73,18 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             layout.HasIndex(item => item.Key)
                 .IsUnique();
 
-            layout.Property(item => item.Instruments)
+            layout.Property(item => item.Details)
                 .HasConversion(
-                    instruments =>
+                    details =>
                         JsonSerializer.Serialize(
-                            instruments,
+                            details,
                             jsonOptions),
 
                     json =>
-                        JsonSerializer.Deserialize<
-                            List<InstrumentDefinition>>(
+                        JsonSerializer.Deserialize<CockpitLayoutDetails>(
                             json,
-                            jsonOptions) ?? new List<InstrumentDefinition>())
-                .Metadata.SetValueComparer(instrumentComparer);
+                            jsonOptions) ?? new CockpitLayoutDetails())
+                .Metadata.SetValueComparer(detailsComparer);
         });
     }
 }

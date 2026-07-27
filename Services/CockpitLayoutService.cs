@@ -82,19 +82,30 @@ public class CockpitLayoutService(
 
         existing.Key = layout.Key;
         existing.Name = layout.Name;
-        existing.Rows = layout.Rows;
-        existing.Columns = layout.Columns;
 
-        existing.Instruments = layout.Instruments
-            .Select(instrument => new InstrumentDefinition
-            {
-                Type = instrument.Type,
-                GridRow = instrument.GridRow,
-                GridColumn = instrument.GridColumn,
-                RowSpan = instrument.RowSpan,
-                ColumnSpan = instrument.ColumnSpan
-            })
-            .ToList();
+        existing.Details = new CockpitLayoutDetails
+        {
+            AircraftId = layout.Details.AircraftId,
+            Rows = layout.Details.Rows,
+            Columns = layout.Details.Columns,
+
+            Instruments = layout.Details.Instruments
+                .Select(instrument => new InstrumentDefinition
+                {
+                    Type = instrument.Type,
+                    GridRow = instrument.GridRow,
+                    GridColumn = instrument.GridColumn,
+                    RowSpan = instrument.RowSpan,
+                    ColumnSpan = instrument.ColumnSpan
+                })
+                .ToList(),
+
+            EngineCount = layout.Details.EngineCount,
+            Airspeed = layout.Details.Airspeed,
+            ArtificialHorizon = layout.Details.ArtificialHorizon,
+            VSI = layout.Details.VSI,
+            DefaultState = layout.Details.DefaultState
+        };
 
         existing.IsBuiltIn = layout.IsBuiltIn;
         existing.UpdatedAt = DateTime.UtcNow;
@@ -128,7 +139,7 @@ public class CockpitLayoutService(
         layout.Key = layout.Key.Trim().ToLowerInvariant();
         layout.Name = layout.Name.Trim();
 
-        layout.Instruments ??=
+        layout.Details.Instruments ??=
             new List<InstrumentDefinition>();
     }
 
@@ -169,21 +180,21 @@ public class CockpitLayoutService(
                 "100 characters.");
         }
 
-        if (layout.Rows is < 1 or > 10)
+        if (layout.Details.Rows is < 1 or > 10)
         {
             errors.Add(
                 "The cockpit layout must contain between " +
                 "1 and 10 rows.");
         }
 
-        if (layout.Columns is < 1 or > 10)
+        if (layout.Details.Columns is < 1 or > 10)
         {
             errors.Add(
                 "The cockpit layout must contain between " +
                 "1 and 10 columns.");
         }
 
-        if (layout.Instruments.Count == 0)
+        if (layout.Details.Instruments.Count == 0)
         {
             errors.Add(
                 "The cockpit layout must contain at least " +
@@ -211,11 +222,9 @@ public class CockpitLayoutService(
         List<string> errors)
     {
         var occupiedCells =
-            new Dictionary<
-                (int Row, int Column),
-                InstrumentType>();
+            new Dictionary<(int Row, int Column), InstrumentType>();
 
-        foreach (var instrument in layout.Instruments)
+        foreach (var instrument in layout.Details.Instruments)
         {
             if (instrument.GridRow < 1 ||
                 instrument.GridColumn < 1)
@@ -245,8 +254,8 @@ public class CockpitLayoutService(
                 instrument.GridColumn +
                 instrument.ColumnSpan - 1;
 
-            if (lastRow > layout.Rows ||
-                lastColumn > layout.Columns)
+            if (lastRow > layout.Details.Rows ||
+                lastColumn > layout.Details.Columns)
             {
                 errors.Add(
                     $"{instrument.Type} extends outside " +

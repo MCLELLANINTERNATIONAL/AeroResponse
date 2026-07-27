@@ -1,35 +1,48 @@
-using AeroResponse.Simulation.Layouts.Aircraft;
+using AeroResponse.Models;
+using AeroResponse.Repositories;
 
 namespace AeroResponse.Simulation.Layouts;
 
-public class CockpitLayoutProvider : ICockpitLayoutProvider
+public class CockpitLayoutProvider(CockpitLayoutRepository repository) : ICockpitLayoutProvider
 {
-    private readonly Dictionary<string, CockpitLayoutDefinition> _layouts;
-
-    public CockpitLayoutProvider()
+    public async Task<CockpitLayoutDefinition> GetLayout(string key)
     {
-        var layouts = new[]
+        var layout = await repository.GetByKeyAsync(key);
+
+        if (layout is null)
         {
-            Cessna172CockpitLayout.Create()
-        };
-
-        _layouts = layouts.ToDictionary(
-            layout => layout.Key,
-            StringComparer.OrdinalIgnoreCase);
-    }
-
-    public CockpitLayoutDefinition GetLayout(string key)
-    {
-        return _layouts.TryGetValue(key, out var layout)
-            ? layout
-            : throw new KeyNotFoundException(
+            throw new KeyNotFoundException(
                 $"No cockpit layout is registered for '{key}'.");
+        }
+
+        return ToDefinition(layout);
     }
 
-    public IReadOnlyList<CockpitLayoutDefinition> GetLayouts()
+    public async Task<IReadOnlyList<CockpitLayoutDefinition>> GetLayouts()
     {
-        return _layouts.Values
+        var layouts = await repository.GetAllAsync();
+
+        return layouts
             .OrderBy(layout => layout.Name)
+            .Select(ToDefinition)
             .ToList();
+    }
+
+    private static CockpitLayoutDefinition ToDefinition(CockpitLayout layout)
+    {
+        return new CockpitLayoutDefinition
+        {
+            AircraftId = layout.Details.AircraftId,
+            Key = layout.Key,
+            Name = layout.Name,
+            Columns = layout.Details.Columns,
+            Rows = layout.Details.Rows,
+            Instruments = layout.Details.Instruments,
+            EngineCount = layout.Details.EngineCount,
+            Airspeed = layout.Details.Airspeed,
+            ArtificialHorizon = layout.Details.ArtificialHorizon,
+            VSI = layout.Details.VSI,
+            DefaultState = layout.Details.DefaultState
+        };
     }
 }

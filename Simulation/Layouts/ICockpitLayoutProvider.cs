@@ -2,7 +2,6 @@ namespace AeroResponse.Simulation.Layouts;
 
 public interface ICockpitLayoutProvider
 {
-    CockpitLayoutDefinition GetLayout(string key);
-
-    IReadOnlyList<CockpitLayoutDefinition> GetLayouts();
+    Task<CockpitLayoutDefinition> GetLayout(string key);
+    Task<IReadOnlyList<CockpitLayoutDefinition>> GetLayouts();
 }

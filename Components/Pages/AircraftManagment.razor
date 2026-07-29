@@ -1,0 +1,365 @@
+@page "/aircraft"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Components.Forms
+
+<PageTitle>Aircraft Fleet Manager | AeroResponse</PageTitle>
+
+<section class="scenario-page aircraft-catalog-page">
+    <header class="scenario-header">
+        <div>
+            <span class="scenario-eyebrow">Fleet overview</span>
+            <h1>Aircraft</h1>
+            <p>
+                Browse, create, and manage aircraft records together with their cockpit layouts.
+            </p>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(statusMessage))
+    {
+        <div class="status-banner" role="status">@statusMessage</div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="scenario-content-card">
+            <p>Loading aircraft...</p>
+        </div>
+    }
+    else
+    {
+        <div class="aircraft-management-grid">
+            <section class="scenario-content-card aircraft-list-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="section-eyebrow">Fleet library</p>
+                        <h2>Aircraft</h2>
+                    </div>
+                </div>
+
+                @if (aircraftList.Count == 0)
+                {
+                    <p>No aircraft have been created yet.</p>
+                }
+                else
+                {
+                    <div class="form-field">
+                        <label for="aircraft-select">Select aircraft</label>
+                        <select id="aircraft-select" class="form-select" value="@selectedAircraftId" @onchange="SelectAircraftAsync">
+                            <option value="0">Create a new aircraft</option>
+                            @foreach (var aircraft in aircraftList)
+                            {
+                                <option value="@aircraft.Id">@aircraft.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="scenario-table-wrapper">
+                        <table class="scenario-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Manufacturer</th>
+                                    <th>Type</th>
+                                    <th>Active</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var aircraft in aircraftList)
+                                {
+                                    <tr>
+                                        <td>@aircraft.Name</td>
+                                        <td>@aircraft.Manufacturer</td>
+                                        <td>@aircraft.AircraftType</td>
+                                        <td>@(aircraft.IsActive ? "Yes" : "No")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </section>
+
+            <section class="scenario-content-card aircraft-form-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="section-eyebrow">Configuration</p>
+                        <h2>@(selectedAircraft.Id == 0 ? "Create aircraft" : "Edit aircraft")</h2>
+                    </div>
+                </div>
+
+                <EditForm Model="@selectedAircraft" OnValidSubmit="SaveAircraftAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="aircraft-form-grid">
+                        <div class="form-field">
+                            <label for="aircraft-name">Name</label>
+                            <InputText id="aircraft-name" class="form-control" @bind-Value="selectedAircraft.Name" />
+                        </div>
+
+                        <div class="form-field">
+                            <label for="manufacturer">Manufacturer</label>
+                            <InputText id="manufacturer" class="form-control" @bind-Value="selectedAircraft.Manufacturer" />
+                        </div>
+
+                        <div class="form-field">
+                            <label for="aircraft-type">Aircraft type</label>
+                            <InputText id="aircraft-type" class="form-control" @bind-Value="selectedAircraft.AircraftType" />
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="description">Description</label>
+                        <InputTextArea id="description" class="form-control" @bind-Value="selectedAircraft.Description" />
+                    </div>
+
+                    <div class="aircraft-form-grid">
+                        <div class="form-field">
+                            <label for="max-altitude">Maximum altitude</label>
+                            <InputNumber id="max-altitude" class="form-control" @bind-Value="selectedAircraft.MaxAltitude" />
+                        </div>
+
+                        <div class="form-field">
+                            <label for="cruise-speed">Cruise speed</label>
+                            <InputNumber id="cruise-speed" class="form-control" @bind-Value="selectedAircraft.CruiseSpeed" />
+                        </div>
+
+                        <div class="form-field">
+                            <label for="engine-count">Engine count</label>
+                            <InputNumber id="engine-count" class="form-control" @bind-Value="selectedAircraft.EngineCount" />
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="cockpit-layout">Cockpit layout</label>
+                        <select id="cockpit-layout" class="form-select" value="@selectedAircraft.CockpitLayoutKey" @onchange="HandleLayoutSelection">
+                            <option value="">Select a cockpit layout</option>
+                            @foreach (var layout in availableLayouts)
+                            {
+                                <option value="@(layout.Definition.Key)">
+                                    @(layout.Definition.Name)
+                                    @if (!layout.IsSaved)
+                                    {
+                                        <text> (Installed)</text>
+                                    }
+                                </option>
+                            }
+                            <option value="__create_new__">+ Create new cockpit layout</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field checkbox-field">
+                        <label for="is-active">Active</label>
+                        <InputCheckbox id="is-active" @bind-Value="selectedAircraft.IsActive" />
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                            @(selectedAircraft.Id == 0 ? "Create aircraft" : "Save changes")
+                        </button>
+                        <button type="button" class="btn btn-secondary" @onclick="StartNewAircraft">Clear</button>
+
+                        @if (!string.IsNullOrWhiteSpace(selectedAircraft.CockpitLayoutKey) && LayoutExists(selectedAircraft.CockpitLayoutKey))
+                        {
+                            <button type="button" class="btn btn-outline" @onclick="OpenEditLayoutOverlay">Edit layout</button>
+                        }
+                    </div>
+
+                    @if (selectedAircraft.Id != 0)
+                    {
+                        <button type="button" class="btn btn-danger" @onclick="DeleteAircraftAsync">Delete aircraft</button>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(selectedAircraft.CockpitLayoutKey) && LayoutExists(selectedAircraft.CockpitLayoutKey))
+                    {
+                        <button type="button" class="btn btn-danger" @onclick="OpenDeleteLayoutOverlay">Delete layout</button>
+                    }
+
+                    @if (showLayoutOverlay)
+                    {
+                        <div class="layout-overlay" role="dialog" aria-modal="true" aria-labelledby="layout-editor-title">
+                            <div class="layout-overlay-backdrop" @onclick="CloseLayoutOverlay"></div>
+
+                            <section class="layout-editor-panel">
+                                <header class="layout-editor-header">
+                                    <div>
+                                        <p class="section-eyebrow">Cockpit designer</p>
+                                        <h2 id="layout-editor-title">@(isEditingLayout ? "Edit cockpit layout" : "Create cockpit layout")</h2>
+                                    </div>
+                                    <button type="button" class="overlay-close-button" aria-label="Close layout editor" @onclick="CloseLayoutOverlay">×</button>
+                                </header>
+
+                                @if (!string.IsNullOrWhiteSpace(layoutEditorError))
+                                {
+                                    <div class="layout-editor-error" role="alert">@layoutEditorError</div>
+                                }
+
+                                <div class="layout-editor-content">
+                                    <section class="layout-dimensions">
+                                        <div class="form-field">
+                                            <label for="layout-name">Layout name</label>
+                                            <InputText id="layout-name" class="form-control" @bind-Value="layoutEditor.Name" />
+                                            <small>Example: Standard Six-Pack</small>
+                                        </div>
+
+                                        <div class="dimension-grid">
+                                            <div class="form-field">
+                                                <label for="layout-rows">Rows</label>
+                                                <InputNumber id="layout-rows" class="form-control" min="1" max="10" @bind-Value="layoutEditor.Rows" @bind-Value:after="DimensionsChanged" />
+                                            </div>
+                                            <div class="form-field">
+                                                <label for="layout-columns">Columns</label>
+                                                <InputNumber id="layout-columns" class="form-control" min="1" max="10" @bind-Value="layoutEditor.Columns" @bind-Value:after="DimensionsChanged" />
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section class="instrument-layout-section">
+                                        <div class="section-heading-row">
+                                            <div>
+                                                <h3>Instruments</h3>
+                                                <p>Select each instrument and assign its position in the cockpit grid.</p>
+                                            </div>
+                                            <span class="grid-size-badge">@layoutEditor.Rows × @layoutEditor.Columns grid</span>
+                                        </div>
+
+                                        <div class="instrument-editor-list">
+                                            @foreach (var instrument in layoutEditor.Instruments)
+                                            {
+                                                <article class="@GetInstrumentEditorClass(instrument)">
+                                                    <div class="instrument-selection-row">
+                                                        <label class="instrument-checkbox">
+                                                            <input type="checkbox" @bind="instrument.IsSelected" @bind:after="() => InstrumentSelectionChanged(instrument)" />
+                                                            <span>@GetInstrumentDisplayName(instrument.Type)</span>
+                                                        </label>
+                                                    </div>
+
+                                                    @if (instrument.IsSelected)
+                                                    {
+                                                        <div class="instrument-position-grid">
+                                                            <div class="form-field">
+                                                                <label>Row</label>
+                                                                <InputNumber class="form-control" min="1" max="@layoutEditor.Rows" @bind-Value="instrument.GridRow" />
+                                                            </div>
+                                                            <div class="form-field">
+                                                                <label>Column</label>
+                                                                <InputNumber class="form-control" min="1" max="@layoutEditor.Columns" @bind-Value="instrument.GridColumn" />
+                                                            </div>
+                                                            <div class="form-field">
+                                                                <label>Row span</label>
+                                                                <InputNumber class="form-control" min="1" max="@layoutEditor.Rows" @bind-Value="instrument.RowSpan" />
+                                                            </div>
+                                                            <div class="form-field">
+                                                                <label>Column span</label>
+                                                                <InputNumber class="form-control" min="1" max="@layoutEditor.Columns" @bind-Value="instrument.ColumnSpan" />
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </article>
+                                            }
+                                        </div>
+                                    </section>
+
+                                    <section class="layout-preview-section">
+                                        <h3>Layout preview</h3>
+                                        <div class="layout-preview" style="@GetPreviewGridStyle()">
+                                            @foreach (var instrument in layoutEditor.Instruments.Where(item => item.IsSelected))
+                                            {
+                                                <div class="layout-preview-instrument" style="@GetPreviewInstrumentStyle(instrument)">
+                                                    @GetInstrumentDisplayName(instrument.Type)
+                                                    <small>Starting row @instrument.GridRow, starting column @instrument.GridColumn</small>
+                                                </div>
+                                            }
+                                        </div>
+                                    </section>
+                                </div>
+
+                                <footer class="layout-editor-actions">
+                                    <button type="button" class="btn btn-secondary" @onclick="CloseLayoutOverlay">Cancel</button>
+                                    <button type="button" class="btn btn-primary" @onclick="SaveCockpitLayout">@(isEditingLayout ? "Save changes" : "Create layout")</button>
+                                </footer>
+                            </section>
+                        </div>
+                    }
+
+                    @if (showDeleteLayoutOverlay && layoutPendingDeletion is not null)
+                    {
+                        <div class="layout-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-layout-title">
+                            <div class="layout-overlay-backdrop" @onclick="CloseDeleteLayoutOverlay"></div>
+
+                            <section class="layout-editor-panel delete-layout-panel">
+                                <header class="layout-editor-header">
+                                    <div>
+                                        <p class="section-eyebrow">Cockpit layout</p>
+                                        <h2 id="delete-layout-title">Delete @layoutPendingDeletion.Name?</h2>
+                                    </div>
+                                    <button type="button" class="overlay-close-button" aria-label="Close delete layout confirmation" @onclick="CloseDeleteLayoutOverlay">×</button>
+                                </header>
+
+                                <div class="layout-editor-content">
+                                    @if (!string.IsNullOrWhiteSpace(deleteLayoutError))
+                                    {
+                                        <div class="layout-editor-error" role="alert">@deleteLayoutError</div>
+                                    }
+
+                                    @if (affectedAircraft.Count == 0)
+                                    {
+                                        <p>No saved aircraft currently use this layout. It can be deleted safely.</p>
+                                    }
+                                    else
+                                    {
+                                        <div class="delete-layout-warning">
+                                            <strong>@affectedAircraft.Count saved @(affectedAircraft.Count == 1 ? "aircraft uses" : "aircraft use") this layout.</strong>
+                                            <p>Each affected aircraft must either be assigned another cockpit layout or deleted.</p>
+                                        </div>
+
+                                        <div class="affected-aircraft-list">
+                                            @foreach (var affected in affectedAircraft)
+                                            {
+                                                <article class="affected-aircraft">
+                                                    <h3>@affected.AircraftName</h3>
+                                                    <fieldset>
+                                                        <legend>What should happen to this aircraft?</legend>
+                                                        <label class="resolution-option">
+                                                            <input type="radio" name="@($"resolution-{affected.AircraftId}")" value="@AircraftLayoutResolution.Modify" checked="@(affected.Resolution == AircraftLayoutResolution.Modify)" @onchange="() => SetAircraftResolution(affected, AircraftLayoutResolution.Modify)" />
+                                                            Modify aircraft
+                                                        </label>
+                                                        <label class="resolution-option">
+                                                            <input type="radio" name="@($"resolution-{affected.AircraftId}")" value="@AircraftLayoutResolution.Delete" checked="@(affected.Resolution == AircraftLayoutResolution.Delete)" @onchange="() => SetAircraftResolution(affected, AircraftLayoutResolution.Delete)" />
+                                                            Delete aircraft
+                                                        </label>
+                                                    </fieldset>
+
+                                                    @if (affected.Resolution == AircraftLayoutResolution.Modify)
+                                                    {
+                                                        <div class="form-field">
+                                                            <label for="@($"replacement-{affected.AircraftId}")">Replacement cockpit layout</label>
+                                                            <select id="@($"replacement-{affected.AircraftId}")" class="form-select" @bind="affected.ReplacementLayoutKey">
+                                                                <option value="">Select replacement layout</option>
+                                                                @foreach (var layout in GetReplacementLayouts())
+                                                                {
+                                                                    <option value="@(layout.Key)">@(layout.Name)</option>
+                                                                }
+                                                            </select>
+                                                        </div>
+                                                    }
+                                                </article>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+
+                                <footer class="layout-editor-actions">
+                                    <button type="button" class="btn btn-secondary" @onclick="CloseDeleteLayoutOverlay">Cancel</button>
+                                    <button type="button" class="btn btn-danger" disabled="@isDeletingLayout" @onclick="ConfirmDeleteLayoutAsync">@(isDeletingLayout ? "Deleting..." : "Delete layout")</button>
+                                </footer>
+                            </section>
+                        </div>
+                    }
+                </EditForm>
+            </section>
+        </div>
+    }
+</section>

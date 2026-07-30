@@ -89,23 +89,30 @@
     [Parameter]
     public double Altitude { get; set; }
 
+
     private const double CenterX = 150;
     private const double CenterY = 150;
 
+
     private AltitudeReading Reading => AltimeterMath.Calculate((int)Math.Round(Altitude));
+
     private double HundredsNeedleAngle =>
-        PositiveModulo((int)Math.Round(Altitude), 1000) / 1000.0 * 360.0;
+        (int)Math.Round(Altitude) / 1000.0 * 360.0;
+
 
     private double ThousandsNeedleAngle =>
-        PositiveModulo((int)Math.Round(Altitude), 10000) / 10000.0 * 360.0;
+        (int)Math.Round(Altitude) / 10000.0 * 360.0;
+
 
     private string HundredsNeedleTransform =>
         FormattableString.Invariant(
             $"rotate({HundredsNeedleAngle} {CenterX} {CenterY})");
 
+
     private string ThousandsNeedleTransform =>
         FormattableString.Invariant(
             $"rotate({ThousandsNeedleAngle} {CenterX} {CenterY})");
+
 
     private static int PositiveModulo(int value, int modulus)
     {

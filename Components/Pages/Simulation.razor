@@ -93,8 +93,8 @@ else
                             </small>
                         </span>
 
-                        <span class="dropdown-chevron
-                                     @(_isAircraftMenuOpen ? "open" : null)"
+                                                <span class="dropdown-chevron
+                                                                         @(_isAircraftMenuOpen ? "open" : "")"
                               aria-hidden="true">
                             ▾
                         </span>
@@ -115,7 +115,7 @@ else
 
                                 <button type="button"
                                         class="selector-dropdown-option
-                                            @(isSelected ? "selected" : null)"
+                                            @(isSelected ? "selected" : "")"
                                         role="menuitem"
                                         @onclick="() =>
                                             ChangeAircraftAsync(aircraft)">
@@ -173,8 +173,8 @@ else
                             </small>
                         </span>
 
-                        <span class="dropdown-chevron
-                                     @(_isScenarioMenuOpen ? "open" : null)"
+                                                <span class="dropdown-chevron
+                                                                         @(_isScenarioMenuOpen ? "open" : "")"
                               aria-hidden="true">
                             ▾
                         </span>
@@ -194,8 +194,8 @@ else
                                     selectedScenarioRecord.Id;
 
                                 <button type="button"
-                                        class="selector-dropdown-option
-                                               @(isSelected ? "selected" : null)"
+                                             class="selector-dropdown-option
+                                                 @(isSelected ? "selected" : "")"
                                         role="menuitem"
                                         @onclick="() =>
                                             ChangeScenarioAsync(scenario)">

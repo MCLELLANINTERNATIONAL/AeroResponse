@@ -3,10 +3,6 @@ using AeroResponse.Services;
 using AeroResponse.Simulation.Layouts;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using CockpitLayoutModel = AeroResponse.Models.CockpitLayout;
 
 namespace AeroResponse.Components.Pages;

@@ -482,3 +482,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# SQLite Database Files that change every run
+Data/app.db
+Data/app.db-shm
+Data/app.db-wal

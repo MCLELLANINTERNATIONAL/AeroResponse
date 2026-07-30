@@ -61,4 +61,17 @@ public class EfGenericRepository<TEntity>(
         return await context.Set<TEntity>()
             .FindAsync(id) is not null;
     }
+    public async Task UpdateCockpitLayoutAsync(
+        int aircraftId,
+        string newLayoutKey)
+    {
+        var aircraft = await context.Aircraft.FindAsync(aircraftId);
+
+        if (aircraft is null)
+            return;
+
+        aircraft.CockpitLayoutKey = newLayoutKey;
+
+        await context.SaveChangesAsync();
+    }
 }

@@ -1,4 +1,5 @@
 using AeroResponse.Models;
+using AeroResponse.Simulation.Layouts.Aircraft;
 using Microsoft.EntityFrameworkCore;
 
 namespace AeroResponse.Data;
@@ -226,10 +227,76 @@ public static class SeedData
             await context.EmergencyScenarios.AddRangeAsync(scenarios);
             await context.SaveChangesAsync();
         }
+            
+        // Seed built-in cockpit layouts independently of the scenario seeding above,
+        // so newly added aircraft definitions get picked up even after the
+        // EmergencyScenarios table has already been seeded once.
+        await SeedCockpitLayoutsAsync(context);
 
         // Seed the demonstration reporting data separately.
         // This still runs when emergency scenarios already exist.
         await SeedTestPilotReportsAsync(context);
+    }
+
+    private static async Task SeedCockpitLayoutsAsync(
+        ApplicationDbContext context)
+    {
+        var definitions = new[]
+        {
+            Cessna172CockpitLayout.Create()
+        };
+
+        foreach (var definition in definitions)
+        {
+            var existing = await context.CockpitLayouts
+                .FirstOrDefaultAsync(layout => layout.Key == definition.Key);
+
+            if (existing is not null)
+            {
+                // Reseeding Definitions of Aircraft for consistency
+                existing.Name = definition.Name;
+                existing.UpdatedAt = DateTime.UtcNow;
+                existing.Details = new CockpitLayoutDetails
+                {
+                    AircraftId = definition.AircraftId,
+                    Rows = definition.Rows,
+                    Columns = definition.Columns,
+                    Instruments = definition.Instruments,
+                    EngineCount = definition.EngineCount,
+                    Airspeed = definition.Airspeed,
+                    ArtificialHorizon = definition.ArtificialHorizon,
+                    VSI = definition.VSI,
+                    DefaultState = definition.DefaultState
+                };
+
+                continue;
+            }
+
+            var now = DateTime.UtcNow;
+
+            context.CockpitLayouts.Add(new CockpitLayout
+            {
+                Key = definition.Key,
+                Name = definition.Name,
+                IsBuiltIn = true,
+                CreatedAt = now,
+                UpdatedAt = now,
+                Details = new CockpitLayoutDetails
+                {
+                    AircraftId = definition.AircraftId,
+                    Rows = definition.Rows,
+                    Columns = definition.Columns,
+                    Instruments = definition.Instruments,
+                    EngineCount = definition.EngineCount,
+                    Airspeed = definition.Airspeed,
+                    ArtificialHorizon = definition.ArtificialHorizon,
+                    VSI = definition.VSI,
+                    DefaultState = definition.DefaultState
+                }
+            });
+        }
+
+        await context.SaveChangesAsync();
     }
 
     private static async Task SeedTestPilotReportsAsync(

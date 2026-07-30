@@ -119,11 +119,13 @@ builder.Services.AddScoped(
     typeof(EfGenericRepository<>));
 
 builder.Services.AddScoped<AircraftRepository>();
+builder.Services.AddScoped<CockpitLayoutRepository>();
 builder.Services.AddScoped<ScenarioRepository>();
 builder.Services.AddScoped<MembershipRepository>();
 
 
 builder.Services.AddScoped<AircraftService>();
+builder.Services.AddScoped<CockpitLayoutService>();
 builder.Services.AddScoped<ScenarioService>();
 builder.Services.AddScoped<MembershipService>();
 builder.Services.AddScoped<PerformanceService>();
@@ -131,11 +133,7 @@ builder.Services.AddScoped<PerformanceDashboardService>();
 builder.Services.AddScoped<SimulationService>();
 builder.Services.AddScoped<SimulationSelectionStorage>();
 builder.Services.AddScoped<SimulationScenarioDataService>();
-
-builder.Services.AddSingleton<
-    ICockpitLayoutProvider,
-    CockpitLayoutProvider>();
-
+builder.Services.AddScoped<ICockpitLayoutProvider, CockpitLayoutProvider>();
 builder.Services.AddSingleton<SimulationEngine>();
 
 var app = builder.Build();
@@ -143,7 +141,6 @@ var app = builder.Build();
 // Apply Entity Framework migrations and seed the
 // initial emergency-scenario data.
 await SeedData.InitializeAsync(app.Services);
-
 
 if (app.Environment.IsDevelopment())
 {

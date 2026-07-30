@@ -248,11 +248,27 @@ public static class SeedData
 
         foreach (var definition in definitions)
         {
-            var exists = await context.CockpitLayouts
-                .AnyAsync(layout => layout.Key == definition.Key);
+            var existing = await context.CockpitLayouts
+                .FirstOrDefaultAsync(layout => layout.Key == definition.Key);
 
-            if (exists)
+            if (existing is not null)
             {
+                // Reseeding Definitions of Aircraft for consistency
+                existing.Name = definition.Name;
+                existing.UpdatedAt = DateTime.UtcNow;
+                existing.Details = new CockpitLayoutDetails
+                {
+                    AircraftId = definition.AircraftId,
+                    Rows = definition.Rows,
+                    Columns = definition.Columns,
+                    Instruments = definition.Instruments,
+                    EngineCount = definition.EngineCount,
+                    Airspeed = definition.Airspeed,
+                    ArtificialHorizon = definition.ArtificialHorizon,
+                    VSI = definition.VSI,
+                    DefaultState = definition.DefaultState
+                };
+
                 continue;
             }
 

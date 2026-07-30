@@ -35,7 +35,8 @@ public sealed class MongoMemberTimelineRepository
                 timeline =>
                     timeline.IdentityUserId ==
                     identityUserId)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(
+                cancellationToken);
     }
 
     public async Task UpsertAsync(
@@ -43,6 +44,14 @@ public sealed class MongoMemberTimelineRepository
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(timeline);
+
+        if (string.IsNullOrWhiteSpace(
+            timeline.IdentityUserId))
+        {
+            throw new ArgumentException(
+                "The Identity user ID is required.",
+                nameof(timeline));
+        }
 
         var filter =
             Builders<MongoMemberTimeline>
@@ -52,10 +61,42 @@ public sealed class MongoMemberTimelineRepository
                         membership.IdentityUserId,
                     timeline.IdentityUserId);
 
-        await _collection.ReplaceOneAsync(
+        var update =
+            Builders<MongoMemberTimeline>
+                .Update
+                .SetOnInsert(
+                    membership =>
+                        membership.IdentityUserId,
+                    timeline.IdentityUserId)
+                .Set(
+                    membership =>
+                        membership.PlanName,
+                    timeline.PlanName)
+                .Set(
+                    membership =>
+                        membership.AccountType,
+                    timeline.AccountType)
+                .Set(
+                    membership =>
+                        membership.BillingFrequency,
+                    timeline.BillingFrequency)
+                .Set(
+                    membership =>
+                        membership.MembershipStartedAtUtc,
+                    timeline.MembershipStartedAtUtc)
+                .Set(
+                    membership =>
+                        membership.MembershipExpiresAtUtc,
+                    timeline.MembershipExpiresAtUtc)
+                .Set(
+                    membership =>
+                        membership.UpdatedAtUtc,
+                    timeline.UpdatedAtUtc);
+
+        await _collection.UpdateOneAsync(
             filter,
-            timeline,
-            new ReplaceOptions
+            update,
+            new UpdateOptions
             {
                 IsUpsert = true
             },

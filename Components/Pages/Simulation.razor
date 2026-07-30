@@ -664,8 +664,7 @@ else
         _needsStorageCheck = true;
     }
 
-    protected override async Task OnAfterRenderAsync(
-        bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!_needsStorageCheck)
         {
@@ -674,26 +673,44 @@ else
 
         _needsStorageCheck = false;
 
-        var savedSelection =
-            await SelectionStorage.GetAsync();
+        var savedSelection = await SelectionStorage.GetAsync();
 
-        if (savedSelection?.IsValid != true ||
-            !int.TryParse(savedSelection.AircraftKey, out _))
+        string aircraftKey;
+        string scenarioType;
+
+        if (savedSelection?.IsValid == true &&
+            int.TryParse(savedSelection.AircraftKey, out _)) // Making sure we have a valid Aircraft Key
         {
-            await SelectionStorage.ClearAsync();
+            aircraftKey = savedSelection.AircraftKey;
+            scenarioType = savedSelection.ScenarioType;
+        }
+        else
+        {
+            // Fallback to first Aircraft and Scenario if none is present in load
 
-            Navigation.NavigateTo(
-                "/simulation/select");
+            var defaultAircraft = _aircraftOptions.FirstOrDefault();
+            var defaultScenario = _scenarioRecords.FirstOrDefault();
 
-            return;
+            if (defaultAircraft is null || defaultScenario is null)
+            {
+                _loadFailed = true;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            aircraftKey = defaultAircraft.Id.ToString();
+            scenarioType = defaultScenario.EmergencyType;
         }
 
-        await LoadSelectionAsync(
-            savedSelection.AircraftKey,
-            savedSelection.ScenarioType);
+        await LoadSelectionAsync(aircraftKey, scenarioType);
 
-        await InvokeAsync(
-            StateHasChanged);
+        if (_isReady)
+        {
+            await SaveCurrentSelectionAsync();
+            UpdateSimulationUrl();
+        }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadSelectionAsync(

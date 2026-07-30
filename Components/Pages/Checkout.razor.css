@@ -926,3 +926,32 @@ select.form-control {
         transition: none;
     }
 }
+
+.payment-error {
+    margin: 0 0 1.25rem;
+    padding: 0.9rem 1rem;
+
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    color: #8f1d2c;
+    background: #fff2f4;
+    border: 1px solid #f0bdc5;
+    border-radius: 9px;
+
+    font-size: 0.84rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.payment-error i {
+    color: #d94355;
+    font-size: 1rem;
+}
+
+.pay-button:disabled {
+    cursor: wait;
+    opacity: 0.68;
+    transform: none;
+}

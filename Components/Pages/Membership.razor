@@ -1,10 +1,17 @@
 @page "/membership"
 @rendermode InteractiveServer
 
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
 <PageTitle>Membership | AeroResponse</PageTitle>
 
 <div class="membership-page">
-    <aside class="membership-sidebar" aria-label="Membership benefits">
+    <aside class="membership-sidebar"
+           aria-label="Membership benefits">
+
         <div class="sidebar-aircraft"
              role="img"
              aria-label="Passenger aircraft on a runway">
@@ -18,7 +25,9 @@
                 {
                     <div class="benefit-item">
                         <div class="benefit-icon">
-                            <i class="@benefit.Icon" aria-hidden="true"></i>
+                            <i class="@benefit.Icon"
+                               aria-hidden="true">
+                            </i>
                         </div>
 
                         <div>
@@ -29,15 +38,21 @@
                 }
             </div>
 
-            <a class="help-card" href="mailto:support@aeroresponse.com">
-                <i class="fa-solid fa-headset" aria-hidden="true"></i>
+            <a class="help-card"
+               href="mailto:support@aeroresponse.com">
+
+                <i class="fa-solid fa-headset"
+                   aria-hidden="true">
+                </i>
 
                 <span>
                     <strong>Need help choosing?</strong>
                     <small>Contact our team</small>
                 </span>
 
-                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                <i class="fa-solid fa-chevron-right"
+                   aria-hidden="true">
+                </i>
             </a>
         </div>
     </aside>
@@ -58,45 +73,94 @@
                 <button class="@(!IsAnnual ? "active" : null)"
                         type="button"
                         aria-pressed="@(!IsAnnual)"
-                        @onclick="() => IsAnnual = false">
+                        @onclick="SelectMonthlyBilling">
+
                     Monthly Billing
                 </button>
 
                 <button class="@(IsAnnual ? "active" : null)"
                         type="button"
                         aria-pressed="@IsAnnual"
-                        @onclick="() => IsAnnual = true">
+                        @onclick="SelectAnnualBilling">
+
                     Annual Billing
+
                     <span>Save 20%</span>
                 </button>
             </div>
         </header>
 
-        <section class="plan-grid" aria-label="Membership plans">
+        @if (!string.IsNullOrWhiteSpace(MembershipError))
+        {
+            <div class="membership-error"
+                 role="alert">
+
+                <i class="fa-solid fa-circle-exclamation"
+                   aria-hidden="true">
+                </i>
+
+                <span>@MembershipError</span>
+
+                <a href="@LoginUrl">
+                    Sign in
+                </a>
+
+                <button type="button"
+                        aria-label="Close error message"
+                        @onclick="ClearMembershipError">
+
+                    <i class="fa-solid fa-xmark"
+                       aria-hidden="true">
+                    </i>
+                </button>
+            </div>
+        }
+
+        <section class="plan-grid"
+                 aria-label="Membership plans">
+
             @foreach (var plan in Plans)
             {
-                <article class="plan-card @(plan.Featured ? "featured" : null) @plan.AccentClass">
+                <article class="
+                    plan-card
+                    @(plan.Featured ? "featured" : null)
+                    @plan.AccentClass">
+
                     @if (plan.Featured)
                     {
-                        <div class="popular-badge">Most Popular</div>
+                        <div class="popular-badge">
+                            Most Popular
+                        </div>
                     }
 
                     <div class="plan-icon">
-                        <i class="@plan.Icon" aria-hidden="true"></i>
+                        <i class="@plan.Icon"
+                           aria-hidden="true">
+                        </i>
                     </div>
 
                     <h2>@plan.Name</h2>
 
-                    <p class="plan-summary">@plan.Summary</p>
+                    <p class="plan-summary">
+                        @plan.Summary
+                    </p>
 
                     <div class="price-row">
                         <span class="currency">$</span>
-                        <span class="price">@GetPrice(plan)</span>
-                        <span class="period">/month</span>
+
+                        <span class="price">
+                            @GetPrice(plan)
+                        </span>
+
+                        <span class="period">
+                            /month
+                        </span>
                     </div>
 
                     <p class="billing-note">
-                        @(IsAnnual ? "Billed annually" : "Billed monthly")
+                        @(IsAnnual
+                            ? "Billed annually"
+                            : "Billed monthly")
                     </p>
 
                     <div class="plan-divider"></div>
@@ -106,48 +170,72 @@
                         {
                             <li>
                                 <i class="fa-solid fa-circle-check"
-                                   aria-hidden="true"></i>
+                                   aria-hidden="true">
+                                </i>
 
                                 <span>@feature</span>
                             </li>
                         }
                     </ul>
 
-                    <a class="plan-button" href="@GetCheckoutLink(plan)">
-                        @plan.ButtonText
-                    </a>
+                    <button class="plan-button"
+                            type="button"
+                            disabled="@IsCheckingAuthentication"
+                            @onclick="() => StartPlanAsync(plan)">
+
+                        @if (IsCheckingAuthentication
+                            && SelectedPlanName == plan.Name)
+                        {
+                            <span>Checking account...</span>
+                        }
+                        else
+                        {
+                            <span>@plan.ButtonText</span>
+                        }
+                    </button>
                 </article>
             }
         </section>
 
-        <section class="trust-strip" aria-label="Membership assurances">
+        <section class="trust-strip"
+                 aria-label="Membership assurances">
+
             <div>
                 <i class="fa-solid fa-shield-halved"
-                   aria-hidden="true"></i>
+                   aria-hidden="true">
+                </i>
 
                 <span>
                     <strong>Secure &amp; Trusted</strong>
-                    <small>Your data is encrypted and secure</small>
+                    <small>
+                        Your data is encrypted and secure
+                    </small>
                 </span>
             </div>
 
             <div>
                 <i class="fa-solid fa-arrows-rotate"
-                   aria-hidden="true"></i>
+                   aria-hidden="true">
+                </i>
 
                 <span>
                     <strong>Cancel Anytime</strong>
-                    <small>No long-term contracts. Ever.</small>
+                    <small>
+                        No long-term contracts. Ever.
+                    </small>
                 </span>
             </div>
 
             <div>
                 <i class="fa-solid fa-award"
-                   aria-hidden="true"></i>
+                   aria-hidden="true">
+                </i>
 
                 <span>
                     <strong>Money Back Guarantee</strong>
-                    <small>30-day money back guarantee</small>
+                    <small>
+                        30-day money back guarantee
+                    </small>
                 </span>
             </div>
         </section>
@@ -156,20 +244,106 @@
 
 @code {
     private bool IsAnnual;
+    private bool IsCheckingAuthentication;
 
-    private decimal GetPrice(Plan plan)
+    private string? MembershipError;
+    private string? SelectedPlanName;
+
+    private string LoginUrl =>
+        NavigationManager.GetUriWithQueryParameters(
+            "/Account/Login",
+            new Dictionary<string, object?>
+            {
+                ["ReturnUrl"] = "/membership"
+            });
+
+    private void SelectMonthlyBilling()
+    {
+        IsAnnual = false;
+        MembershipError = null;
+    }
+
+    private void SelectAnnualBilling()
+    {
+        IsAnnual = true;
+        MembershipError = null;
+    }
+
+    private void ClearMembershipError()
+    {
+        MembershipError = null;
+    }
+
+    private async Task StartPlanAsync(
+        Plan plan)
+    {
+        if (IsCheckingAuthentication)
+        {
+            return;
+        }
+
+        IsCheckingAuthentication = true;
+        SelectedPlanName = plan.Name;
+        MembershipError = null;
+
+        try
+        {
+            var authenticationState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var isSignedIn =
+                authenticationState
+                    .User
+                    .Identity?
+                    .IsAuthenticated == true;
+
+            if (!isSignedIn)
+            {
+                MembershipError =
+                    "You must be signed in to get a membership.";
+
+                return;
+            }
+
+            /*
+             * The user is authenticated, so continue
+             * to the existing checkout destination.
+             */
+            NavigationManager.NavigateTo(
+                GetCheckoutLink(plan));
+        }
+        finally
+        {
+            IsCheckingAuthentication = false;
+            SelectedPlanName = null;
+        }
+    }
+
+    private decimal GetPrice(
+        Plan plan)
     {
         return IsAnnual
-            ? Math.Round(plan.MonthlyPrice * 0.8m, 0)
+            ? Math.Round(
+                plan.MonthlyPrice * 0.8m,
+                0)
             : plan.MonthlyPrice;
     }
 
-    private string GetCheckoutLink(Plan plan)
+    private string GetCheckoutLink(
+        Plan plan)
     {
-        var encodedPlanName = Uri.EscapeDataString(plan.Name);
-        var billing = IsAnnual ? "annual" : "monthly";
+        var encodedPlanName =
+            Uri.EscapeDataString(plan.Name);
 
-        return $"/checkout?plan={encodedPlanName}&billing={billing}";
+        var billing =
+            IsAnnual
+                ? "annual"
+                : "monthly";
+
+        return
+            $"/checkout?plan={encodedPlanName}" +
+            $"&billing={billing}";
     }
 
     private static readonly Benefit[] Benefits =
@@ -210,7 +384,8 @@
     [
         new(
             Name: "Private",
-            Summary: "Personal emergency training for private pilots.",
+            Summary:
+                "Personal emergency training for private pilots.",
             MonthlyPrice: 99m,
             Icon: "fa-regular fa-paper-plane",
             AccentClass: "private-plan",
@@ -226,12 +401,14 @@
                 "Mobile & Web Access"
             ],
             ButtonText: "Start Private Plan",
-            Link: "/signup",
             Featured: false
         ),
+
         new(
             Name: "Small Commercial",
-            Summary: "Team training for flight schools, charter operators and small aviation companies.",
+            Summary:
+                "Team training for flight schools, " +
+                "charter operators and small aviation companies.",
             MonthlyPrice: 399m,
             Icon: "fa-regular fa-star",
             AccentClass: "commercial-plan",
@@ -247,12 +424,14 @@
                 "Priority Email Support"
             ],
             ButtonText: "Start Small Commercial Plan",
-            Link: "/signup",
             Featured: true
         ),
+
         new(
             Name: "Large Commercial",
-            Summary: "Enterprise training management for airlines and large aviation organisations.",
+            Summary:
+                "Enterprise training management for airlines " +
+                "and large aviation organisations.",
             MonthlyPrice: 999m,
             Icon: "fa-solid fa-crown",
             AccentClass: "enterprise-plan",
@@ -270,7 +449,6 @@
                 "Priority Support Available 24/7"
             ],
             ButtonText: "Start Large Commercial Plan",
-            Link: "/contact",
             Featured: false
         )
     ];
@@ -289,7 +467,6 @@
         string AccentClass,
         string[] Features,
         string ButtonText,
-        string Link,
         bool Featured
     );
 }

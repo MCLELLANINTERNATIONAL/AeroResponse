@@ -1,0 +1,632 @@
+@page "/reports/admin"
+@rendermode InteractiveServer
+@inject AdminDashboardService AdminDashboardService
+
+<PageTitle>
+    Administration Dashboard | AeroResponse
+</PageTitle>
+
+@if (_loading)
+{
+    <div class="reports-loading">
+        Loading system-wide training analytics…
+    </div>
+}
+else if (_dashboard is null)
+{
+    <div class="reports-empty">
+        <h1>
+            Administration dashboard unavailable
+        </h1>
+
+        <p>
+            Please refresh the page and try again.
+        </p>
+    </div>
+}
+else
+{
+    <main class="reports-page admin-dashboard-page">
+
+        <header class="reports-header">
+
+            <div>
+                <h1>ADMINISTRATION DASHBOARD</h1>
+
+                <p>
+                    System-wide training usage,
+                    scenario popularity and outcomes
+                </p>
+            </div>
+
+            <div class="admin-chip">
+
+                <span class="admin-avatar">
+                    ▦
+                </span>
+
+                <div>
+                    <strong>
+                        Platform Overview
+                    </strong>
+
+                    <small>
+                        All training activity
+                    </small>
+                </div>
+
+            </div>
+
+        </header>
+
+        <nav class="reports-tabs">
+
+            <NavLink href="/reports"
+            Match="NavLinkMatch.All">
+            ◉ Overview
+        </NavLink>
+
+        <NavLink href="/reports/flight-logs">
+            ✈ Flight Logs
+        </NavLink>
+
+        <NavLink href="/reports/scoring">
+            ⚙ Scoring
+        </NavLink>
+
+        <NavLink href="/reports/analytics">
+            ▥ Analytics
+        </NavLink>
+
+        <NavLink href="/reports/feedback">
+            ✪ Feedback
+        </NavLink>
+
+        <NavLink href="/reports/badges">
+            🏆 Badges
+        </NavLink>
+
+        <NavLink href="/reports/admin">
+            ▦ Administration
+        </NavLink>
+
+    </nav>
+
+    <section class="admin-filter-card">
+
+        <div>
+            <strong>Reporting period</strong>
+            <small>@PeriodDescription</small>
+        </div>
+
+        <label>
+            <span>Show</span>
+
+            <select value="@_selectedDays"
+            @onchange="ChangePeriodAsync">
+
+            <option value="7">
+                Last 7 days
+            </option>
+
+            <option value="30">
+                Last 30 days
+            </option>
+
+            <option value="90">
+                Last 90 days
+            </option>
+
+            <option value="0">
+                All time
+            </option>
+
+        </select>
+    </label>
+
+</section>
+
+<section class="admin-kpi-grid"
+aria-label="Platform summary">
+
+<article class="admin-kpi-card">
+
+    <span class="admin-kpi-icon">
+        👥
+    </span>
+
+    <small>Registered Users</small>
+
+    <strong>
+        @_dashboard.TotalRegisteredUsers
+    </strong>
+
+    <em>
+        @_dashboard.ActivePilots active
+        in this period
+    </em>
+
+</article>
+
+<article class="admin-kpi-card">
+
+    <span class="admin-kpi-icon">
+        ✈
+    </span>
+
+    <small>Training Attempts</small>
+
+    <strong>
+        @_dashboard.TotalAttempts
+    </strong>
+
+    <em>
+        Completed simulations
+    </em>
+
+</article>
+
+<article class="admin-kpi-card">
+
+    <span class="admin-kpi-icon">
+        ✓
+    </span>
+
+    <small>Pass Rate</small>
+
+    <strong>
+        @_dashboard.PassRate%
+    </strong>
+
+    <em>
+        @_dashboard.PassCount passed ·
+        @_dashboard.FailCount failed
+    </em>
+
+</article>
+
+<article class="admin-kpi-card">
+
+    <span class="admin-kpi-icon">
+        ★
+    </span>
+
+    <small>Average Score</small>
+
+    <strong>
+        @_dashboard.AverageScore%
+    </strong>
+
+    <em>
+        Across all attempts shown
+    </em>
+
+</article>
+
+<article class="admin-kpi-card">
+
+    <span class="admin-kpi-icon">
+        ⚙
+    </span>
+
+    <small>Active Scenarios</small>
+
+    <strong>
+        @_dashboard.ActiveScenarios
+    </strong>
+
+    <em>
+        @_dashboard.TotalScenarios
+        scenarios in total
+    </em>
+
+</article>
+
+</section>
+
+<section class="admin-dashboard-grid">
+
+    <article class="report-card
+    admin-usage-card">
+
+    <div class="card-heading">
+
+        <h2>Platform Usage</h2>
+
+        <span>
+            @_dashboard.TotalAttempts attempts
+        </span>
+
+    </div>
+
+    @if (_dashboard.UsageByDay.Count == 0)
+    {
+        <p class="admin-no-data">
+            No training activity exists
+            for this period.
+        </p>
+    }
+    else
+    {
+        var maximumAttempts =
+        Math.Max(
+        1,
+        _dashboard.UsageByDay
+        .Max(
+        item =>
+        item.Attempts));
+
+        <div class="usage-chart"
+        aria-label=
+        "Daily training attempts">
+
+        @foreach (
+        var day in
+        _dashboard.UsageByDay)
+        {
+            var height =
+            Math.Max(
+            8,
+            (int)Math.Round(
+            day.Attempts *
+            100d /
+            maximumAttempts));
+
+            <div class="usage-column"
+            title="@day.Attempts attempts by @day.UniquePilots pilots">
+
+            <strong>
+                @day.Attempts
+            </strong>
+
+            <div class=
+            "usage-bar-track">
+
+            <div class="usage-bar"
+            style=
+            "height:@height%">
+        </div>
+
+    </div>
+
+    <small>
+        @day.Date
+        .ToString("dd MMM")
+    </small>
+
+</div>
+}
+
+</div>
+}
+
+</article>
+
+<article class="report-card
+admin-outcomes-card">
+
+<h2>Pass and Fail Outcomes</h2>
+
+<div class="outcome-ring"
+style=
+"--pass-rate:@_dashboard.PassRate">
+
+<span>
+    @_dashboard.PassRate%
+</span>
+
+<small>Pass rate</small>
+
+</div>
+
+<div class="outcome-legend">
+
+    <div>
+        <span class=
+        "legend-dot pass">
+    </span>
+
+    Passed
+
+    <strong>
+        @_dashboard.PassCount
+    </strong>
+</div>
+
+<div>
+    <span class=
+    "legend-dot fail">
+</span>
+
+Failed
+
+<strong>
+    @_dashboard.FailCount
+</strong>
+</div>
+
+</div>
+
+</article>
+
+</section>
+
+<section class="reports-grid
+admin-table-grid">
+
+<article class="report-card">
+
+    <div class="card-heading">
+
+        <h2>
+            Scenario Popularity
+            and Effectiveness
+        </h2>
+
+        <span>
+            @_dashboard
+            .ScenarioPopularity
+            .Count scenarios used
+        </span>
+
+    </div>
+
+    @if (
+    _dashboard
+    .ScenarioPopularity
+    .Count == 0)
+    {
+        <p class="admin-no-data">
+            No scenario results exist
+            for this period.
+        </p>
+    }
+    else
+    {
+        var maximumScenarioAttempts =
+        Math.Max(
+        1,
+        _dashboard
+        .ScenarioPopularity
+        .Max(
+        item =>
+        item.Attempts));
+
+        <div class="table-responsive">
+
+            <table class=
+            "table admin-table">
+
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Popularity</th>
+                    <th>Attempts</th>
+                    <th>Average Score</th>
+                    <th>Pass Rate</th>
+                    <th>Outcome</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @foreach (
+                var scenario in
+                _dashboard
+                .ScenarioPopularity)
+                {
+                    var popularityWidth =
+                    Math.Max(
+                    4,
+                    (int)Math.Round(
+                    scenario
+                    .Attempts *
+                    100d /
+                    maximumScenarioAttempts));
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                @scenario
+                                .ScenarioName
+                            </strong>
+                        </td>
+
+                        <td>
+                            <div class=
+                            "popularity-track">
+
+                            <div class=
+                            "popularity-fill"
+                            style=
+                            "width:@popularityWidth%">
+                        </div>
+
+                    </div>
+                </td>
+
+                <td>
+                    @scenario.Attempts
+                </td>
+
+                <td>
+                    @scenario
+                    .AverageScore%
+                </td>
+
+                <td>
+                    @scenario.PassRate%
+                </td>
+
+                <td>
+
+                    <span class=
+                    "status-pill @(scenario.PassRate >= 70 ? "passed" : "failed")">
+
+                    @scenario.Passes
+                    passed /
+
+                    @scenario.Failures
+                    failed
+
+                </span>
+
+            </td>
+
+        </tr>
+    }
+
+</tbody>
+
+</table>
+
+</div>
+}
+
+</article>
+
+<article class="report-card">
+
+    <div class="card-heading">
+
+        <h2>
+            Recent Platform Activity
+        </h2>
+
+        <span>
+            Latest
+            @_dashboard.RecentActivity.Count
+        </span>
+
+    </div>
+
+    @if (
+    _dashboard.RecentActivity.Count == 0)
+    {
+        <p class="admin-no-data">
+            No recent training activity
+            is available.
+        </p>
+    }
+    else
+    {
+        <div class=
+        "recent-activity-list">
+
+        @foreach (
+        var activity in
+        _dashboard.RecentActivity)
+        {
+            <div class=
+            "recent-activity-item">
+
+            <span class=
+            "activity-icon">
+            ✈
+        </span>
+
+        <div>
+
+            <strong>
+                @activity.PilotName
+            </strong>
+
+            <small>
+                @activity.ScenarioName ·
+                @activity.AircraftName
+            </small>
+
+            <small>
+                @activity.CompletedAt
+                .ToLocalTime()
+                .ToString(
+                "dd MMM yyyy, HH:mm")
+            </small>
+
+        </div>
+
+        <div class=
+        "activity-result">
+
+        <strong>
+            @activity.OverallScore%
+        </strong>
+
+        <span class=
+        "status-pill @(activity.Passed ? "passed" : "failed")">
+
+        @(activity.Passed
+        ? "Passed"
+        : "Failed")
+
+    </span>
+
+</div>
+
+</div>
+}
+
+</div>
+}
+
+</article>
+
+</section>
+
+<p class="live-note">
+    ● Dashboard values update from all
+    saved simulation reports.
+</p>
+
+</main>
+}
+
+@code {
+    private AdminDashboardVm? _dashboard;
+
+    private bool _loading = true;
+
+    private int _selectedDays = 30;
+
+    private string PeriodDescription =>
+        _dashboard?.FromUtc is null
+            ? "All recorded platform activity"
+            : $"{_dashboard.FromUtc.Value.ToLocalTime():dd MMM yyyy} " +
+            $"to {_dashboard.ToUtc.ToLocalTime():dd MMM yyyy}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ChangePeriodAsync(
+        ChangeEventArgs args)
+    {
+        if (int.TryParse(
+                args.Value?.ToString(),
+                out var days))
+        {
+            _selectedDays = days;
+
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+
+            _dashboard =
+                await AdminDashboardService
+                    .GetDashboardAsync(
+                        _selectedDays);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

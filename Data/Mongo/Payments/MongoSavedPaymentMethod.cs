@@ -7,19 +7,13 @@ public sealed class MongoSavedPaymentMethod
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
+    [BsonIgnoreIfDefault]
     public string? Id { get; set; }
 
     [BsonElement("identityUserId")]
     public string IdentityUserId { get; set; } =
         string.Empty;
 
-    /*
-     * Demonstration token only.
-     *
-     * A real application would receive this token
-     * from Stripe, PayPal, Adyen or another payment
-     * provider.
-     */
     [BsonElement("paymentToken")]
     public string PaymentToken { get; set; } =
         string.Empty;

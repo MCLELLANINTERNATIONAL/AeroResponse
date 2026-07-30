@@ -7,7 +7,7 @@ using CockpitLayoutModel = AeroResponse.Models.CockpitLayout;
 
 namespace AeroResponse.Components.Pages;
 
-public partial class AircraftManagment : ComponentBase
+public partial class AircraftManagement : ComponentBase
 {
     [Inject]
     private AircraftService AircraftService { get; set; } = default!;

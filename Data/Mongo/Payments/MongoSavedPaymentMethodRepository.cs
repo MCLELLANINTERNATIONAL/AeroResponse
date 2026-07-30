@@ -32,8 +32,9 @@ public sealed class MongoSavedPaymentMethodRepository
 
         return await _collection
             .Find(
-                method =>
-                    method.IdentityUserId == identityUserId)
+                payment =>
+                    payment.IdentityUserId ==
+                    identityUserId)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -43,17 +44,78 @@ public sealed class MongoSavedPaymentMethodRepository
     {
         ArgumentNullException.ThrowIfNull(paymentMethod);
 
+        if (string.IsNullOrWhiteSpace(
+            paymentMethod.IdentityUserId))
+        {
+            throw new ArgumentException(
+                "The Identity user ID is required.",
+                nameof(paymentMethod));
+        }
+
         var filter =
             Builders<MongoSavedPaymentMethod>
                 .Filter
                 .Eq(
-                    method => method.IdentityUserId,
+                    payment =>
+                        payment.IdentityUserId,
                     paymentMethod.IdentityUserId);
 
-        await _collection.ReplaceOneAsync(
+        var update =
+            Builders<MongoSavedPaymentMethod>
+                .Update
+                .SetOnInsert(
+                    payment =>
+                        payment.IdentityUserId,
+                    paymentMethod.IdentityUserId)
+                .Set(
+                    payment =>
+                        payment.PaymentToken,
+                    paymentMethod.PaymentToken)
+                .Set(
+                    payment =>
+                        payment.CardBrand,
+                    paymentMethod.CardBrand)
+                .Set(
+                    payment =>
+                        payment.LastFour,
+                    paymentMethod.LastFour)
+                .Set(
+                    payment =>
+                        payment.ExpiryDate,
+                    paymentMethod.ExpiryDate)
+                .Set(
+                    payment =>
+                        payment.CardholderName,
+                    paymentMethod.CardholderName)
+                .Set(
+                    payment =>
+                        payment.Country,
+                    paymentMethod.Country)
+                .Set(
+                    payment =>
+                        payment.PostalCode,
+                    paymentMethod.PostalCode)
+                .Set(
+                    payment =>
+                        payment.AddressLineOne,
+                    paymentMethod.AddressLineOne)
+                .Set(
+                    payment =>
+                        payment.City,
+                    paymentMethod.City)
+                .Set(
+                    payment =>
+                        payment.Region,
+                    paymentMethod.Region)
+                .Set(
+                    payment =>
+                        payment.UpdatedAtUtc,
+                    paymentMethod.UpdatedAtUtc);
+
+        await _collection.UpdateOneAsync(
             filter,
-            paymentMethod,
-            new ReplaceOptions
+            update,
+            new UpdateOptions
             {
                 IsUpsert = true
             },

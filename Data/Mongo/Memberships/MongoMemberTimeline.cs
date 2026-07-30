@@ -7,6 +7,7 @@ public sealed class MongoMemberTimeline
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
+    [BsonIgnoreIfDefault]
     public string? Id { get; set; }
 
     [BsonElement("identityUserId")]

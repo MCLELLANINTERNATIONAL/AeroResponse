@@ -976,3 +976,116 @@
         transition: none;
     }
 }
+
+/* =========================================================
+   Authentication error
+   ========================================================= */
+
+.membership-error {
+    width: 100%;
+    max-width: 1110px;
+    margin: 0 auto 1.25rem;
+    padding: 0.9rem 1rem;
+
+    display: grid;
+    grid-template-columns:
+        auto
+        minmax(0, 1fr)
+        auto
+        auto;
+
+    align-items: center;
+    gap: 0.75rem;
+
+    color: #8f1d2c;
+    background: #fff2f4;
+    border: 1px solid #f0bdc5;
+    border-radius: 10px;
+
+    box-shadow:
+        0 5px 16px
+        rgba(143, 29, 44, 0.07);
+}
+
+.membership-error > i {
+    color: #d94355;
+    font-size: 1.1rem;
+}
+
+.membership-error span {
+    min-width: 0;
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.membership-error a {
+    color: #087cf0;
+    font-size: 0.84rem;
+    font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.membership-error a:hover {
+    text-decoration: underline;
+}
+
+.membership-error button {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+
+    display: grid;
+    place-items: center;
+
+    color: #8f1d2c;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+
+    cursor: pointer;
+}
+
+.membership-error button:hover {
+    background: rgba(143, 29, 44, 0.08);
+}
+
+
+/* The plan controls are now buttons rather than links. */
+
+button.plan-button {
+    width: 100%;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+button.plan-button:disabled {
+    cursor: wait;
+    opacity: 0.7;
+    transform: none;
+}
+
+
+/* Mobile error layout */
+
+@media (max-width: 560px) {
+    .membership-error {
+        grid-template-columns:
+            auto
+            minmax(0, 1fr)
+            auto;
+
+        gap: 0.6rem;
+    }
+
+    .membership-error a {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .membership-error button {
+        grid-column: 3;
+        grid-row: 1;
+    }
+}

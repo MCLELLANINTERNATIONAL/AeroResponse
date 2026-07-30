@@ -104,7 +104,7 @@
     transform: scaleX(1);
 }
 
-/* Account buttons */
+/* Account area */
 
 .account-actions {
     justify-self: end;
@@ -117,7 +117,8 @@
 }
 
 .login-button,
-.signup-button {
+.signup-button,
+.logout-button {
     min-width: 104px;
     min-height: 42px;
     padding: 0 1.25rem;
@@ -128,9 +129,12 @@
 
     border-radius: 5px;
 
+    font: inherit;
     font-size: 0.9rem;
     font-weight: 700;
     text-decoration: none;
+
+    cursor: pointer;
 
     transition:
         transform 0.2s ease,
@@ -138,13 +142,16 @@
         border-color 0.2s ease;
 }
 
-.login-button {
+.login-button,
+.logout-button {
     color: #ffffff;
     border: 1px solid rgba(255, 255, 255, 0.52);
     background: transparent;
 }
 
-.login-button:hover {
+.login-button:hover,
+.logout-button:hover {
+    color: #ffffff;
     border-color: #ffffff;
     background: rgba(255, 255, 255, 0.08);
     transform: translateY(-1px);
@@ -158,9 +165,28 @@
 }
 
 .signup-button:hover {
+    color: #ffffff;
     background: #168cff;
     border-color: #168cff;
     transform: translateY(-1px);
+}
+
+/*
+ * This is not a visible logout form.
+ *
+ * It has no layout, border, background, fields,
+ * or separate page. It only allows the Log Out
+ * button to securely send a POST request to
+ * ASP.NET Identity.
+ */
+.logout-action {
+    display: contents;
+    margin: 0;
+    padding: 0;
+}
+
+.logout-button {
+    appearance: none;
 }
 
 /* Hidden desktop controls */
@@ -191,7 +217,8 @@
     }
 
     .login-button,
-    .signup-button {
+    .signup-button,
+    .logout-button {
         min-width: 92px;
         padding: 0 1rem;
     }
@@ -226,7 +253,8 @@
     }
 
     .login-button,
-    .signup-button {
+    .signup-button,
+    .logout-button {
         min-width: 78px;
         min-height: 40px;
         padding: 0 0.7rem;
@@ -294,16 +322,26 @@
             opacity 0.2s ease;
     }
 
-    .nav-toggle:checked + .nav-toggle-label span:nth-child(1) {
-        transform: translateY(7px) rotate(45deg);
+    .nav-toggle:checked
+        + .nav-toggle-label
+        span:nth-child(1) {
+        transform:
+            translateY(7px)
+            rotate(45deg);
     }
 
-    .nav-toggle:checked + .nav-toggle-label span:nth-child(2) {
+    .nav-toggle:checked
+        + .nav-toggle-label
+        span:nth-child(2) {
         opacity: 0;
     }
 
-    .nav-toggle:checked + .nav-toggle-label span:nth-child(3) {
-        transform: translateY(-7px) rotate(-45deg);
+    .nav-toggle:checked
+        + .nav-toggle-label
+        span:nth-child(3) {
+        transform:
+            translateY(-7px)
+            rotate(-45deg);
     }
 
     .primary-nav {
@@ -316,12 +354,17 @@
         padding: 0.75rem 1rem;
 
         background: #020d1b;
-        border-top: 1px solid rgba(147, 183, 220, 0.14);
+        border-top:
+            1px solid
+            rgba(147, 183, 220, 0.14);
 
-        box-shadow: 0 14px 25px rgba(0, 0, 0, 0.25);
+        box-shadow:
+            0 14px 25px
+            rgba(0, 0, 0, 0.25);
     }
 
-    .nav-toggle:checked ~ .primary-nav {
+    .nav-toggle:checked
+        ~ .primary-nav {
         display: grid;
     }
 
@@ -355,17 +398,23 @@
         padding: 0 1rem 1rem;
 
         background: #020d1b;
-        border-bottom: 1px solid rgba(147, 183, 220, 0.18);
+        border-bottom:
+            1px solid
+            rgba(147, 183, 220, 0.18);
 
-        box-shadow: 0 14px 25px rgba(0, 0, 0, 0.25);
+        box-shadow:
+            0 14px 25px
+            rgba(0, 0, 0, 0.25);
     }
 
-    .nav-toggle:checked ~ .account-actions {
+    .nav-toggle:checked
+        ~ .account-actions {
         display: grid;
     }
 
     .login-button,
-    .signup-button {
+    .signup-button,
+    .logout-button {
         width: 100%;
         min-height: 44px;
         font-size: 0.9rem;

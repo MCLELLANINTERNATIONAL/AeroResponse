@@ -1,0 +1,132 @@
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using AeroResponse.Data.Mongo.Memberships
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject MongoMemberTimelineRepository MemberTimelines
+@inject ILogger<SubscriptionBanner> Logger
+
+@if (!string.IsNullOrWhiteSpace(BannerMessage))
+{
+    <div class="subscription-banner @BannerClass"
+         role="status">
+
+        <i class="@BannerIcon"
+           aria-hidden="true">
+        </i>
+
+        <span>@BannerMessage</span>
+    </div>
+}
+
+@code {
+    private string? BannerMessage;
+    private string BannerClass =
+        string.Empty;
+
+    private string BannerIcon =
+        "fa-solid fa-circle-info";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var user =
+            authenticationState.User;
+
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            return;
+        }
+
+        var identityUserId =
+            user.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(identityUserId))
+        {
+            return;
+        }
+
+        try
+        {
+            var timeline =
+                await MemberTimelines
+                    .FindByIdentityUserIdAsync(
+                        identityUserId);
+
+            if (timeline is null)
+            {
+                return;
+            }
+
+            SetBanner(
+                timeline.MembershipExpiresAtUtc);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(
+                exception,
+                "Could not check membership expiry for {UserId}.",
+                identityUserId);
+        }
+    }
+
+    private void SetBanner(
+        DateTime expiresAtUtc)
+    {
+        var today =
+            DateOnly.FromDateTime(
+                DateTime.UtcNow);
+
+        var expiryDate =
+            DateOnly.FromDateTime(
+                expiresAtUtc);
+
+        var daysRemaining =
+            expiryDate.DayNumber -
+            today.DayNumber;
+
+        if (daysRemaining < 0)
+        {
+            BannerMessage =
+                "Membership has expired.";
+
+            BannerClass =
+                "subscription-expired";
+
+            BannerIcon =
+                "fa-solid fa-circle-xmark";
+
+            return;
+        }
+
+        if (daysRemaining == 0)
+        {
+            BannerMessage =
+                "Subscription expires today.";
+
+            BannerClass =
+                "subscription-today";
+
+            BannerIcon =
+                "fa-solid fa-triangle-exclamation";
+
+            return;
+        }
+
+        if (daysRemaining <= 7)
+        {
+            BannerMessage =
+                "Subscription expires soon.";
+
+            BannerClass =
+                "subscription-soon";
+
+            BannerIcon =
+                "fa-solid fa-clock";
+        }
+    }
+}

@@ -1,0 +1,32 @@
+.subscription-banner {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.75rem 1.25rem;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+
+    font-size: 0.9rem;
+    font-weight: 750;
+    text-align: center;
+}
+
+.subscription-soon {
+    color: #704700;
+    background: #fff4cc;
+    border-bottom: 1px solid #eccd64;
+}
+
+.subscription-today {
+    color: #8a3f00;
+    background: #ffe5c2;
+    border-bottom: 1px solid #eea64c;
+}
+
+.subscription-expired {
+    color: #8e1f2d;
+    background: #ffe0e4;
+    border-bottom: 1px solid #e99aa5;
+}

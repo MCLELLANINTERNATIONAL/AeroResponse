@@ -1,7 +1,6 @@
 ﻿<header class="site-header">
     <div class="nav-container">
 
-        <!-- Logo -->
         <NavLink class="brand"
                  href=""
                  Match="NavLinkMatch.All"
@@ -12,7 +11,6 @@
                  class="brand-logo" />
         </NavLink>
 
-        <!-- Mobile menu control -->
         <input id="nav-toggle"
                class="nav-toggle"
                type="checkbox"
@@ -21,13 +19,15 @@
         <label class="nav-toggle-label"
                for="nav-toggle"
                aria-hidden="true">
+
             <span></span>
             <span></span>
             <span></span>
         </label>
 
-        <!-- Main navigation -->
-        <nav class="primary-nav" aria-label="Primary navigation">
+        <nav class="primary-nav"
+             aria-label="Primary navigation">
+
             <NavLink href=""
                      Match="NavLinkMatch.All">
                 Home
@@ -54,17 +54,41 @@
             </NavLink>
         </nav>
 
-        <!-- Account buttons -->
         <div class="account-actions">
-            <a class="login-button"
-               href="/Account/Login">
-                Login
-            </a>
+            <AuthorizeView>
+                <Authorized>
+                    <UserAccountEmblem />
 
-            <a class="signup-button"
-                href="/Account/Register">
-                Sign Up
-            </a>
+                    <form action="/Account/Logout"
+                          method="post"
+                          class="logout-action">
+
+                        <AntiforgeryToken />
+
+                        <input type="hidden"
+                               name="ReturnUrl"
+                               value="" />
+
+                        <button type="submit"
+                                class="logout-button">
+                            Log Out
+                        </button>
+                    </form>
+                </Authorized>
+
+                <NotAuthorized>
+                    <a class="login-button"
+                       href="/Account/Login">
+                        Login
+                    </a>
+
+                    <a class="signup-button"
+                       href="/Account/Register">
+                        Sign Up
+                    </a>
+                </NotAuthorized>
+            </AuthorizeView>
         </div>
+
     </div>
 </header>

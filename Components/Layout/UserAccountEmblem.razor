@@ -1,0 +1,186 @@
+@using System.Security.Claims
+@using AeroResponse.Data.Mongo.Accounts
+@using Microsoft.AspNetCore.Components.Authorization
+@using MongoDB.Driver
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject MongoUserAccountRepository MongoUserAccounts
+@inject ILogger<UserAccountEmblem> Logger
+
+<span class="user-emblem"
+      title="@displayName"
+      aria-label="@($"Logged in as {displayName}")">
+
+    <span class="user-initials"
+          aria-hidden="true">
+        @initials
+    </span>
+
+    <span class="user-name">
+        @displayName
+    </span>
+</span>
+
+@code {
+    private string displayName = "Account";
+    private string initials = "A";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var user =
+            authenticationState.User;
+
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            return;
+        }
+
+        /*
+         * Use the Identity name as a fallback in
+         * case MongoDB is temporarily unavailable.
+         */
+        displayName =
+            GetFallbackName(user);
+
+        initials =
+            BuildInitials(displayName);
+
+        var identityUserId =
+            user.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(
+            identityUserId))
+        {
+            return;
+        }
+
+        try
+        {
+            var mongoAccount =
+                await MongoUserAccounts
+                    .FindByIdentityUserIdAsync(
+                        identityUserId);
+
+            if (mongoAccount is null)
+            {
+                Logger.LogWarning(
+                    "No MongoDB account was found " +
+                    "for Identity user {UserId}.",
+                    identityUserId);
+
+                return;
+            }
+
+            var mongoDisplayName =
+                BuildDisplayName(
+                    mongoAccount.FirstName,
+                    mongoAccount.Surname);
+
+            if (string.IsNullOrWhiteSpace(
+                mongoDisplayName))
+            {
+                return;
+            }
+
+            displayName =
+                mongoDisplayName;
+
+            initials =
+                BuildInitials(
+                    mongoDisplayName);
+        }
+        catch (Exception exception)
+            when (
+                exception is MongoException
+                or TimeoutException)
+        {
+            /*
+             * A MongoDB problem should not log out
+             * the authenticated user or break the
+             * navigation menu.
+             */
+            Logger.LogWarning(
+                exception,
+                "Could not load the navigation name " +
+                "from MongoDB for Identity user " +
+                "{UserId}.",
+                identityUserId);
+        }
+    }
+
+    private static string BuildDisplayName(
+        string? firstName,
+        string? surname)
+    {
+        return string.Join(
+            " ",
+            new[]
+            {
+                firstName?.Trim(),
+                surname?.Trim()
+            }
+            .Where(
+                value =>
+                    !string.IsNullOrWhiteSpace(
+                        value)));
+    }
+
+    private static string GetFallbackName(
+        ClaimsPrincipal user)
+    {
+        var identityName =
+            user.Identity?.Name;
+
+        if (string.IsNullOrWhiteSpace(
+            identityName))
+        {
+            return "Account";
+        }
+
+        /*
+         * Identity.Name will normally be the user's
+         * email. Display only the part before @ as
+         * the temporary fallback.
+         */
+        var atIndex =
+            identityName.IndexOf(
+                '@',
+                StringComparison.Ordinal);
+
+        return atIndex > 0
+            ? identityName[..atIndex]
+            : identityName;
+    }
+
+    private static string BuildInitials(
+        string name)
+    {
+        var nameParts =
+            name.Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries
+                | StringSplitOptions.TrimEntries);
+
+        if (nameParts.Length == 0)
+        {
+            return "A";
+        }
+
+        if (nameParts.Length == 1)
+        {
+            return nameParts[0][0]
+                .ToString()
+                .ToUpperInvariant();
+        }
+
+        return string.Concat(
+            nameParts[0][0],
+            nameParts[^1][0])
+            .ToUpperInvariant();
+    }
+}

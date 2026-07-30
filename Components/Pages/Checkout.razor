@@ -3,6 +3,10 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Authorization
+@using AeroResponse.Data.Mongo.Accounts
+@using AeroResponse.Data.Mongo.Payments
+@using AeroResponse.Data.Mongo.Memberships
 
 <PageTitle>Secure Checkout | AeroResponse</PageTitle>
 
@@ -329,11 +333,20 @@
                 </label>
 
                 <button class="pay-button"
-                        type="submit">
-                    <i class="fa-solid fa-lock"
-                       aria-hidden="true"></i>
+                        type="submit"
+                        disabled="@PaymentSubmitting">
 
-                    Pay @FormatMoney(TotalDue)
+                    <i class="fa-solid fa-lock"
+                    aria-hidden="true"></i>
+
+                    @if (PaymentSubmitting)
+                    {
+                        <span>Processing...</span>
+                    }
+                    else
+                    {
+                        <span>Pay @FormatMoney(TotalDue)</span>
+                    }
                 </button>
 
                 <p class="payment-terms">
@@ -354,6 +367,16 @@
                         </a>.
                     </span>
                 </p>
+                @if (!string.IsNullOrWhiteSpace(PaymentError))
+                    {
+                        <div class="payment-error"
+                            role="alert">
+                            <i class="fa-solid fa-circle-exclamation"
+                            aria-hidden="true"></i>
+
+                            <span>@PaymentError</span>
+                        </div>
+                    }
             </EditForm>
         </section>
 
@@ -508,28 +531,134 @@
     [SupplyParameterFromQuery(Name = "billing")]
     public string? BillingFrequency { get; set; }
 
+    [Inject]
+    private AuthenticationStateProvider
+        AuthenticationStateProvider { get; set; } = default!;
+
+    [Inject]
+    private MongoSavedPaymentMethodRepository
+        SavedPaymentMethods { get; set; } = default!;
+
+    [Inject]
+    private MongoMemberTimelineRepository
+        MemberTimelines { get; set; } = default!;
+
+    [Inject]
+    private MongoUserAccountRepository
+        MongoUserAccounts { get; set; } = default!;
+
+    [Inject]
+    private ILogger<Checkout>
+        Logger { get; set; } = default!;
+
     private bool PaymentSubmitted;
+    private bool PaymentSubmitting;
+    private bool UsingSavedCard;
+
+    private string? PaymentError;
+    private string? IdentityUserId;
 
     private PaymentFormModel Payment { get; } = new()
     {
-        CardNumber = "4242 4242 4242 4242",
-        ExpiryDate = "06 / 27",
-        Cvc = "123",
-        CardholderName = "John Doe",
-        Country = "United Kingdom",
-        PostalCode = "SW1A 1AA",
-        AddressLineOne = "123 Aviation Way",
-        City = "London",
-        Region = "Greater London",
-        SaveCard = true
+        Country = "United Kingdom"
     };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var user =
+            authenticationState.User;
+
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            PaymentError =
+                "You must be signed in to complete a membership purchase.";
+
+            return;
+        }
+
+        IdentityUserId =
+            user.FindFirst(
+                System.Security.Claims
+                    .ClaimTypes
+                    .NameIdentifier)?
+                .Value;
+
+        if (string.IsNullOrWhiteSpace(IdentityUserId))
+        {
+            PaymentError =
+                "Your account could not be identified.";
+
+            return;
+        }
+
+        await LoadSavedPaymentMethodAsync();
+    }
+
+    private async Task LoadSavedPaymentMethodAsync()
+    {
+        try
+        {
+            var savedMethod =
+                await SavedPaymentMethods
+                    .FindByIdentityUserIdAsync(
+                        IdentityUserId!);
+
+            if (savedMethod is null)
+            {
+                return;
+            }
+
+            UsingSavedCard = true;
+
+            Payment.CardNumber =
+                $"•••• •••• •••• {savedMethod.LastFour}";
+
+            Payment.ExpiryDate =
+                savedMethod.ExpiryDate;
+
+            Payment.CardholderName =
+                savedMethod.CardholderName;
+
+            Payment.Country =
+                savedMethod.Country;
+
+            Payment.PostalCode =
+                savedMethod.PostalCode;
+
+            Payment.AddressLineOne =
+                savedMethod.AddressLineOne;
+
+            Payment.City =
+                savedMethod.City;
+
+            Payment.Region =
+                savedMethod.Region;
+
+            Payment.SaveCard = true;
+
+            /*
+             * CVC is deliberately never restored.
+             */
+            Payment.Cvc = string.Empty;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(
+                exception,
+                "Could not load the saved payment method for {UserId}.",
+                IdentityUserId);
+        }
+    }
 
     private bool IsAnnual =>
         string.Equals(
             BillingFrequency,
             "annual",
-            StringComparison.OrdinalIgnoreCase
-        );
+            StringComparison.OrdinalIgnoreCase);
 
     private CheckoutPlan SelectedPlan
     {
@@ -560,8 +689,7 @@
             ? Math.Round(
                 SelectedPlan.MonthlyPrice * 0.8m,
                 0,
-                MidpointRounding.AwayFromZero
-            )
+                MidpointRounding.AwayFromZero)
             : SelectedPlan.MonthlyPrice;
 
     private decimal AnnualTotal =>
@@ -580,19 +708,238 @@
     private string PlanAccentClass =>
         SelectedPlan.Name switch
         {
-            "Small Commercial" => "commercial-accent",
-            "Large Commercial" => "enterprise-accent",
-            _ => "private-accent"
+            "Small Commercial" =>
+                "commercial-accent",
+
+            "Large Commercial" =>
+                "enterprise-accent",
+
+            _ =>
+                "private-accent"
         };
 
-    private static string FormatMoney(decimal amount)
+    private string SelectedAccountType =>
+        SelectedPlan.Name switch
+        {
+            "Small Commercial" =>
+                "owner_small",
+
+            "Large Commercial" =>
+                "owner_large",
+
+            _ =>
+                "pilot"
+        };
+
+    private static string FormatMoney(
+        decimal amount)
     {
         return $"${amount:N2}";
     }
 
-    private void SubmitPayment()
+    private async Task SubmitPayment()
     {
-        PaymentSubmitted = true;
+        if (PaymentSubmitting)
+        {
+            return;
+        }
+
+        PaymentError = null;
+        PaymentSubmitted = false;
+
+        if (string.IsNullOrWhiteSpace(IdentityUserId))
+        {
+            PaymentError =
+                "You must be signed in to complete this purchase.";
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Payment.Cvc))
+        {
+            PaymentError =
+                "Enter the CVC for this payment. " +
+                "CVC values are never saved.";
+
+            return;
+        }
+
+        PaymentSubmitting = true;
+
+        try
+        {
+            var now =
+                DateTime.UtcNow;
+
+            var expiry =
+                IsAnnual
+                    ? now.AddYears(1)
+                    : now.AddMonths(1);
+
+            if (Payment.SaveCard)
+            {
+                await SavePaymentMethodAsync(now);
+            }
+
+            await MongoUserAccounts
+                .UpdateAccountTypeAsync(
+                    IdentityUserId,
+                    SelectedAccountType);
+
+            await MemberTimelines.UpsertAsync(
+                new MongoMemberTimeline
+                {
+                    IdentityUserId =
+                        IdentityUserId,
+
+                    PlanName =
+                        SelectedPlan.Name,
+
+                    AccountType =
+                        SelectedAccountType,
+
+                    BillingFrequency =
+                        IsAnnual
+                            ? "annual"
+                            : "monthly",
+
+                    MembershipStartedAtUtc =
+                        now,
+
+                    MembershipExpiresAtUtc =
+                        expiry,
+
+                    UpdatedAtUtc =
+                        now
+                });
+
+            PaymentSubmitted = true;
+
+            Logger.LogInformation(
+                "User {UserId} purchased the {Plan} plan " +
+                "with {Billing} billing.",
+                IdentityUserId,
+                SelectedPlan.Name,
+                IsAnnual ? "annual" : "monthly");
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(
+                exception,
+                "Membership purchase failed for {UserId}.",
+                IdentityUserId);
+
+            PaymentError =
+                "The membership could not be completed. " +
+                "Please try again.";
+        }
+        finally
+        {
+            PaymentSubmitting = false;
+        }
+    }
+
+    private async Task SavePaymentMethodAsync(
+        DateTime now)
+    {
+        var cardDigits =
+            new string(
+                Payment.CardNumber
+                    .Where(char.IsDigit)
+                    .ToArray());
+
+        string lastFour;
+
+        if (UsingSavedCard &&
+            Payment.CardNumber.Contains('•'))
+        {
+            lastFour =
+                cardDigits.Length >= 4
+                    ? cardDigits[^4..]
+                    : cardDigits;
+        }
+        else
+        {
+            if (cardDigits.Length < 4)
+            {
+                throw new InvalidOperationException(
+                    "Enter a valid card number.");
+            }
+
+            lastFour =
+                cardDigits[^4..];
+        }
+
+        await SavedPaymentMethods.UpsertAsync(
+            new MongoSavedPaymentMethod
+            {
+                IdentityUserId =
+                    IdentityUserId!,
+
+                /*
+                 * Demonstration token. Replace this with
+                 * a real payment-provider token later.
+                 */
+                PaymentToken =
+                    $"demo_{Guid.NewGuid():N}",
+
+                CardBrand =
+                    DetectCardBrand(cardDigits),
+
+                LastFour =
+                    lastFour,
+
+                ExpiryDate =
+                    Payment.ExpiryDate.Trim(),
+
+                CardholderName =
+                    Payment.CardholderName.Trim(),
+
+                Country =
+                    Payment.Country.Trim(),
+
+                PostalCode =
+                    Payment.PostalCode.Trim(),
+
+                AddressLineOne =
+                    Payment.AddressLineOne.Trim(),
+
+                City =
+                    Payment.City.Trim(),
+
+                Region =
+                    Payment.Region.Trim(),
+
+                UpdatedAtUtc =
+                    now
+            });
+    }
+
+    private static string DetectCardBrand(
+        string cardDigits)
+    {
+        if (cardDigits.StartsWith("4"))
+        {
+            return "Visa";
+        }
+
+        if (cardDigits.StartsWith("5"))
+        {
+            return "Mastercard";
+        }
+
+        if (cardDigits.StartsWith("34") ||
+            cardDigits.StartsWith("37"))
+        {
+            return "American Express";
+        }
+
+        if (cardDigits.StartsWith("6"))
+        {
+            return "Discover";
+        }
+
+        return "Card";
     }
 
     private static readonly CheckoutPlan[] Plans =
@@ -624,23 +971,32 @@
 
     private sealed class PaymentFormModel
     {
-        public string CardNumber { get; set; } = string.Empty;
+        public string CardNumber { get; set; } =
+            string.Empty;
 
-        public string ExpiryDate { get; set; } = string.Empty;
+        public string ExpiryDate { get; set; } =
+            string.Empty;
 
-        public string Cvc { get; set; } = string.Empty;
+        public string Cvc { get; set; } =
+            string.Empty;
 
-        public string CardholderName { get; set; } = string.Empty;
+        public string CardholderName { get; set; } =
+            string.Empty;
 
-        public string Country { get; set; } = string.Empty;
+        public string Country { get; set; } =
+            string.Empty;
 
-        public string PostalCode { get; set; } = string.Empty;
+        public string PostalCode { get; set; } =
+            string.Empty;
 
-        public string AddressLineOne { get; set; } = string.Empty;
+        public string AddressLineOne { get; set; } =
+            string.Empty;
 
-        public string City { get; set; } = string.Empty;
+        public string City { get; set; } =
+            string.Empty;
 
-        public string Region { get; set; } = string.Empty;
+        public string Region { get; set; } =
+            string.Empty;
 
         public bool SaveCard { get; set; }
     }

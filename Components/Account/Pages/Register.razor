@@ -2,16 +2,15 @@
 @layout AeroResponse.Components.Account.Shared.AuthLayout
 
 @using System.ComponentModel.DataAnnotations
-@using System.Text
-@using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
-@using Microsoft.AspNetCore.WebUtilities
+@using MongoDB.Driver
 @using AeroResponse.Data
+@using AeroResponse.Data.Mongo.Accounts
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
 @inject SignInManager<ApplicationUser> SignInManager
-@inject IEmailSender<ApplicationUser> EmailSender
+@inject MongoUserAccountRepository MongoUserAccounts
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
@@ -66,6 +65,7 @@
                         class="auth-input-icon"
                         viewBox="0 0 24 24"
                         aria-hidden="true">
+
                         <circle cx="12" cy="8" r="4" />
                         <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
                     </svg>
@@ -94,6 +94,7 @@
                         class="auth-input-icon"
                         viewBox="0 0 24 24"
                         aria-hidden="true">
+
                         <circle cx="12" cy="8" r="4" />
                         <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
                     </svg>
@@ -123,6 +124,7 @@
                     class="auth-input-icon"
                     viewBox="0 0 24 24"
                     aria-hidden="true">
+
                     <path d="M3 5h18v14H3z" />
                     <path d="m3 7 9 6 9-6" />
                 </svg>
@@ -136,6 +138,7 @@
         <div class="auth-field">
             <label for="Input.ReferenceCode">
                 Reference Code
+
                 <span class="optional-label">
                     Optional
                 </span>
@@ -153,6 +156,7 @@
                     class="auth-input-icon"
                     viewBox="0 0 24 24"
                     aria-hidden="true">
+
                     <path d="M20 12 12 20 4 12l8-8 8 8Z" />
                     <circle cx="12" cy="12" r="1.5" />
                 </svg>
@@ -182,12 +186,14 @@
                     class="auth-input-icon auth-lock-icon"
                     viewBox="0 0 24 24"
                     aria-hidden="true">
+
                     <rect
                         x="5"
                         y="10"
                         width="14"
                         height="10"
                         rx="2" />
+
                     <path d="M8 10V7a4 4 0 0 1 8 0v3" />
                 </svg>
 
@@ -197,11 +203,13 @@
                     aria-label="@passwordToggleLabel"
                     title="@passwordToggleLabel"
                     @onclick="TogglePasswordVisibility">
+
                     @if (showPassword)
                     {
                         <svg
                             viewBox="0 0 24 24"
                             aria-hidden="true">
+
                             <path d="M3 3l18 18" />
                             <path d="M10.6 10.7a2 2 0 0 0 2.7 2.7" />
                             <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5.5 0 9 5 9 5a16 16 0 0 1-2.4 2.9" />
@@ -213,6 +221,7 @@
                         <svg
                             viewBox="0 0 24 24"
                             aria-hidden="true">
+
                             <path d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z" />
                             <circle cx="12" cy="12" r="2.5" />
                         </svg>
@@ -248,12 +257,14 @@
                     class="auth-input-icon auth-lock-icon"
                     viewBox="0 0 24 24"
                     aria-hidden="true">
+
                     <rect
                         x="5"
                         y="10"
                         width="14"
                         height="10"
                         rx="2" />
+
                     <path d="M8 10V7a4 4 0 0 1 8 0v3" />
                 </svg>
 
@@ -263,11 +274,13 @@
                     aria-label="@confirmPasswordToggleLabel"
                     title="@confirmPasswordToggleLabel"
                     @onclick="ToggleConfirmPasswordVisibility">
+
                     @if (showConfirmPassword)
                     {
                         <svg
                             viewBox="0 0 24 24"
                             aria-hidden="true">
+
                             <path d="M3 3l18 18" />
                             <path d="M10.6 10.7a2 2 0 0 0 2.7 2.7" />
                             <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5.5 0 9 5 9 5a16 16 0 0 1-2.4 2.9" />
@@ -279,6 +292,7 @@
                         <svg
                             viewBox="0 0 24 24"
                             aria-hidden="true">
+
                             <path d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z" />
                             <circle cx="12" cy="12" r="2.5" />
                         </svg>
@@ -298,10 +312,13 @@
 
             <span>
                 I agree to the
+
                 <a href="/terms" target="_blank">
                     Terms of Service
                 </a>
+
                 and
+
                 <a href="/privacy" target="_blank">
                     Privacy Policy
                 </a>.
@@ -314,14 +331,22 @@
 
         <button
             type="submit"
-            class="primary-auth-button">
+            class="primary-auth-button"
+            disabled="@isSubmitting">
 
             <img
                 src="/images/aircraft.png"
                 alt=""
                 aria-hidden="true" />
 
-            <span>Create Account</span>
+            @if (isSubmitting)
+            {
+                <span>Creating Account...</span>
+            }
+            else
+            {
+                <span>Create Account</span>
+            }
         </button>
 
         <div class="auth-divider">
@@ -344,6 +369,7 @@
     private IEnumerable<IdentityError>? identityErrors;
     private bool showPassword;
     private bool showConfirmPassword;
+    private bool isSubmitting;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = default!;
@@ -360,10 +386,14 @@
                     error => error.Description))}";
 
     private string passwordInputType =>
-        showPassword ? "text" : "password";
+        showPassword
+            ? "text"
+            : "password";
 
     private string confirmPasswordInputType =>
-        showConfirmPassword ? "text" : "password";
+        showConfirmPassword
+            ? "text"
+            : "password";
 
     private string passwordToggleLabel =>
         showPassword
@@ -391,99 +421,218 @@
     public async Task RegisterUser(
         EditContext editContext)
     {
-        identityErrors = null;
-
-        var user = CreateUser();
-
-        user.FirstName = Input.FirstName.Trim();
-        user.Surname = Input.Surname.Trim();
-
-        user.ReferenceCode =
-            string.IsNullOrWhiteSpace(Input.ReferenceCode)
-                ? null
-                : Input.ReferenceCode.Trim();
-
-        var normalisedEmail = Input.Email.Trim();
-
-        await UserStore.SetUserNameAsync(
-            user,
-            normalisedEmail,
-            CancellationToken.None);
-
-        var emailStore = GetEmailStore();
-
-        await emailStore.SetEmailAsync(
-            user,
-            normalisedEmail,
-            CancellationToken.None);
-
-        var result =
-            await UserManager.CreateAsync(
-                user,
-                Input.Password);
-
-        if (!result.Succeeded)
+        if (isSubmitting)
         {
-            identityErrors = result.Errors;
             return;
         }
 
-        Logger.LogInformation(
-            "User created a new account with password.");
+        isSubmitting = true;
+        identityErrors = null;
 
-        var userId =
-            await UserManager.GetUserIdAsync(user);
+        ApplicationUser? user = null;
 
-        var code =
-            await UserManager
-                .GenerateEmailConfirmationTokenAsync(user);
-
-        code = WebEncoders.Base64UrlEncode(
-            Encoding.UTF8.GetBytes(code));
-
-        var callbackUrl =
-            NavigationManager.GetUriWithQueryParameters(
-                NavigationManager
-                    .ToAbsoluteUri(
-                        "Account/ConfirmEmail")
-                    .AbsoluteUri,
-                new Dictionary<string, object?>
-                {
-                    ["userId"] = userId,
-                    ["code"] = code,
-                    ["returnUrl"] = ReturnUrl
-                });
-
-        await EmailSender.SendConfirmationLinkAsync(
-            user,
-            normalisedEmail,
-            HtmlEncoder.Default.Encode(callbackUrl));
-
-        if (UserManager.Options
-            .SignIn
-            .RequireConfirmedAccount)
+        try
         {
-            RedirectManager.RedirectTo(
-                "Account/RegisterConfirmation",
-                new Dictionary<string, object?>
+            user = CreateUser();
+
+            user.FirstName =
+                Input.FirstName.Trim();
+
+            user.Surname =
+                Input.Surname.Trim();
+
+            user.ReferenceCode =
+                string.IsNullOrWhiteSpace(
+                    Input.ReferenceCode)
+                    ? null
+                    : Input.ReferenceCode.Trim();
+
+            var normalisedEmail =
+                Input.Email.Trim();
+
+            await UserStore.SetUserNameAsync(
+                user,
+                normalisedEmail,
+                CancellationToken.None);
+
+            var emailStore =
+                GetEmailStore();
+
+            await emailStore.SetEmailAsync(
+                user,
+                normalisedEmail,
+                CancellationToken.None);
+
+            var identityResult =
+                await UserManager.CreateAsync(
+                    user,
+                    Input.Password);
+
+            if (!identityResult.Succeeded)
+            {
+                identityErrors =
+                    identityResult.Errors;
+
+                return;
+            }
+
+            var mongoAccount =
+                new MongoUserAccount
                 {
-                    ["email"] = normalisedEmail,
-                    ["returnUrl"] = ReturnUrl
-                });
-        }
-        else
-        {
+                    IdentityUserId =
+                        user.Id,
+
+                    FirstName =
+                        user.FirstName,
+
+                    Surname =
+                        user.Surname,
+
+                    Email =
+                        normalisedEmail,
+
+                    NormalizedEmail =
+                        user.NormalizedEmail
+                        ?? normalisedEmail
+                            .ToUpperInvariant(),
+
+                    PasswordHash =
+                        user.PasswordHash
+                        ?? string.Empty,
+
+                    AccountType =
+                        MongoUserAccount
+                            .DefaultAccountType,
+
+                    CreatedAtUtc =
+                        DateTime.UtcNow
+                };
+
+            /*
+             * ReferenceCode is deliberately not stored
+             * inside the MongoDB account document.
+             */
+            try
+            {
+                await MongoUserAccounts.CreateAsync(
+                    mongoAccount);
+            }
+            catch (Exception mongoException)
+                when (
+                    mongoException is MongoException
+                    or TimeoutException)
+            {
+                /*
+                 * Remove the Identity account if its
+                 * MongoDB profile could not be created.
+                 */
+                var deleteResult =
+                    await UserManager.DeleteAsync(
+                        user);
+
+                if (!deleteResult.Succeeded)
+                {
+                    Logger.LogError(
+                        "Could not roll back Identity user " +
+                        "{UserId} after MongoDB account " +
+                        "creation failed.",
+                        user.Id);
+                }
+
+                Logger.LogError(
+                    mongoException,
+                    "MongoDB account creation failed " +
+                    "for {Email}.",
+                    normalisedEmail);
+
+                identityErrors =
+                [
+                    new IdentityError
+                    {
+                        Code = "MongoDbUnavailable",
+                        Description =
+                            "The account database is currently " +
+                            "unavailable. Please try again."
+                    }
+                ];
+
+                return;
+            }
+
+            Logger.LogInformation(
+                "User {Email} created a new guest account.",
+                normalisedEmail);
+
+            /*
+             * Immediately sign in the newly created
+             * user. No confirmation page is shown.
+             */
             await SignInManager.SignInAsync(
                 user,
                 isPersistent: false);
 
-            RedirectManager.RedirectTo(ReturnUrl);
+            /*
+             * Redirect directly to the home page.
+             * The home page will now render the
+             * authenticated navigation controls.
+             */
+            RedirectManager.RedirectTo("/");
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(
+                exception,
+                "Unexpected registration error for {Email}.",
+                Input.Email);
+
+            /*
+             * If Identity creation succeeded but another
+             * unexpected operation failed before sign-in,
+             * attempt to remove the incomplete account.
+             */
+            if (user is not null)
+            {
+                var existingUser =
+                    await UserManager.FindByIdAsync(
+                        user.Id);
+
+                if (existingUser is not null)
+                {
+                    var deleteResult =
+                        await UserManager.DeleteAsync(
+                            existingUser);
+
+                    if (!deleteResult.Succeeded)
+                    {
+                        Logger.LogError(
+                            "Could not roll back incomplete " +
+                            "Identity user {UserId}.",
+                            user.Id);
+                    }
+                }
+            }
+
+            identityErrors =
+            [
+                new IdentityError
+                {
+                    Code = "RegistrationFailed",
+                    Description =
+                        "An unexpected error occurred while " +
+                        "creating your account. Please try again."
+                }
+            ];
+        }
+        finally
+        {
+            isSubmitting = false;
         }
     }
 
     private void TogglePasswordVisibility()
     {
-        showPassword = !showPassword;
+        showPassword =
+            !showPassword;
     }
 
     private void ToggleConfirmPasswordVisibility()
@@ -520,7 +669,8 @@
                 "with email support.");
         }
 
-        return (IUserEmailStore<ApplicationUser>)
+        return
+            (IUserEmailStore<ApplicationUser>)
             UserStore;
     }
 
@@ -561,7 +711,8 @@
         [StringLength(
             100,
             ErrorMessage =
-                "Reference code cannot exceed 100 characters.")]
+                "Reference code cannot exceed " +
+                "100 characters.")]
         [Display(Name = "Reference code")]
         public string? ReferenceCode { get; set; }
 

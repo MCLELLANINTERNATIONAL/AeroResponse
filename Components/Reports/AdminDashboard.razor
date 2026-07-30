@@ -1,9 +1,10 @@
 @page "/reports/admin"
 @rendermode InteractiveServer
 @inject AdminDashboardService AdminDashboardService
+@inject IJSRuntime JS
 
 <PageTitle>
-    Administration Dashboard | AeroResponse
+    Admin Reports Dashboard | AeroResponse
 </PageTitle>
 
 @if (_loading)
@@ -16,7 +17,7 @@ else if (_dashboard is null)
 {
     <div class="reports-empty">
         <h1>
-            Administration dashboard unavailable
+            Admin Reports Dashboard unavailable
         </h1>
 
         <p>
@@ -26,12 +27,12 @@ else if (_dashboard is null)
 }
 else
 {
-    <main class="reports-page admin-dashboard-page">
+    <main id="admin-performance-report" class="reports-page admin-dashboard-page">
 
         <header class="reports-header">
 
             <div>
-                <h1>ADMINISTRATION DASHBOARD</h1>
+                <h1>ADMIN REPORTS DASHBOARD</h1>
 
                 <p>
                     System-wide training usage,
@@ -87,42 +88,47 @@ else
         </NavLink>
 
         <NavLink href="/reports/admin">
-            ▦ Administration
+            ▦ Admin Reports
         </NavLink>
 
-    </nav>
+        <button id="download-report-button"
+        type="button"
+        @onclick="DownloadReportAsync">
+        ⬇ Download PDF
+    </button>
+</nav>
 
-    <section class="admin-filter-card">
+<section class="admin-filter-card">
 
-        <div>
-            <strong>Reporting period</strong>
-            <small>@PeriodDescription</small>
-        </div>
+    <div>
+        <strong>Reporting period</strong>
+        <small>@PeriodDescription</small>
+    </div>
 
-        <label>
-            <span>Show</span>
+    <label>
+        <span>Show</span>
 
-            <select value="@_selectedDays"
-            @onchange="ChangePeriodAsync">
+        <select value="@_selectedDays"
+        @onchange="ChangePeriodAsync">
 
-            <option value="7">
-                Last 7 days
-            </option>
+        <option value="7">
+            Last 7 days
+        </option>
 
-            <option value="30">
-                Last 30 days
-            </option>
+        <option value="30">
+            Last 30 days
+        </option>
 
-            <option value="90">
-                Last 90 days
-            </option>
+        <option value="90">
+            Last 90 days
+        </option>
 
-            <option value="0">
-                All time
-            </option>
+        <option value="0">
+            All time
+        </option>
 
-        </select>
-    </label>
+    </select>
+</label>
 
 </section>
 
@@ -290,8 +296,7 @@ aria-label="Platform summary">
     </div>
 
     <small>
-        @day.Date
-        .ToString("dd MMM")
+        @(day.Date.ToString("dd MMM"))
     </small>
 
 </div>
@@ -538,10 +543,9 @@ admin-table-grid">
             </small>
 
             <small>
-                @activity.CompletedAt
+                @(activity.CompletedAt
                 .ToLocalTime()
-                .ToString(
-                "dd MMM yyyy, HH:mm")
+                .ToString("dd MMM yyyy, HH:mm"))
             </small>
 
         </div>
@@ -584,9 +588,7 @@ admin-table-grid">
 
 @code {
     private AdminDashboardVm? _dashboard;
-
     private bool _loading = true;
-
     private int _selectedDays = 30;
 
     private string PeriodDescription =>
@@ -608,7 +610,6 @@ admin-table-grid">
                 out var days))
         {
             _selectedDays = days;
-
             await LoadAsync();
         }
     }
@@ -629,4 +630,27 @@ admin-table-grid">
             _loading = false;
         }
     }
-}
+
+    private async Task DownloadReportAsync()
+    {
+        if (_dashboard is null)
+        {
+            return;
+        }
+
+        var periodName = _selectedDays == 0
+            ? "All-Time"
+            : $"Last-{_selectedDays}-Days";
+
+        var currentDate =
+            DateTime.Now.ToString("yyyy-MM-dd");
+
+        var fileName =
+            $"AeroResponse-Administration-{periodName}-{currentDate}.pdf";
+
+        await JS.InvokeVoidAsync(
+            "aeroReports.downloadPdf",
+            "admin-performance-report",
+            fileName);
+    }
+}   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }   }

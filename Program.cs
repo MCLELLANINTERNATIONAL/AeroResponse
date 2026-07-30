@@ -124,6 +124,7 @@ builder.Services.AddScoped<ScenarioRepository>();
 builder.Services.AddScoped<MembershipRepository>();
 
 
+
 builder.Services.AddScoped<AircraftService>();
 builder.Services.AddScoped<CockpitLayoutService>();
 builder.Services.AddScoped<ScenarioService>();
@@ -135,6 +136,7 @@ builder.Services.AddScoped<SimulationSelectionStorage>();
 builder.Services.AddScoped<SimulationScenarioDataService>();
 builder.Services.AddScoped<ICockpitLayoutProvider, CockpitLayoutProvider>();
 builder.Services.AddSingleton<SimulationEngine>();
+builder.Services.AddScoped<AdminDashboardService>();
 
 var app = builder.Build();
 

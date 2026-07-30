@@ -798,7 +798,7 @@
 }
 
 /* -------------------------------------------------------------
-    ADMINISTRATION DASHBOARD
+    ADMIN REPORTS DASHBOARD
    ========================================================= */
 
 .admin-chip {
@@ -813,7 +813,7 @@
 }
 
 .admin-chip strong {
-    color: #8dace6;
+    color: #2d69da;
     font-size: 1.25rem;
 }
 
@@ -827,7 +827,7 @@
     border-radius: 12px;
     display: grid;
     place-items: center;
-    background: #8dace6;
+    background: #6290e6;
     color: #0b2545;
     font-size: 1.4rem;
     font-weight: 900;
@@ -856,6 +856,7 @@
 .admin-filter-card label span {
     color: #185abc;
     font-weight: 800;
+    font-size: 1.5rem;
 }
 
 .admin-filter-card small {
@@ -865,11 +866,11 @@
 .admin-filter-card select {
     min-width: 180px;
     padding: 10px 12px;
-    border: 1px solid #9dbcf0;
+    border: 1px solid #6d9ff6;
     border-radius: 8px;
     background: #ffffff;
     color: #0b2545;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .admin-kpi-grid {
@@ -895,6 +896,7 @@
 .admin-kpi-card small {
     color: #185abc;
     font-weight: 800;
+    font-size: 1.5rem;
 }
 
 .admin-kpi-card strong {
@@ -964,7 +966,7 @@
     width: 22px;
     height: 160px;
     border-radius: 8px 8px 3px 3px;
-    background: #e5edf9;
+    background: #8a909c;
     display: flex;
     align-items: flex-end;
     overflow: hidden;
@@ -974,7 +976,7 @@
     width: 100%;
     min-height: 8px;
     border-radius: 8px 8px 0 0;
-    background: linear-gradient(180deg, #4da3ff, #1558de);
+    background: linear-gradient(180deg, #3592f6, #1558de);
 }
 
 .admin-outcomes-card {
@@ -1009,7 +1011,7 @@
 
 .outcome-ring small {
     color: #596579;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .outcome-legend {
@@ -1058,7 +1060,7 @@
     height: 9px;
     border-radius: 999px;
     overflow: hidden;
-    background: #e5edf9;
+    background: #6f7275;
 }
 
 .popularity-fill {
@@ -1073,7 +1075,7 @@
     justify-content: center;
     padding: 5px 9px;
     border-radius: 999px;
-    font-size: 0.75rem;
+    font-size: 1rem;
     font-weight: 800;
     white-space: nowrap;
 }

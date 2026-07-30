@@ -65,95 +65,99 @@ else
             <NavLink href="/reports/badges">
                 🏆 Badges
             </NavLink>
+
+            <NavLink href="/reports/admin">
+                ▦ Admin Reports
+            </NavLink>
         </nav>
 
-        <section class="reports-grid">
+    <section class="reports-grid">
 
-            <article class="report-card feedback-card">
+        <article class="report-card feedback-card">
 
-                <h2>Feedback</h2>
+            <h2>Feedback</h2>
 
-                <div class="feedback-tabs">
-                    <b>Instructor Feedback</b>
-                    <span>AI Feedback</span>
+            <div class="feedback-tabs">
+                <b>Instructor Feedback</b>
+                <span>AI Feedback</span>
+            </div>
+
+            <div class="feedback-good">
+                <strong>☆ Great Job!</strong>
+                <p>@report.Feedback</p>
+            </div>
+
+            <h3>AI Performance Analysis</h3>
+            <p>@report.AiFeedback</p>
+
+            <h3>Areas to Improve</h3>
+
+            <ul>
+                @foreach (var item in ImprovementItems(report))
+                {
+                    <li>@item</li>
+                }
+            </ul>
+        </article>
+
+        <article class="report-card">
+            <h2>Scenario Reviewed</h2>
+
+            <div class="scenario-title">
+                <span>✈</span>
+
+                <div>
+                    <strong>@report.ScenarioName</strong>
+
+                    <small>
+                        Completed:
+                        @report.CompletedAt
+                        .ToLocalTime()
+                        .ToString("dd MMM yyyy 'at' HH:mm")
+                    </small>
+
+                    <small>
+                        Difficulty: @report.Difficulty
+                    </small>
                 </div>
 
-                <div class="feedback-good">
-                    <strong>☆ Great Job!</strong>
-                    <p>@report.Feedback</p>
-                </div>
+                <b>EMERGENCY</b>
+            </div>
 
-                <h3>AI Performance Analysis</h3>
-                <p>@report.AiFeedback</p>
+            <hr />
 
-                <h3>Areas to Improve</h3>
+            <div class="info-row">
+                <span>◷</span>
+                <label>Reaction Time</label>
+                <strong>@report.ReactionTimeSeconds seconds</strong>
+            </div>
 
-                <ul>
-                    @foreach (var item in ImprovementItems(report))
-                    {
-                        <li>@item</li>
-                    }
-                </ul>
-            </article>
+            <div class="info-row">
+                <span>☑</span>
+                <label>Actions Taken</label>
+                <strong>@report.ActionsTaken</strong>
+            </div>
 
-            <article class="report-card">
-                <h2>Scenario Reviewed</h2>
+            <div class="info-row">
+                <span>⚠</span>
+                <label>Safety-Critical Errors</label>
+                <strong>@report.SafetyCriticalErrors</strong>
+            </div>
 
-                <div class="scenario-title">
-                    <span>✈</span>
+            <div class="info-row">
+                <span>▣</span>
+                <label>Checklist Accuracy</label>
+                <strong>@report.ChecklistAccuracyScore%</strong>
+            </div>
+        </article>
 
-                    <div>
-                        <strong>@report.ScenarioName</strong>
+    </section>
 
-                        <small>
-                            Completed:
-                            @report.CompletedAt
-                                .ToLocalTime()
-                                .ToString("dd MMM yyyy 'at' HH:mm")
-                        </small>
+    <p class="live-note">
+        ● Feedback updates automatically when a pilot completes a scenario.
+    </p>
 
-                        <small>
-                            Difficulty: @report.Difficulty
-                        </small>
-                    </div>
-
-                    <b>EMERGENCY</b>
-                </div>
-
-                <hr />
-
-                <div class="info-row">
-                    <span>◷</span>
-                    <label>Reaction Time</label>
-                    <strong>@report.ReactionTimeSeconds seconds</strong>
-                </div>
-
-                <div class="info-row">
-                    <span>☑</span>
-                    <label>Actions Taken</label>
-                    <strong>@report.ActionsTaken</strong>
-                </div>
-
-                <div class="info-row">
-                    <span>⚠</span>
-                    <label>Safety-Critical Errors</label>
-                    <strong>@report.SafetyCriticalErrors</strong>
-                </div>
-
-                <div class="info-row">
-                    <span>▣</span>
-                    <label>Checklist Accuracy</label>
-                    <strong>@report.ChecklistAccuracyScore%</strong>
-                </div>
-            </article>
-
-        </section>
-
-        <p class="live-note">
-            ● Feedback updates automatically when a pilot completes a scenario.
-        </p>
-
-    </main>
+</main>
 }
 
 @code {

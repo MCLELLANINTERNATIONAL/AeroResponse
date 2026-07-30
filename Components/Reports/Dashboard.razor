@@ -89,116 +89,119 @@ else
                 🏆 Badges
             </NavLink>
 
+            <NavLink href="/reports/admin">
+                ▦ Admin Reports
+            </NavLink>
             <button id="download-report-button"
-            type="button"
-                    @onclick="DownloadReportAsync">
+                type="button"
+                @onclick="DownloadReportAsync">
                 ⬇ Download PDF
             </button>
         </nav>
 
-        @* =====================================================
-        TOP DASHBOARD GRID
-        ===================================================== *@
+    @* =====================================================
+    TOP DASHBOARD GRID
+    ===================================================== *@
 
-        <section id="overview" class="reports-grid top-grid">
-
-            @* =================================================
-            OVERALL SCORE CARD
-            ================================================= *@
-
-            <article class="report-card score-card">
-                <h2>Overall Score</h2>
-
-                <div class="score-main">
-
-                    <div class="score-ring"
-                    style="--score:@report.OverallScore">
-
-                    <span>@report.OverallScore%</span>
-
-                    <small>
-                        @(report.OverallScore >= 70
-                        ? "Great Performance!"
-                        : "Keep Practising")
-                    </small>
-                </div>
-
-                <div class="score-copy">
-                    <small>Total Score</small>
-                    <strong>@(report.OverallScore * 10) / 1000</strong>
-
-                    <small>Passing Score</small>
-                    <b>70% (700/1000)</b>
-
-                    <small>Rank</small>
-                    <strong>Top @RankPercent%</strong>
-                    <em>of all users</em>
-                </div>
-            </div>
-
-            <div class="pass-banner">
-                🏆
-
-                <span>
-                    <strong>
-                        @(report.OverallScore >= 70
-                        ? "You passed this scenario!"
-                        : "Scenario not yet passed")
-                    </strong>
-
-                    <small>
-                        @(report.OverallScore >= 70
-                        ? "Keep up the great work."
-                        : "Review feedback and try again.")
-                    </small>
-                </span>
-            </div>
-        </article>
+    <section id="overview" class="reports-grid top-grid">
 
         @* =================================================
-        SCORE BREAKDOWN CARD
+        OVERALL SCORE CARD
         ================================================= *@
 
-        <article id="scoring" class="report-card">
-            <h2>Score Breakdown</h2>
+        <article class="report-card score-card">
+            <h2>Overall Score</h2>
 
-            <div class="metric">
-                <div class="metric-result">
-                    <span>Procedural Accuracy</span>
-                    <strong>@report.ChecklistAccuracyScore%</strong>
-                </div>
+            <div class="score-main">
 
-                <div class="metric-track">
-                    <div class="metric-fill blue"
-                    style="width: @report.ChecklistAccuracyScore%;">
-                </div>
+                <div class="score-ring"
+                style="--score:@report.OverallScore">
+
+                <span>@report.OverallScore%</span>
+
+                <small>
+                    @(report.OverallScore >= 70
+                    ? "Great Performance!"
+                    : "Keep Practising")
+                </small>
+            </div>
+
+            <div class="score-copy">
+                <small>Total Score</small>
+                <strong>@(report.OverallScore * 10) / 1000</strong>
+
+                <small>Passing Score</small>
+                <b>70% (700/1000)</b>
+
+                <small>Rank</small>
+                <strong>Top @RankPercent%</strong>
+                <em>of all users</em>
             </div>
         </div>
 
+        <div class="pass-banner">
+            🏆
+
+            <span>
+                <strong>
+                    @(report.OverallScore >= 70
+                    ? "You passed this scenario!"
+                    : "Scenario not yet passed")
+                </strong>
+
+                <small>
+                    @(report.OverallScore >= 70
+                    ? "Keep up the great work."
+                    : "Review feedback and try again.")
+                </small>
+            </span>
+        </div>
+    </article>
+
+    @* =================================================
+    SCORE BREAKDOWN CARD
+    ================================================= *@
+
+    <article id="scoring" class="report-card">
+        <h2>Score Breakdown</h2>
+
         <div class="metric">
             <div class="metric-result">
-                <span>Decision Making</span>
-                <strong>@report.DecisionMakingScore%</strong>
+                <span>Procedural Accuracy</span>
+                <strong>@report.ChecklistAccuracyScore%</strong>
             </div>
 
             <div class="metric-track">
-                <div class="metric-fill green"
-                style="width: @report.DecisionMakingScore%;">
+                <div class="metric-fill blue"
+                style="width: @report.ChecklistAccuracyScore%;">
             </div>
         </div>
     </div>
 
     <div class="metric">
         <div class="metric-result">
-            <span>Checklist Usage</span>
-            <strong>@report.ChecklistUsageScore%</strong>
+            <span>Decision Making</span>
+            <strong>@report.DecisionMakingScore%</strong>
         </div>
 
         <div class="metric-track">
-            <div class="metric-fill orange"
-            style="width: @report.ChecklistUsageScore%;">
+            <div class="metric-fill green"
+            style="width: @report.DecisionMakingScore%;">
         </div>
     </div>
+</div>
+
+<div class="metric">
+    <div class="metric-result">
+        <span>Checklist Usage</span>
+        <strong>@report.ChecklistUsageScore%</strong>
+    </div>
+
+    <div class="metric-track">
+        <div class="metric-fill orange"
+        style="width: @report.ChecklistUsageScore%;">
+    </div>
+</div>
 </div>
 
 <div class="metric">
@@ -713,5 +716,4 @@ LIVE DASHBOARD STATUS
     {
         PerformanceFeed.ReportSaved -= OnReportSaved;
     }
-}   }
 }

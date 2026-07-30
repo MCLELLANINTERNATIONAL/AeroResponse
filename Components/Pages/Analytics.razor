@@ -65,6 +65,10 @@ else
             <NavLink href="/reports/badges">
                 🏆 Badges
             </NavLink>
+
+            <NavLink href="/reports/admin">
+                ▦ Admin Reports
+            </NavLink>
         </nav>
 
         <section class="reports-grid">
@@ -77,128 +81,128 @@ else
                 </div>
 
                 <svg class="trend-chart"
-                     viewBox="0 0 620 260"
-                     role="img"
-                     aria-label="Pilot performance trend">
+                viewBox="0 0 620 260"
+                role="img"
+                aria-label="Pilot performance trend">
 
-                    <g class="grid-lines">
-                        @for (var y = 0; y <= 4; y++)
-                        {
-                            <line x1="45"
-                                  y1="@(25 + y * 48)"
-                                  x2="600"
-                                  y2="@(25 + y * 48)" />
-                        }
-                    </g>
-
-                    <polyline class="average-line"
-                              points="@AveragePoints" />
-
-                    <polyline class="score-line"
-                              points="@ScorePoints" />
-
-                    @foreach (var point in ChartPoints)
+                <g class="grid-lines">
+                    @for (var y = 0; y <= 4; y++)
                     {
-                        <circle cx="@point.X"
-                                cy="@point.Y"
-                                r="4" />
+                        <line x1="45"
+                        y1="@(25 + y * 48)"
+                        x2="600"
+                        y2="@(25 + y * 48)" />
                     }
-                </svg>
+                </g>
 
-                <div class="chart-legend">
-                    <span>● Your Score</span>
-                    <span>● Average Score</span>
+                <polyline class="average-line"
+                points="@AveragePoints" />
+
+                <polyline class="score-line"
+                points="@ScorePoints" />
+
+                @foreach (var point in ChartPoints)
+                {
+                    <circle cx="@point.X"
+                    cy="@point.Y"
+                    r="4" />
+                }
+            </svg>
+
+            <div class="chart-legend">
+                <span>● Your Score</span>
+                <span>● Average Score</span>
+            </div>
+
+            <div class="stat-row">
+                <div>
+                    <small>Average Score</small>
+                    <strong>@_dashboard.AverageScore%</strong>
                 </div>
 
-                <div class="stat-row">
-                    <div>
-                        <small>Average Score</small>
-                        <strong>@_dashboard.AverageScore%</strong>
-                    </div>
-
-                    <div>
-                        <small>Best Score</small>
-                        <strong>@_dashboard.BestScore%</strong>
-                    </div>
-
-                    <div>
-                        <small>Total Scenarios</small>
-                        <strong>@_dashboard.Reports.Count</strong>
-                    </div>
-
-                    <div>
-                        <small>Improvement</small>
-
-                        <strong class="positive">
-                            @Signed(_dashboard.Improvement)%
-                        </strong>
-                    </div>
-                </div>
-            </article>
-
-            <article class="report-card">
-                <h2>Latest Performance</h2>
-
-                <div class="metric">
-                    <div class="metric-result">
-                        <span>Overall Score</span>
-                        <strong>@report.OverallScore%</strong>
-                    </div>
-
-                    <div class="metric-track">
-                        <div class="metric-fill blue"
-                             style="width: @report.OverallScore%;">
-                        </div>
-                    </div>
+                <div>
+                    <small>Best Score</small>
+                    <strong>@_dashboard.BestScore%</strong>
                 </div>
 
-                <div class="metric">
-                    <div class="metric-result">
-                        <span>Procedural Accuracy</span>
-                        <strong>@report.ChecklistAccuracyScore%</strong>
-                    </div>
-
-                    <div class="metric-track">
-                        <div class="metric-fill green"
-                             style="width: @report.ChecklistAccuracyScore%;">
-                        </div>
-                    </div>
+                <div>
+                    <small>Total Scenarios</small>
+                    <strong>@_dashboard.Reports.Count</strong>
                 </div>
 
-                <div class="metric">
-                    <div class="metric-result">
-                        <span>Decision Making</span>
-                        <strong>@report.DecisionMakingScore%</strong>
-                    </div>
+                <div>
+                    <small>Improvement</small>
 
-                    <div class="metric-track">
-                        <div class="metric-fill orange"
-                             style="width: @report.DecisionMakingScore%;">
-                        </div>
-                    </div>
+                    <strong class="positive">
+                        @Signed(_dashboard.Improvement)%
+                    </strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="report-card">
+            <h2>Latest Performance</h2>
+
+            <div class="metric">
+                <div class="metric-result">
+                    <span>Overall Score</span>
+                    <strong>@report.OverallScore%</strong>
                 </div>
 
-                <div class="metric">
-                    <div class="metric-result">
-                        <span>Communication</span>
-                        <strong>@report.CommunicationScore%</strong>
-                    </div>
-
-                    <div class="metric-track">
-                        <div class="metric-fill cyan"
-                             style="width: @report.CommunicationScore%;">
-                        </div>
-                    </div>
+                <div class="metric-track">
+                    <div class="metric-fill blue"
+                    style="width: @report.OverallScore%;">
                 </div>
-            </article>
+            </div>
+        </div>
 
-        </section>
+        <div class="metric">
+            <div class="metric-result">
+                <span>Procedural Accuracy</span>
+                <strong>@report.ChecklistAccuracyScore%</strong>
+            </div>
 
-        <p class="live-note">
-            ● Analytics update automatically when a pilot completes a scenario.
-        </p>
+            <div class="metric-track">
+                <div class="metric-fill green"
+                style="width: @report.ChecklistAccuracyScore%;">
+            </div>
+        </div>
+    </div>
 
-    </main>
+    <div class="metric">
+        <div class="metric-result">
+            <span>Decision Making</span>
+            <strong>@report.DecisionMakingScore%</strong>
+        </div>
+
+        <div class="metric-track">
+            <div class="metric-fill orange"
+            style="width: @report.DecisionMakingScore%;">
+        </div>
+    </div>
+</div>
+
+<div class="metric">
+    <div class="metric-result">
+        <span>Communication</span>
+        <strong>@report.CommunicationScore%</strong>
+    </div>
+
+    <div class="metric-track">
+        <div class="metric-fill cyan"
+        style="width: @report.CommunicationScore%;">
+    </div>
+</div>
+</div>
+</article>
+
+</section>
+
+<p class="live-note">
+    ● Analytics update automatically when a pilot completes a scenario.
+</p>
+
+</main>
 }
 
 @code {

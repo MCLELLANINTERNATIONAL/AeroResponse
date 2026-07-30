@@ -188,6 +188,19 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     ScenarioRepository>();
 
+
+builder.Services.AddScoped<AircraftService>();
+builder.Services.AddScoped<CockpitLayoutService>();
+builder.Services.AddScoped<ScenarioService>();
+builder.Services.AddScoped<MembershipService>();
+builder.Services.AddScoped<PerformanceService>();
+builder.Services.AddScoped<PerformanceDashboardService>();
+builder.Services.AddScoped<SimulationService>();
+builder.Services.AddScoped<SimulationSelectionStorage>();
+builder.Services.AddScoped<SimulationScenarioDataService>();
+builder.Services.AddScoped<ICockpitLayoutProvider, CockpitLayoutProvider>();
+builder.Services.AddSingleton<SimulationEngine>();
+builder.Services.AddScoped<AdminDashboardService>();
 builder.Services.AddScoped<
     MembershipRepository>();
 

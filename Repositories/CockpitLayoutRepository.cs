@@ -7,8 +7,10 @@ namespace AeroResponse.Repositories;
 
 public class CockpitLayoutRepository(
     ApplicationDbContext context)
-    : EfGenericRepository<CockpitLayout>(context)
+        : EfGenericRepository<CockpitLayout>(context)
 {
+    private readonly ApplicationDbContext _context = context;
+
     public Task<CockpitLayout?> GetByKeyAsync(
         string key)
     {
@@ -16,7 +18,7 @@ public class CockpitLayoutRepository(
 
         var normalizedKey = key.Trim();
 
-        return context.CockpitLayouts
+        return _context.CockpitLayouts
             .AsNoTracking()
             .FirstOrDefaultAsync(layout =>
                 layout.Key == normalizedKey);
@@ -30,7 +32,7 @@ public class CockpitLayoutRepository(
 
         var normalizedKey = key.Trim();
 
-        return context.CockpitLayouts.AnyAsync(layout =>
+        return _context.CockpitLayouts.AnyAsync(layout =>
             layout.Key == normalizedKey &&
             (!excludedLayoutId.HasValue ||
              layout.Id != excludedLayoutId.Value));
@@ -46,16 +48,16 @@ public class CockpitLayoutRepository(
             originalKey);
 
         await using var transaction =
-            await context.Database.BeginTransactionAsync();
+            await _context.Database.BeginTransactionAsync();
 
         try
         {
             CockpitLayout savedLayout;
 
-           if (existingLayoutId.HasValue)
+            if (existingLayoutId.HasValue)
             {
                 savedLayout =
-                    await context.CockpitLayouts
+                    await _context.CockpitLayouts
                         .FirstOrDefaultAsync(item =>
                             item.Id ==
                             existingLayoutId.Value)
@@ -108,7 +110,7 @@ public class CockpitLayoutRepository(
                     }
                 };
 
-                await context.CockpitLayouts.AddAsync(savedLayout);
+                await _context.CockpitLayouts.AddAsync(savedLayout);
             }
 
             var keyChanged = !string.Equals(
@@ -119,7 +121,7 @@ public class CockpitLayoutRepository(
             if (keyChanged)
             {
                 var affectedAircraft =
-                    await context.Aircraft
+                    await _context.Aircraft
                         .Where(aircraft =>
                             aircraft.CockpitLayoutKey ==
                             originalKey)
@@ -132,7 +134,7 @@ public class CockpitLayoutRepository(
                 }
             }
 
-            await context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
             return savedLayout;
@@ -171,11 +173,11 @@ public class CockpitLayoutRepository(
         ArgumentNullException.ThrowIfNull(resolutions);
 
         await using var transaction =
-            await context.Database.BeginTransactionAsync();
+            await _context.Database.BeginTransactionAsync();
 
         try
         {
-            var layout = await context.CockpitLayouts
+            var layout = await _context.CockpitLayouts
                 .FirstOrDefaultAsync(item => item.Id == layoutId);
 
             if (layout is null)
@@ -193,7 +195,7 @@ public class CockpitLayoutRepository(
                     "The cockpit layout key no longer matches the saved record.");
             }
 
-            var affectedAircraft = await context.Aircraft
+            var affectedAircraft = await _context.Aircraft
                 .Where(aircraft =>
                     aircraft.CockpitLayoutKey == layoutKey)
                 .ToListAsync();
@@ -242,7 +244,7 @@ public class CockpitLayoutRepository(
                         break;
 
                     case AircraftResolutionAction.Delete:
-                        context.Aircraft.Remove(aircraft);
+                        _context.Aircraft.Remove(aircraft);
                         break;
 
                     default:
@@ -252,9 +254,9 @@ public class CockpitLayoutRepository(
                 }
             }
 
-            context.CockpitLayouts.Remove(layout);
+            _context.CockpitLayouts.Remove(layout);
 
-            await context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
             await transaction.CommitAsync();
         }
         catch

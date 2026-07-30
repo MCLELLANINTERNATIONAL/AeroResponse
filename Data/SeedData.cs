@@ -233,9 +233,58 @@ public static class SeedData
         // EmergencyScenarios table has already been seeded once.
         await SeedCockpitLayoutsAsync(context);
 
+        //Seed built-in Aircrafts to usein simulation examples
+        await SeedAircraftAsync(context);
+
         // Seed the demonstration reporting data separately.
         // This still runs when emergency scenarios already exist.
         await SeedTestPilotReportsAsync(context);
+    }
+    private static async Task SeedAircraftAsync(ApplicationDbContext context)
+    {
+        var aircraftDefinitions = new[]
+        {
+            new
+            {
+                Name = "Cessna 172",
+                Manufacturer = "Cessna",
+                AircraftType = "Single-Engine Piston",
+                CockpitLayoutKey = Cessna172CockpitLayout.Create().Key,
+                EngineCount = 1,
+                CruiseSpeed = 122,
+                MaxAltitude = 14000,
+                Description = "Standard single-engine trainer aircraft.",
+                IsActive = true
+            }
+            // add more built-in aircraft here as layouts are added
+        };
+
+        foreach (var definition in aircraftDefinitions)
+        {
+            var exists = await context.Aircraft
+                .AnyAsync(aircraft => aircraft.Name == definition.Name);
+
+            if (exists)
+            {
+                continue;
+            }
+
+            context.Aircraft.Add(new Aircraft
+            {
+                Name = definition.Name,
+                Manufacturer = definition.Manufacturer,
+                AircraftType = definition.AircraftType,
+                CockpitLayoutKey = definition.CockpitLayoutKey,
+                EngineCount = definition.EngineCount,
+                CruiseSpeed = definition.CruiseSpeed,
+                MaxAltitude = definition.MaxAltitude,
+                Description = definition.Description,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        await context.SaveChangesAsync();
     }
 
     private static async Task SeedCockpitLayoutsAsync(

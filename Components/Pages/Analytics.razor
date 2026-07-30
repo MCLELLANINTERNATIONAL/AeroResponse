@@ -1,0 +1,310 @@
+@page "/reports/analytics"
+@rendermode InteractiveServer
+@implements IDisposable
+
+@inject PerformanceDashboardService DashboardService
+
+<PageTitle>Analytics | AeroResponse</PageTitle>
+
+@if (_loading)
+{
+    <div class="reports-loading">
+        Loading performance analytics…
+    </div>
+}
+else if (_dashboard?.Latest is null)
+{
+    <div class="reports-empty">
+        <h1>No analytics available yet</h1>
+        <p>Complete a practice scenario to populate your analytics.</p>
+    </div>
+}
+else
+{
+    var report = _dashboard.Latest;
+
+    <main class="reports-page">
+
+        <header class="reports-header">
+            <div>
+                <h1>PERFORMANCE ANALYTICS</h1>
+                <p>Track your progress across completed scenarios</p>
+            </div>
+
+            <div class="pilot-chip">
+                <span class="pilot-avatar">✈</span>
+
+                <div>
+                    <strong>@report.PilotName</strong>
+                    <small>Professional Pilot</small>
+                </div>
+            </div>
+        </header>
+
+        <nav class="reports-tabs">
+            <NavLink href="/reports" Match="NavLinkMatch.All">
+                ◉ Overview
+            </NavLink>
+
+            <NavLink href="/reports/flight-logs">
+                ✈ Flight Logs
+            </NavLink>
+
+            <NavLink href="/reports/scoring">
+                ⚙ Scoring
+            </NavLink>
+
+            <NavLink href="/reports/analytics">
+                ▥ Analytics
+            </NavLink>
+
+            <NavLink href="/reports/feedback">
+                ✪ Feedback
+            </NavLink>
+
+            <NavLink href="/reports/badges">
+                🏆 Badges
+            </NavLink>
+        </nav>
+
+        <section class="reports-grid">
+
+            <article class="report-card analytics-card">
+
+                <div class="card-heading">
+                    <h2>Performance Trend</h2>
+                    <span>Last 10 Scenarios</span>
+                </div>
+
+                <svg class="trend-chart"
+                     viewBox="0 0 620 260"
+                     role="img"
+                     aria-label="Pilot performance trend">
+
+                    <g class="grid-lines">
+                        @for (var y = 0; y <= 4; y++)
+                        {
+                            <line x1="45"
+                                  y1="@(25 + y * 48)"
+                                  x2="600"
+                                  y2="@(25 + y * 48)" />
+                        }
+                    </g>
+
+                    <polyline class="average-line"
+                              points="@AveragePoints" />
+
+                    <polyline class="score-line"
+                              points="@ScorePoints" />
+
+                    @foreach (var point in ChartPoints)
+                    {
+                        <circle cx="@point.X"
+                                cy="@point.Y"
+                                r="4" />
+                    }
+                </svg>
+
+                <div class="chart-legend">
+                    <span>● Your Score</span>
+                    <span>● Average Score</span>
+                </div>
+
+                <div class="stat-row">
+                    <div>
+                        <small>Average Score</small>
+                        <strong>@_dashboard.AverageScore%</strong>
+                    </div>
+
+                    <div>
+                        <small>Best Score</small>
+                        <strong>@_dashboard.BestScore%</strong>
+                    </div>
+
+                    <div>
+                        <small>Total Scenarios</small>
+                        <strong>@_dashboard.Reports.Count</strong>
+                    </div>
+
+                    <div>
+                        <small>Improvement</small>
+
+                        <strong class="positive">
+                            @Signed(_dashboard.Improvement)%
+                        </strong>
+                    </div>
+                </div>
+            </article>
+
+            <article class="report-card">
+                <h2>Latest Performance</h2>
+
+                <div class="metric">
+                    <div class="metric-result">
+                        <span>Overall Score</span>
+                        <strong>@report.OverallScore%</strong>
+                    </div>
+
+                    <div class="metric-track">
+                        <div class="metric-fill blue"
+                             style="width: @report.OverallScore%;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric">
+                    <div class="metric-result">
+                        <span>Procedural Accuracy</span>
+                        <strong>@report.ChecklistAccuracyScore%</strong>
+                    </div>
+
+                    <div class="metric-track">
+                        <div class="metric-fill green"
+                             style="width: @report.ChecklistAccuracyScore%;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric">
+                    <div class="metric-result">
+                        <span>Decision Making</span>
+                        <strong>@report.DecisionMakingScore%</strong>
+                    </div>
+
+                    <div class="metric-track">
+                        <div class="metric-fill orange"
+                             style="width: @report.DecisionMakingScore%;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric">
+                    <div class="metric-result">
+                        <span>Communication</span>
+                        <strong>@report.CommunicationScore%</strong>
+                    </div>
+
+                    <div class="metric-track">
+                        <div class="metric-fill cyan"
+                             style="width: @report.CommunicationScore%;">
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+        </section>
+
+        <p class="live-note">
+            ● Analytics update automatically when a pilot completes a scenario.
+        </p>
+
+    </main>
+}
+
+@code {
+    private const string UserId = "test-pilot";
+
+    private PerformanceDashboardVm? _dashboard;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        PerformanceFeed.ReportSaved += OnReportSaved;
+        await LoadAsync();
+    }
+
+    private async void OnReportSaved(string userId)
+    {
+        if (userId != UserId)
+        {
+            return;
+        }
+
+        await InvokeAsync(async () =>
+        {
+            await LoadAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+            _dashboard = await DashboardService.GetDashboardAsync(UserId);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private IReadOnlyList<(double X, double Y)> ChartPoints
+    {
+        get
+        {
+            var reports = _dashboard?.ChartReports;
+
+            if (reports is null || reports.Count == 0)
+            {
+                return Array.Empty<(double X, double Y)>();
+            }
+
+            return reports
+                .Select((item, index) =>
+                {
+                    var denominator =
+                        Math.Max(1, reports.Count - 1);
+
+                    var x =
+                        45 + index * (555.0 / denominator);
+
+                    var score =
+                        Math.Clamp(item.OverallScore, 0, 100);
+
+                    var y =
+                        217 - score * 1.8;
+
+                    return (X: x, Y: y);
+                })
+                .ToList();
+        }
+    }
+
+    private string ScorePoints =>
+        string.Join(
+            " ",
+            ChartPoints.Select(
+                point => $"{point.X:F1},{point.Y:F1}"));
+
+    private string AveragePoints =>
+        string.Join(
+            " ",
+            ChartPoints.Select(
+                (point, index) =>
+                {
+                    var averageScore =
+                        Math.Clamp(
+                            55 + index * 2,
+                            0,
+                            100);
+
+                    var y =
+                        217 - averageScore * 1.8;
+
+                    return $"{point.X:F1},{y:F1}";
+                }));
+
+    private static string Signed(int number)
+    {
+        return number >= 0
+            ? $"+{number}"
+            : number.ToString();
+    }
+
+    public void Dispose()
+    {
+        PerformanceFeed.ReportSaved -= OnReportSaved;
+    }
+}

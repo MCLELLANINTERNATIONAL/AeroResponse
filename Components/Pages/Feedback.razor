@@ -1,0 +1,248 @@
+@page "/reports/feedback"
+@rendermode InteractiveServer
+@implements IDisposable
+
+@inject PerformanceDashboardService DashboardService
+
+<PageTitle>Feedback | AeroResponse</PageTitle>
+
+@if (_loading)
+{
+    <div class="reports-loading">
+        Loading feedback…
+    </div>
+}
+else if (_dashboard?.Latest is null)
+{
+    <div class="reports-empty">
+        <h1>No feedback available yet</h1>
+        <p>Complete a practice scenario to receive performance feedback.</p>
+    </div>
+}
+else
+{
+    var report = _dashboard.Latest;
+
+    <main class="reports-page">
+
+        <header class="reports-header">
+            <div>
+                <h1>PERFORMANCE FEEDBACK</h1>
+                <p>Review instructor and AI-generated recommendations</p>
+            </div>
+
+            <div class="pilot-chip">
+                <span class="pilot-avatar">✈</span>
+
+                <div>
+                    <strong>@report.PilotName</strong>
+                    <small>Professional Pilot</small>
+                </div>
+            </div>
+        </header>
+
+        <nav class="reports-tabs">
+            <NavLink href="/reports" Match="NavLinkMatch.All">
+                ◉ Overview
+            </NavLink>
+
+            <NavLink href="/reports/flight-logs">
+                ✈ Flight Logs
+            </NavLink>
+
+            <NavLink href="/reports/scoring">
+                ⚙ Scoring
+            </NavLink>
+
+            <NavLink href="/reports/analytics">
+                ▥ Analytics
+            </NavLink>
+
+            <NavLink href="/reports/feedback">
+                ✪ Feedback
+            </NavLink>
+
+            <NavLink href="/reports/badges">
+                🏆 Badges
+            </NavLink>
+        </nav>
+
+        <section class="reports-grid">
+
+            <article class="report-card feedback-card">
+
+                <h2>Feedback</h2>
+
+                <div class="feedback-tabs">
+                    <b>Instructor Feedback</b>
+                    <span>AI Feedback</span>
+                </div>
+
+                <div class="feedback-good">
+                    <strong>☆ Great Job!</strong>
+                    <p>@report.Feedback</p>
+                </div>
+
+                <h3>AI Performance Analysis</h3>
+                <p>@report.AiFeedback</p>
+
+                <h3>Areas to Improve</h3>
+
+                <ul>
+                    @foreach (var item in ImprovementItems(report))
+                    {
+                        <li>@item</li>
+                    }
+                </ul>
+            </article>
+
+            <article class="report-card">
+                <h2>Scenario Reviewed</h2>
+
+                <div class="scenario-title">
+                    <span>✈</span>
+
+                    <div>
+                        <strong>@report.ScenarioName</strong>
+
+                        <small>
+                            Completed:
+                            @report.CompletedAt
+                                .ToLocalTime()
+                                .ToString("dd MMM yyyy 'at' HH:mm")
+                        </small>
+
+                        <small>
+                            Difficulty: @report.Difficulty
+                        </small>
+                    </div>
+
+                    <b>EMERGENCY</b>
+                </div>
+
+                <hr />
+
+                <div class="info-row">
+                    <span>◷</span>
+                    <label>Reaction Time</label>
+                    <strong>@report.ReactionTimeSeconds seconds</strong>
+                </div>
+
+                <div class="info-row">
+                    <span>☑</span>
+                    <label>Actions Taken</label>
+                    <strong>@report.ActionsTaken</strong>
+                </div>
+
+                <div class="info-row">
+                    <span>⚠</span>
+                    <label>Safety-Critical Errors</label>
+                    <strong>@report.SafetyCriticalErrors</strong>
+                </div>
+
+                <div class="info-row">
+                    <span>▣</span>
+                    <label>Checklist Accuracy</label>
+                    <strong>@report.ChecklistAccuracyScore%</strong>
+                </div>
+            </article>
+
+        </section>
+
+        <p class="live-note">
+            ● Feedback updates automatically when a pilot completes a scenario.
+        </p>
+
+    </main>
+}
+
+@code {
+    private const string UserId = "test-pilot";
+
+    private PerformanceDashboardVm? _dashboard;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        PerformanceFeed.ReportSaved += OnReportSaved;
+        await LoadAsync();
+    }
+
+    private async void OnReportSaved(string userId)
+    {
+        if (userId != UserId)
+        {
+            return;
+        }
+
+        await InvokeAsync(async () =>
+        {
+            await LoadAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+            _dashboard = await DashboardService.GetDashboardAsync(UserId);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private static IEnumerable<string> ImprovementItems(
+        SimulationReport report)
+    {
+        var hasImprovementItem = false;
+
+        if (report.ReactionTimeSeconds > 10)
+        {
+            hasImprovementItem = true;
+
+            yield return
+                $"Improve time to identify the primary failure " +
+                $"({report.ReactionTimeSeconds - 10}s slower than target).";
+        }
+
+        if (report.CommunicationScore < 90)
+        {
+            hasImprovementItem = true;
+
+            yield return
+                "Consider declaring the emergency and requesting " +
+                "assistance earlier.";
+        }
+
+        if (report.ChecklistAccuracyScore < 95)
+        {
+            hasImprovementItem = true;
+
+            yield return
+                "Maintain checklist discipline when workload increases.";
+        }
+
+        if (report.SafetyCriticalErrors > 0)
+        {
+            hasImprovementItem = true;
+
+            yield return
+                "Review safety-critical actions before the next attempt.";
+        }
+
+        if (!hasImprovementItem)
+        {
+            yield return
+                "Continue maintaining the same high standard in future scenarios.";
+        }
+    }
+
+    public void Dispose()
+    {
+        PerformanceFeed.ReportSaved -= OnReportSaved;
+    }
+}

@@ -1,0 +1,200 @@
+@page "/reports/badges"
+@rendermode InteractiveServer
+@implements IDisposable
+
+@inject PerformanceDashboardService DashboardService
+
+<PageTitle>Badges | AeroResponse</PageTitle>
+
+@if (_loading)
+{
+    <div class="reports-loading">
+        Loading badges and achievements…
+    </div>
+}
+else if (_dashboard?.Latest is null)
+{
+    <div class="reports-empty">
+        <h1>No achievements available yet</h1>
+        <p>Complete a practice scenario to begin earning badges.</p>
+    </div>
+}
+else
+{
+    var report = _dashboard.Latest;
+
+    <main class="reports-page">
+
+        <header class="reports-header">
+            <div>
+                <h1>BADGES AND ACHIEVEMENTS</h1>
+                <p>Review the achievements earned during your training</p>
+            </div>
+
+            <div class="pilot-chip">
+                <span class="pilot-avatar">✈</span>
+
+                <div>
+                    <strong>@report.PilotName</strong>
+                    <small>Professional Pilot</small>
+                </div>
+            </div>
+        </header>
+
+        <nav class="reports-tabs">
+            <NavLink href="/reports" Match="NavLinkMatch.All">
+                ◉ Overview
+            </NavLink>
+
+            <NavLink href="/reports/flight-logs">
+                ✈ Flight Logs
+            </NavLink>
+
+            <NavLink href="/reports/scoring">
+                ⚙ Scoring
+            </NavLink>
+
+            <NavLink href="/reports/analytics">
+                ▥ Analytics
+            </NavLink>
+
+            <NavLink href="/reports/feedback">
+                ✪ Feedback
+            </NavLink>
+
+            <NavLink href="/reports/badges">
+                🏆 Badges
+            </NavLink>
+        </nav>
+
+        <section class="reports-grid">
+
+            <article class="report-card badges-card">
+
+                <div class="card-heading">
+                    <h2>Badges Earned</h2>
+                    <span>@_dashboard.Achievements.Count earned</span>
+                </div>
+
+                @if (_dashboard.Achievements.Count == 0)
+                {
+                    <div class="reports-empty">
+                        <h3>No badges earned yet</h3>
+                        <p>
+                            Continue completing training scenarios to unlock
+                            your first achievement.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div class="badges-grid">
+
+                        @foreach (var badge in _dashboard.Achievements)
+                        {
+                            <div class="badge">
+                                <div class="badge-icon">
+                                    @badge.Icon
+                                </div>
+
+                                <strong>@badge.Name</strong>
+
+                                <small>
+                                    Earned: @(badge.EarnedAt.ToLocalTime().ToString("dd MMM yyyy"))
+                                </small>
+                            </div>
+                        }
+
+                        <div class="badge locked">
+                            <div class="badge-icon">🔒</div>
+
+                            <strong>Perfect Score</strong>
+
+                            <small>
+                                Score 100% in any scenario
+                            </small>
+                        </div>
+
+                    </div>
+                }
+            </article>
+
+            <article class="report-card">
+                <h2>Achievement Summary</h2>
+
+                <div class="stat-row">
+                    <div>
+                        <small>Badges Earned</small>
+                        <strong>@_dashboard.Achievements.Count</strong>
+                    </div>
+
+                    <div>
+                        <small>Scenarios Completed</small>
+                        <strong>@_dashboard.Reports.Count</strong>
+                    </div>
+
+                    <div>
+                        <small>Best Score</small>
+                        <strong>@_dashboard.BestScore%</strong>
+                    </div>
+
+                    <div>
+                        <small>Latest Score</small>
+                        <strong>@report.OverallScore%</strong>
+                    </div>
+                </div>
+            </article>
+
+        </section>
+
+        <p class="live-note">
+            ● New badges appear automatically when achievement conditions are met.
+        </p>
+
+    </main>
+}
+
+@code {
+    private const string UserId = "test-pilot";
+
+    private PerformanceDashboardVm? _dashboard;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        PerformanceFeed.ReportSaved += OnReportSaved;
+        await LoadAsync();
+    }
+
+    private async void OnReportSaved(string userId)
+    {
+        if (userId != UserId)
+        {
+            return;
+        }
+
+        await InvokeAsync(async () =>
+        {
+            await LoadAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+            _dashboard = await DashboardService.GetDashboardAsync(UserId);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        PerformanceFeed.ReportSaved -= OnReportSaved;
+    }
+}

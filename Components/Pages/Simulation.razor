@@ -697,47 +697,60 @@ else
     }
 
     private async Task LoadSelectionAsync(
-    string aircraftKey,
-    string scenarioType)
-{
-    try
+        string aircraftKey,
+        string scenarioType)
     {
-        if (!int.TryParse(aircraftKey, out var aircraftId))
+        try
         {
-            throw new InvalidOperationException(
-                $"'{aircraftKey}' is not a valid aircraft identifier.");
+            if (!int.TryParse(aircraftKey, out var aircraftId))
+            {
+                throw new InvalidOperationException(
+                    $"'{aircraftKey}' is not a valid aircraft identifier.");
+            }
+
+            var requestedAircraft =
+                await AircraftService.GetByIdAsync(aircraftId);
+
+            if (requestedAircraft is null)
+            {
+                requestedAircraft = _aircraftOptions.FirstOrDefault() // Gracefully defaulting when Server Conflicts with Local 
+                    ?? throw new KeyNotFoundException(
+                        "No aircraft are available to simulate.");
+            }
+
+            selectedAircraft = requestedAircraft;
+
+            cockpitLayout =
+                await LayoutProvider.GetLayout(
+                    selectedAircraft.CockpitLayoutKey);
+
+            cockpitLayout.EngineCount = selectedAircraft.EngineCount;
+
+            selectedScenarioRecord =
+                FindScenarioRecord(scenarioType)
+                ?? _scenarioRecords.FirstOrDefault()
+                ?? throw new InvalidOperationException(
+                    "No emergency scenarios are available.");
+
+            selectedRuntimeScenario =
+                SimulationEngine.GetScenario(
+                    selectedScenarioRecord.EmergencyType);
+
+            await InitializeSimulationStateAsync();
+
+            // The resolved selection may differ from what was requested
+            // (stale id fell back to a default) — persist and reflect
+            // that in the URL so we don't keep re-triggering this fallback.
+            await SaveCurrentSelectionAsync();
+            UpdateSimulationUrl();
         }
-
-        selectedAircraft =
-            await AircraftService.GetByIdAsync(aircraftId)
-            ?? throw new KeyNotFoundException(
-                $"Aircraft {aircraftId} was not found.");
-
-        cockpitLayout =
-            await LayoutProvider.GetLayout(
-                selectedAircraft.CockpitLayoutKey);
-
-        cockpitLayout.EngineCount = selectedAircraft.EngineCount;
-
-        selectedScenarioRecord =
-            FindScenarioRecord(
-                scenarioType)
-            ?? throw new InvalidOperationException(
-                $"Database scenario '{scenarioType}' was not found.");
-
-        selectedRuntimeScenario =
-            SimulationEngine.GetScenario(
-                selectedScenarioRecord.EmergencyType);
-
-        await InitializeSimulationStateAsync();
+        catch (Exception ex)
+        {
+            _loadFailed = true;
+            _isReady = false;
+            Console.WriteLine($"LoadSelectionAsync failed: {ex}");
+        }
     }
-    catch (Exception ex)
-    {
-        _loadFailed = true;
-        _isReady = false;
-        Console.WriteLine($"LoadSelectionAsync failed: {ex}");
-    }
-}
 
     private EmergencyScenario?
         FindScenarioRecord(

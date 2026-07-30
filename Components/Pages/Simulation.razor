@@ -624,6 +624,16 @@ else
                 0,
                 100);
 
+
+    /* ==  Initiliazation and state based functions == */
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSelectionAsync(
+            AircraftKey,
+            ScenarioType,
+            saveSelection: false);
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         _isReady = false;
@@ -702,20 +712,15 @@ else
             scenarioType = defaultScenario.EmergencyType;
         }
 
-        await LoadSelectionAsync(aircraftKey, scenarioType);
-
-        if (_isReady)
-        {
-            await SaveCurrentSelectionAsync();
-            UpdateSimulationUrl();
-        }
+        await LoadSelectionAsync(aircraftKey, scenarioType, true);
 
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadSelectionAsync(
         string aircraftKey,
-        string scenarioType)
+        string scenarioType,
+        bool saveSelection = false)
     {
         try
         {
@@ -758,7 +763,10 @@ else
             // The resolved selection may differ from what was requested
             // (stale id fell back to a default) — persist and reflect
             // that in the URL so we don't keep re-triggering this fallback.
-            await SaveCurrentSelectionAsync();
+            if (saveSelection)
+            {
+                await SaveCurrentSelectionAsync();
+            }
             UpdateSimulationUrl();
         }
         catch (Exception ex)

@@ -18,12 +18,19 @@ using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Razor components and interactive server rendering.
+// =========================================================
+// RAZOR COMPONENTS
+// =========================================================
+
 builder.Services
     .AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Authentication state services.
+// =========================================================
+// AUTHENTICATION AND AUTHORIZATION
+// =========================================================
+
+builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddScoped<IdentityRedirectManager>();
@@ -43,26 +50,28 @@ builder.Services
     })
     .AddIdentityCookies();
 
-// SQLite connection used by ASP.NET Core Identity
-// and the existing Entity Framework repositories.
+// =========================================================
+// SQLITE AND ENTITY FRAMEWORK
+// =========================================================
+
+// SQLite is used by ASP.NET Core Identity and the
+// Entity Framework application repositories.
 var connectionString =
     builder.Configuration.GetConnectionString(
         "DefaultConnection")
     ?? throw new InvalidOperationException(
-        "Connection string 'DefaultConnection' " +
-        "was not found.");
+        "Connection string 'DefaultConnection' was not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(
-    options =>
-    {
-        options.UseSqlite(connectionString);
-    });
+    options => options.UseSqlite(connectionString));
 
 builder.Services
     .AddDatabaseDeveloperPageExceptionFilter();
 
-// MongoDB settings continue to come from the
-// existing MongoDb configuration section.
+// =========================================================
+// MONGODB SETTINGS
+// =========================================================
+
 builder.Services
     .AddOptions<MongoDbSettings>()
     .Bind(
@@ -80,8 +89,8 @@ builder.Services
         "MongoDb:DatabaseName is required.")
     .ValidateOnStart();
 
-// MongoClient is thread-safe and should be reused
-// for the lifetime of the application.
+// MongoClient is thread-safe and should be reused for
+// the lifetime of the application.
 builder.Services.AddSingleton<IMongoClient>(
     serviceProvider =>
     {
@@ -92,20 +101,18 @@ builder.Services.AddSingleton<IMongoClient>(
                 .Value;
 
         var clientSettings =
-            MongoClientSettings
-                .FromConnectionString(
-                    settings.ConnectionString);
+            MongoClientSettings.FromConnectionString(
+                settings.ConnectionString);
 
-        // Fail MongoDB operations reasonably quickly
-        // when the database cannot be reached.
+        // Prevent MongoDB connection attempts from
+        // waiting indefinitely when MongoDB is unavailable.
         clientSettings.ServerSelectionTimeout =
             TimeSpan.FromSeconds(5);
 
         clientSettings.ConnectTimeout =
             TimeSpan.FromSeconds(5);
 
-        return new MongoClient(
-            clientSettings);
+        return new MongoClient(clientSettings);
     });
 
 // Shared MongoDB context.
@@ -132,36 +139,29 @@ builder.Services.AddSingleton<
     MongoConnectionProbe>();
 
 // MongoDB account repository.
-//
-// Used during registration, navigation name lookup,
-// and account-type updates after membership purchase.
 builder.Services.AddSingleton<
     MongoUserAccountRepository>();
 
 // MongoDB saved payment-method repository.
-//
-// Stores a demonstration payment token, card brand,
-// last four digits, expiry, cardholder name and
-// billing address. It does not store the CVC.
 builder.Services.AddSingleton<
     MongoSavedPaymentMethodRepository>();
 
 // MongoDB membership timeline repository.
-//
-// Stores the selected plan, billing period, account
-// type, membership start date and expiry date.
 builder.Services.AddSingleton<
     MongoMemberTimelineRepository>();
 
-// ASP.NET Core Identity.
+// =========================================================
+// ASP.NET CORE IDENTITY
+// =========================================================
+
 builder.Services
     .AddIdentityCore<ApplicationUser>(
         options =>
         {
-            // New accounts can be signed in immediately
-            // after successful registration.
-            options.SignIn
-                .RequireConfirmedAccount = false;
+            // Registered users can sign in immediately
+            // without confirming an email address.
+            options.SignIn.RequireConfirmedAccount =
+                false;
 
             options.Stores.SchemaVersion =
                 IdentitySchemaVersions.Version3;
@@ -174,7 +174,11 @@ builder.Services.AddSingleton<
     IEmailSender<ApplicationUser>,
     IdentityNoOpEmailSender>();
 
-// Existing generic and application repositories.
+// =========================================================
+// REPOSITORIES
+// =========================================================
+
+// Generic Entity Framework repository.
 builder.Services.AddScoped(
     typeof(IGenericRepository<>),
     typeof(EfGenericRepository<>));
@@ -188,23 +192,13 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     ScenarioRepository>();
 
-
-builder.Services.AddScoped<AircraftService>();
-builder.Services.AddScoped<CockpitLayoutService>();
-builder.Services.AddScoped<ScenarioService>();
-builder.Services.AddScoped<MembershipService>();
-builder.Services.AddScoped<PerformanceService>();
-builder.Services.AddScoped<PerformanceDashboardService>();
-builder.Services.AddScoped<SimulationService>();
-builder.Services.AddScoped<SimulationSelectionStorage>();
-builder.Services.AddScoped<SimulationScenarioDataService>();
-builder.Services.AddScoped<ICockpitLayoutProvider, CockpitLayoutProvider>();
-builder.Services.AddSingleton<SimulationEngine>();
-builder.Services.AddScoped<AdminDashboardService>();
 builder.Services.AddScoped<
     MembershipRepository>();
 
-// Existing application services.
+// =========================================================
+// APPLICATION SERVICES
+// =========================================================
+
 builder.Services.AddScoped<
     AircraftService>();
 
@@ -223,6 +217,11 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     PerformanceDashboardService>();
 
+// Provides the system-wide Administration Dashboard.
+// This currently has no role-based access restriction.
+builder.Services.AddScoped<
+    AdminDashboardService>();
+
 builder.Services.AddScoped<
     SimulationService>();
 
@@ -239,12 +238,20 @@ builder.Services.AddScoped<
 builder.Services.AddSingleton<
     SimulationEngine>();
 
+// =========================================================
+// BUILD APPLICATION
+// =========================================================
+
 var app = builder.Build();
 
 // Apply Entity Framework migrations and seed the
-// initial emergency-scenario data.
+// initial application data.
 await SeedData.InitializeAsync(
     app.Services);
+
+// =========================================================
+// HTTP REQUEST PIPELINE
+// =========================================================
 
 if (app.Environment.IsDevelopment())
 {
@@ -253,21 +260,18 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler(
-        "/Error",
+        errorHandlingPath: "/Error",
         createScopeForErrors: true);
 
     app.UseHsts();
 }
 
 app.UseStatusCodePagesWithReExecute(
-    "/not-found",
+    pathFormat: "/not-found",
     createScopeForStatusCodePages: true);
 
 app.UseHttpsRedirection();
 
-// Identity authentication and authorization
-// middleware.
-//
 // Authentication must run before authorization.
 app.UseAuthentication();
 app.UseAuthorization();
@@ -276,22 +280,25 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 
+// =========================================================
+// APPLICATION ENDPOINTS
+// =========================================================
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// ASP.NET Core Identity account endpoints,
-// including login, logout and account management.
+// ASP.NET Core Identity endpoints, including login,
+// logout, registration and account management.
 app.MapAdditionalIdentityEndpoints();
 
 // SignalR cockpit simulation hub.
 app.MapHub<CockpitHub>(
     "/cockpithub");
 
-// MongoDB health endpoint.
-//
-// The application can still start even if MongoDB
-// is temporarily unavailable. This endpoint tests
-// the connection separately.
+// =========================================================
+// MONGODB HEALTH ENDPOINT
+// =========================================================
+
 app.MapGet(
     "/health/mongodb",
     async (
@@ -313,17 +320,12 @@ app.MapGet(
         catch (Exception exception)
         {
             return Results.Problem(
-                title:
-                    "MongoDB connection failed",
-
-                detail:
-                    app.Environment.IsDevelopment()
-                        ? exception.Message
-                        : null,
-
-                statusCode:
-                    StatusCodes
-                        .Status503ServiceUnavailable);
+                detail: app.Environment.IsDevelopment()
+                    ? exception.Message
+                    : null,
+                statusCode: StatusCodes
+                    .Status503ServiceUnavailable,
+                title: "MongoDB connection failed");
         }
     });
 

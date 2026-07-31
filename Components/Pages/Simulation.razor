@@ -17,6 +17,7 @@
 @inject SimulationScenarioDataService ScenarioDataService
 @inject NavigationManager Navigation
 @inject AircraftService AircraftService
+@inject ScenarioTriggerEvaluator TriggerEvaluator
 
 <PageTitle>Simulation | AeroResponse</PageTitle>
 
@@ -44,524 +45,556 @@ else
     <div class="simulation-page-shell">
 
         @* ==================================================
-           Left sidebar
+        Left sidebar
         ================================================== *@
 
         <aside class="simulation-selector-rail"
-               aria-label="Simulation setup">
+        aria-label="Simulation setup">
 
-            <div class="selector-rail-heading">
-                <span class="scenario-eyebrow">
-                    Training setup
-                </span>
+        <div class="selector-rail-heading">
+            <span class="scenario-eyebrow">
+                Training setup
+            </span>
 
-                <h2>Simulation</h2>
+            <h2>Simulation</h2>
 
-                <p>
-                    Change the aircraft or emergency
-                    without leaving the cockpit.
-                </p>
+            <p>
+                Change the aircraft or emergency
+                without leaving the cockpit.
+            </p>
+        </div>
+
+        <section class="selector-group">
+            <div class="selector-group-label">
+                Current aircraft
             </div>
 
-            <section class="selector-group">
-                <div class="selector-group-label">
-                    Current aircraft
-                </div>
-
-                <div class="selector-dropdown">
-                    <button type="button"
-                            class="current-selection-button"
-                            aria-expanded="@_isAircraftMenuOpen"
-                            aria-controls="aircraft-selector-menu"
-                            @onclick="ToggleAircraftMenu">
-
-                        <span class="selection-icon"
-                              aria-hidden="true">
-                            ✈
-                        </span>
-
-                        <span class="selection-details">
-                            <strong>
-                                @selectedAircraft.Name
-                            </strong>
-
-                            <small>
-                                @selectedAircraft.EngineCount
-                                @(selectedAircraft.EngineCount == 1
-                                    ? "engine"
-                                    : "engines")
-                            </small>
-                        </span>
-
-                                                <span class="dropdown-chevron
-                                                                         @(_isAircraftMenuOpen ? "open" : "")"
-                              aria-hidden="true">
-                            ▾
-                        </span>
-                    </button>
-
-                    @if (_isAircraftMenuOpen)
-                    {
-                        <div id="aircraft-selector-menu"
-                             class="selector-dropdown-menu"
-                             role="menu"
-                             aria-label="Aircraft options">
-
-                            @foreach (var aircraft in _aircraftOptions)
-                            {
-                                var isSelected =
-                                    aircraft.Id ==
-                                    selectedAircraft.Id;
-
-                                <button type="button"
-                                        class="selector-dropdown-option
-                                            @(isSelected ? "selected" : "")"
-                                        role="menuitem"
-                                        @onclick="() =>
-                                            ChangeAircraftAsync(aircraft)">
-
-                                    <span>
-                                        <strong>
-                                            @aircraft.Name
-                                        </strong>
-
-                                        <small>
-                                            @aircraft.EngineCount
-                                            @(aircraft.EngineCount == 1
-                                                ? "engine"
-                                                : "engines")
-                                        </small>
-                                    </span>
-
-                                    @if (isSelected)
-                                    {
-                                        <span class="active-label">
-                                            Active
-                                        </span>
-                                    }
-                                </button>
-                            }
-                        </div>
-                    }
-                </div>
-            </section>
-
-            <section class="selector-group">
-                <div class="selector-group-label">
-                    Current scenario
-                </div>
-
-                <div class="selector-dropdown">
-                    <button type="button"
-                            class="current-selection-button emergency-selection-button"
-                            aria-expanded="@_isScenarioMenuOpen"
-                            aria-controls="scenario-selector-menu"
-                            @onclick="ToggleScenarioMenu">
-
-                        <span class="selection-icon"
-                              aria-hidden="true">
-                            ⚠
-                        </span>
-
-                        <span class="selection-details">
-                            <strong>
-                                @selectedScenarioRecord.Title
-                            </strong>
-
-                            <small>
-                                @selectedScenarioRecord.Difficulty
-                            </small>
-                        </span>
-
-                                                <span class="dropdown-chevron
-                                                                         @(_isScenarioMenuOpen ? "open" : "")"
-                              aria-hidden="true">
-                            ▾
-                        </span>
-                    </button>
-
-                    @if (_isScenarioMenuOpen)
-                    {
-                        <div id="scenario-selector-menu"
-                             class="selector-dropdown-menu"
-                             role="menu"
-                             aria-label="Scenario options">
-
-                            @foreach (var scenario in _scenarioRecords)
-                            {
-                                var isSelected =
-                                    scenario.Id ==
-                                    selectedScenarioRecord.Id;
-
-                                <button type="button"
-                                             class="selector-dropdown-option
-                                                 @(isSelected ? "selected" : "")"
-                                        role="menuitem"
-                                        @onclick="() =>
-                                            ChangeScenarioAsync(scenario)">
-
-                                    <span>
-                                        <strong>
-                                            @scenario.Title
-                                        </strong>
-
-                                        <small>
-                                            @scenario.Difficulty
-                                        </small>
-                                    </span>
-
-                                    @if (isSelected)
-                                    {
-                                        <span class="active-label">
-                                            Active
-                                        </span>
-                                    }
-                                </button>
-                            }
-                        </div>
-                    }
-                </div>
-            </section>
-        </aside>
-
-        @* ==================================================
-           Database-driven top status bar
-        ================================================== *@
-
-        <section class="emergency-status-bar"
-                 aria-label="Current emergency status">
-
-            <div class="emergency-summary">
-                <div class="emergency-title-row">
-                    <span class="emergency-badge">
-                        <span aria-hidden="true">⚠</span>
-                        Emergency
-                    </span>
-
-                    <h1>
-                        @selectedScenarioRecord.Title
-                    </h1>
-                </div>
-
-                <p>
-                    @selectedScenarioRecord.TriggerCondition
-                </p>
-            </div>
-
-            <div class="flight-status-items">
-                <div class="flight-status-item">
-                    <span>Altitude</span>
-
-                    <strong>
-                        @cockpitState.Altitude.ToString("N0") ft
-                    </strong>
-                </div>
-
-                <div class="flight-status-item">
-                    <span>Airspeed</span>
-
-                    <strong>
-                        @cockpitState.Airspeed.ToString("N0") kts
-                    </strong>
-                </div>
-
-                <div class="flight-status-item">
-                    <span>Heading</span>
-
-                    <strong>
-                        @FormatHeading(cockpitState.Heading)°
-                    </strong>
-                </div>
-
-                <div class="flight-status-item difficulty-item">
-                    <span>Difficulty</span>
-
-                    <strong>
-                        @selectedScenarioRecord.Difficulty
-                    </strong>
-                </div>
-            </div>
-
-            <div class="emergency-objective">
-                <span>Objective</span>
-
-                <p>
-                    @GetObjectiveText()
-                </p>
-            </div>
-        </section>
-
-        @* ==================================================
-           Main cockpit
-        ================================================== *@
-
-        <main class="simulation-main-panel">
-            <div class="simulation-content-card">
-                <CockpitLayout Layout="@cockpitLayout"
-                               State="@cockpitState" />
-
-                <div class="testing-center">
-                    <div class="testing-control">
-                        <h2>Airspeed</h2>
-
-                        <input type="range"
-                               min="0"
-                               max="@cockpitLayout.Airspeed.MaximumSpeed"
-                               step="10"
-                               aria-label="Airspeed"
-                               @bind="cockpitState.Airspeed"
-                               @bind:event="oninput" />
-
-                        <p>
-                            @cockpitState.Airspeed.ToString("N0")
-                            knots
-                        </p>
-                    </div>
-
-                    <div class="testing-control">
-                        <h2>Attitude</h2>
-
-                        <h3>Pitch</h3>
-
-                        <input type="range"
-                               min="-30"
-                               max="30"
-                               step="1"
-                               aria-label="Pitch"
-                               @bind="cockpitState.Pitch"
-                               @bind:event="oninput" />
-
-                        <p>
-                            @cockpitState.Pitch°
-                        </p>
-
-                        <h3>Bank</h3>
-
-                        <input type="range"
-                               min="-90"
-                               max="90"
-                               step="1"
-                               aria-label="Bank"
-                               @bind="cockpitState.Bank"
-                               @bind:event="oninput" />
-
-                        <p>
-                            @cockpitState.Bank°
-                        </p>
-                    </div>
-
-                    <div class="testing-control">
-                        <h2>Altitude</h2>
-
-                        <input type="range"
-                               min="0"
-                               max="20000"
-                               step="10"
-                               aria-label="Altitude"
-                               @bind="cockpitState.Altitude"
-                               @bind:event="oninput" />
-
-                        <p>
-                            @cockpitState.Altitude.ToString("N0")
-                            feet
-                        </p>
-                    </div>
-
-                    <div class="testing-control">
-                        <h2>Turn Rate</h2>
-
-                        <input type="range"
-                               min="-3"
-                               max="3"
-                               step="0.1"
-                               aria-label="Turn rate"
-                               @bind="cockpitState.TurnRate"
-                               @bind:event="oninput" />
-
-                        <p>
-                            @cockpitState.TurnRate.ToString("0.0")°/sec
-                        </p>
-
-                        <h3>Slip / Skid</h3>
-
-                        <input type="range"
-                               min="-1"
-                               max="1"
-                               step="0.05"
-                               aria-label="Slip or skid"
-                               @bind="cockpitState.Slip"
-                               @bind:event="oninput" />
-
-                        <p>
-                            @cockpitState.Slip.ToString("0.00")
-                        </p>
-                    </div>
-
-                    <div class="testing-control">
-                        <h2>Heading</h2>
-
-                        <input type="range"
-                               min="0"
-                               max="359"
-                               step="1"
-                               aria-label="Heading"
-                               @bind="cockpitState.Heading"
-                               @bind:event="oninput" />
-
-                        <p>
-                            @FormatHeading(cockpitState.Heading)°
-                        </p>
-                    </div>
-
-                    <div class="testing-control">
-                        <h2>Vertical Speed</h2>
-
-                        <input type="range"
-                               min="@cockpitLayout.VSI.MinimumVerticalSpeed"
-                               max="@cockpitLayout.VSI.MaximumVerticalSpeed"
-                               step="100"
-                               aria-label="Vertical speed"
-                               @bind="cockpitState.VerticalSpeed"
-                               @bind:event="oninput" />
-
-                        <p>
-                            @cockpitState.VerticalSpeed.ToString("N0")
-                            FPM
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        @* ==================================================
-           Database-driven emergency panel
-        ================================================== *@
-
-        <aside class="emergency-checklist-panel"
-               aria-label="Emergency checklist">
-
-            <section class="emergency-panel-card active-emergency-card">
-                <span class="emergency-panel-eyebrow">
-                    Active emergency
-                </span>
-
-                <div class="active-emergency-heading">
-                    <span class="active-emergency-icon"
-                          aria-hidden="true">
-                        ⚠
-                    </span>
-
-                    <h2>
-                        @selectedScenarioRecord.Title
-                    </h2>
-                </div>
-
-                <strong class="affected-system-label">
-                    @selectedScenarioRecord.EmergencyType
+            <div class="selector-dropdown">
+                <button type="button"
+                class="current-selection-button"
+                aria-expanded="@_isAircraftMenuOpen"
+                aria-controls="aircraft-selector-menu"
+                @onclick="ToggleAircraftMenu">
+
+                <span class="selection-icon"
+                aria-hidden="true">
+                ✈
+            </span>
+
+            <span class="selection-details">
+                <strong>
+                    @selectedAircraft.Name
                 </strong>
 
+                <small>
+                    @selectedAircraft.EngineCount
+                    @(selectedAircraft.EngineCount == 1
+                    ? "engine"
+                    : "engines")
+                </small>
+            </span>
+
+            <span class="dropdown-chevron
+            @(_isAircraftMenuOpen ? "open" : "")"
+            aria-hidden="true">
+            ▾
+        </span>
+    </button>
+
+    @if (_isAircraftMenuOpen)
+    {
+        <div id="aircraft-selector-menu"
+        class="selector-dropdown-menu"
+        role="menu"
+        aria-label="Aircraft options">
+
+        @foreach (var aircraft in _aircraftOptions)
+        {
+            var isSelected =
+            aircraft.Id ==
+            selectedAircraft.Id;
+
+            <button type="button"
+            class="selector-dropdown-option
+            @(isSelected ? "selected" : "")"
+            role="menuitem"
+            @onclick="() =>
+            ChangeAircraftAsync(aircraft)">
+
+            <span>
+                <strong>
+                    @aircraft.Name
+                </strong>
+
+                <small>
+                    @aircraft.EngineCount
+                    @(aircraft.EngineCount == 1
+                    ? "engine"
+                    : "engines")
+                </small>
+            </span>
+
+            @if (isSelected)
+            {
+                <span class="active-label">
+                    Active
+                </span>
+            }
+        </button>
+    }
+</div>
+}
+</div>
+</section>
+
+<section class="selector-group">
+    <div class="selector-group-label">
+        Current scenario
+    </div>
+
+    <div class="selector-dropdown">
+        <button type="button"
+        class="current-selection-button emergency-selection-button"
+        aria-expanded="@_isScenarioMenuOpen"
+        aria-controls="scenario-selector-menu"
+        @onclick="ToggleScenarioMenu">
+
+        <span class="selection-icon"
+        aria-hidden="true">
+        ⚠
+    </span>
+
+    <span class="selection-details">
+        <strong>
+            @selectedScenarioRecord.Title
+        </strong>
+
+        <small>
+            @selectedScenarioRecord.Difficulty
+        </small>
+    </span>
+
+    <span class="dropdown-chevron
+    @(_isScenarioMenuOpen ? "open" : "")"
+    aria-hidden="true">
+    ▾
+</span>
+</button>
+
+@if (_isScenarioMenuOpen)
+{
+    <div id="scenario-selector-menu"
+    class="selector-dropdown-menu"
+    role="menu"
+    aria-label="Scenario options">
+
+    @foreach (var scenario in _scenarioRecords)
+    {
+        var isSelected =
+        scenario.Id ==
+        selectedScenarioRecord.Id;
+
+        <button type="button"
+        class="selector-dropdown-option
+        @(isSelected ? "selected" : "")"
+        role="menuitem"
+        @onclick="() =>
+        ChangeScenarioAsync(scenario)">
+
+        <span>
+            <strong>
+                @scenario.Title
+            </strong>
+
+            <small>
+                @scenario.Difficulty
+            </small>
+        </span>
+
+        @if (isSelected)
+        {
+            <span class="active-label">
+                Active
+            </span>
+        }
+    </button>
+}
+</div>
+}
+</div>
+</section>
+</aside>
+
+@* ==================================================
+Database-driven top status bar
+================================================== *@
+
+<section class="emergency-status-bar"
+aria-label="Current emergency status">
+
+<div class="emergency-summary">
+    <div class="emergency-title-row">
+        <span class="emergency-badge">
+            <span aria-hidden="true">⚠</span>
+            Emergency
+        </span>
+
+        <h1>
+            @selectedScenarioRecord.Title
+        </h1>
+    </div>
+
+    <p>
+        @selectedScenarioRecord.TriggerCondition
+    </p>
+</div>
+
+<div class="flight-status-items">
+    <div class="flight-status-item">
+        <span>Altitude</span>
+
+        <strong>
+            @cockpitState.Altitude.ToString("N0") ft
+        </strong>
+    </div>
+
+    <div class="flight-status-item">
+        <span>Airspeed</span>
+
+        <strong>
+            @cockpitState.Airspeed.ToString("N0") kts
+        </strong>
+    </div>
+
+    <div class="flight-status-item">
+        <span>Heading</span>
+
+        <strong>
+            @FormatHeading(cockpitState.Heading)°
+        </strong>
+    </div>
+
+    <div class="flight-status-item difficulty-item">
+        <span>Difficulty</span>
+
+        <strong>
+            @selectedScenarioRecord.Difficulty
+        </strong>
+    </div>
+</div>
+
+<div class="emergency-objective">
+    <span>Objective</span>
+
+    <p>
+        @GetObjectiveText()
+    </p>
+</div>
+</section>
+
+@* ==================================================
+Main cockpit
+================================================== *@
+
+<main class="simulation-main-panel">
+    <div class="simulation-content-card">
+        <CockpitLayout Layout="@cockpitLayout"
+        State="@cockpitState" />
+
+        <div class="testing-center">
+            <div class="testing-control">
+                <h2>Airspeed</h2>
+
+                <input type="range"
+                min="0"
+                max="@cockpitLayout.Airspeed.MaximumSpeed"
+                step="10"
+                aria-label="Airspeed"
+                @bind="cockpitState.Airspeed"
+                @bind:event="oninput" />
+
                 <p>
-                    @selectedScenarioRecord.Description
+                    @cockpitState.Airspeed.ToString("N0")
+                    knots
+                </p>
+            </div>
+
+            <div class="testing-control">
+                <h2>Attitude</h2>
+
+                <h3>Pitch</h3>
+
+                <input type="range"
+                min="-30"
+                max="30"
+                step="1"
+                aria-label="Pitch"
+                @bind="cockpitState.Pitch"
+                @bind:event="oninput" />
+
+                <p>
+                    @cockpitState.Pitch°
                 </p>
 
-                @if (!string.IsNullOrWhiteSpace(
-                    selectedScenarioRecord.TriggerCondition))
-                {
-                    <p>
-                        @selectedScenarioRecord.TriggerCondition
-                    </p>
-                }
-            </section>
+                <h3>Bank</h3>
 
-            <section class="emergency-panel-card checklist-progress-card">
-                <span class="emergency-panel-eyebrow">
-                    Checklist progress
-                </span>
+                <input type="range"
+                min="-90"
+                max="90"
+                step="1"
+                aria-label="Bank"
+                @bind="cockpitState.Bank"
+                @bind:event="oninput" />
 
-                <div class="checklist-progress-row">
-                    <div class="checklist-progress-track"
-                         role="progressbar"
-                         aria-label="Emergency checklist progress"
-                         aria-valuemin="0"
-                         aria-valuemax="@procedureSteps.Count"
-                         aria-valuenow="@CompletedStepCount">
+                <p>
+                    @cockpitState.Bank°
+                </p>
+            </div>
 
-                        <span class="checklist-progress-fill"
-                              style="@GetChecklistProgressStyle()">
-                        </span>
-                    </div>
+            <div class="testing-control">
+                <h2>Altitude</h2>
 
-                    <strong>
-                        @CompletedStepCount /
-                        @procedureSteps.Count
-                    </strong>
-                </div>
-            </section>
+                <input type="range"
+                min="0"
+                max="20000"
+                step="10"
+                aria-label="Altitude"
+                @bind="cockpitState.Altitude"
+                @bind:event="oninput" />
 
-            <section class="emergency-panel-card checklist-card">
-                <span class="emergency-panel-eyebrow">
-                    Checklist
-                </span>
+                <p>
+                    @cockpitState.Altitude.ToString("N0")
+                    feet
+                </p>
+            </div>
 
-                <h2>
-                    @selectedScenarioRecord.Title
-                </h2>
+            <div class="testing-control">
+                <h2>Turn Rate</h2>
 
-                @if (procedureSteps.Count == 0)
-                {
-                    <p class="empty-checklist-message">
-                        No procedure has been stored for this scenario.
-                    </p>
-                }
-                else
-                {
-                    <ol class="emergency-checklist">
-                        @foreach (var step in procedureSteps
-                            .OrderBy(item => item.StepOrder))
-                        {
-                            var isCompleted =
-                                IsProcedureStepCompleted(step);
+                <input type="range"
+                min="-3"
+                max="3"
+                step="0.1"
+                aria-label="Turn rate"
+                @bind="cockpitState.TurnRate"
+                @bind:event="oninput" />
 
-                            <li class="checklist-step
-                                       @(isCompleted ? "completed" : null)
-                                       @(step.IsSafetyCritical ? "safety-critical" : null)">
+                <p>
+                    @cockpitState.TurnRate.ToString("0.0")°/sec
+                </p>
 
-                                <label>
-                                    <input type="checkbox"
-                                           checked="@isCompleted"
-                                           @onchange="eventArgs =>
-                                               ToggleProcedureStep(
-                                                   step,
-                                                   eventArgs)" />
+                <h3>Slip / Skid</h3>
 
-                                    <span class="custom-check-box"
-                                          aria-hidden="true">
-                                    </span>
+                <input type="range"
+                min="-1"
+                max="1"
+                step="0.05"
+                aria-label="Slip or skid"
+                @bind="cockpitState.Slip"
+                @bind:event="oninput" />
 
-                                    <span class="checklist-step-content">
-                                        <span class="checklist-step-number">
-                                            @step.StepOrder.
-                                        </span>
+                <p>
+                    @cockpitState.Slip.ToString("0.00")
+                </p>
+            </div>
 
-                                        <span class="checklist-step-text">
-                                            @step.Instruction
-                                        </span>
+            <div class="testing-control">
+                <h2>Heading</h2>
 
-                                        @if (step.IsSafetyCritical)
-                                        {
-                                            <small>
-                                                Critical
-                                            </small>
-                                        }
-                                    </span>
-                                </label>
-                            </li>
-                        }
-                    </ol>
-                }
-            </section>
-        </aside>
+                <input type="range"
+                min="0"
+                max="359"
+                step="1"
+                aria-label="Heading"
+                @bind="cockpitState.Heading"
+                @bind:event="oninput" />
+
+                <p>
+                    @FormatHeading(cockpitState.Heading)°
+                </p>
+            </div>
+
+            <div class="testing-control">
+                <h2>Vertical Speed</h2>
+
+                <input type="range"
+                min="@cockpitLayout.VSI.MinimumVerticalSpeed"
+                max="@cockpitLayout.VSI.MaximumVerticalSpeed"
+                step="100"
+                aria-label="Vertical speed"
+                @bind="cockpitState.VerticalSpeed"
+                @bind:event="oninput" />
+
+                <p>
+                    @cockpitState.VerticalSpeed.ToString("N0")
+                    FPM
+                </p>
+            </div>
+        </div>
     </div>
+</main>
+
+@* ==================================================
+Database-driven emergency panel
+================================================== *@
+
+<aside class="emergency-checklist-panel"
+aria-label="Emergency checklist">
+
+<section class="emergency-panel-card active-emergency-card">
+    <span class="emergency-panel-eyebrow">
+        @(emergencyTriggered
+        ? "Active emergency"
+        : "Emergency pending")
+    </span>
+
+    <div class="active-emergency-heading">
+        <span class="active-emergency-icon"
+        aria-hidden="true">
+        @(emergencyTriggered ? "⚠" : "⏱")
+    </span>
+
+    <h2>
+        @selectedScenarioRecord.Title
+    </h2>
+</div>
+
+<strong class="affected-system-label">
+    @selectedScenarioRecord.EmergencyType
+</strong>
+
+@if (emergencyTriggered)
+{
+    <p>
+        @selectedScenarioRecord.Description
+    </p>
+}
+else
+{
+    <p>
+        @GetTriggerStatusText()
+    </p>
+}
+
+@if (!string.IsNullOrWhiteSpace(
+selectedScenarioRecord.TriggerCondition))
+{
+    <p>
+        @selectedScenarioRecord.TriggerCondition
+    </p>
+}
+
+@if (selectedScenarioRecord.TriggerType == "Manual" &&
+!emergencyTriggered)
+{
+    <div class="manual-trigger-section">
+
+        <button type="button"
+        class="btn btn-danger"
+        @onclick="ActivateEmergencyManually">
+
+        🚨 Activate Emergency
+
+    </button>
+
+    <small>
+        This scenario is configured for manual instructor activation.
+    </small>
+
+</div>
+}
+</section>
+
+<section class="emergency-panel-card checklist-progress-card">
+    <span class="emergency-panel-eyebrow">
+        Checklist progress
+    </span>
+
+    <div class="checklist-progress-row">
+        <div class="checklist-progress-track"
+        role="progressbar"
+        aria-label="Emergency checklist progress"
+        aria-valuemin="0"
+        aria-valuemax="@procedureSteps.Count"
+        aria-valuenow="@CompletedStepCount">
+
+        <span class="checklist-progress-fill"
+        style="@GetChecklistProgressStyle()">
+    </span>
+</div>
+
+<strong>
+    @CompletedStepCount /
+    @procedureSteps.Count
+</strong>
+</div>
+</section>
+
+<section class="emergency-panel-card checklist-card">
+    <span class="emergency-panel-eyebrow">
+        Checklist
+    </span>
+
+    <h2>
+        @selectedScenarioRecord.Title
+    </h2>
+
+    @if (procedureSteps.Count == 0)
+    {
+        <p class="empty-checklist-message">
+            No procedure has been stored for this scenario.
+        </p>
+    }
+    else
+    {
+        <ol class="emergency-checklist">
+            @foreach (var step in procedureSteps
+            .OrderBy(item => item.StepOrder))
+            {
+                var isCompleted =
+                IsProcedureStepCompleted(step);
+
+                <li class="checklist-step
+                @(isCompleted ? "completed" : null)
+                @(step.IsSafetyCritical ? "safety-critical" : null)">
+
+                <label>
+                    <input type="checkbox"
+                    checked="@isCompleted"
+                    disabled="@(!emergencyTriggered)"
+                    @onchange="eventArgs =>
+                    ToggleProcedureStep(
+                    step,
+                    eventArgs)" />
+
+                    <span class="custom-check-box"
+                    aria-hidden="true">
+                </span>
+
+                <span class="checklist-step-content">
+                    <span class="checklist-step-number">
+                        @step.StepOrder.
+                    </span>
+
+                    <span class="checklist-step-text">
+                        @step.Instruction
+                    </span>
+
+                    @if (step.IsSafetyCritical)
+                    {
+                        <small>
+                            Critical
+                        </small>
+                    }
+                </span>
+            </label>
+        </li>
+    }
+</ol>
+}
+</section>
+</aside>
+</div>
 }
 
 @code {
@@ -589,6 +622,12 @@ else
         _simulationCancellation;
 
     private Task? _simulationLoop;
+
+    private DateTime simulationStartedAt;
+
+    private bool emergencyTriggered;
+
+    private bool manualTriggerRequested;
 
     private bool _isReady;
     private bool _loadFailed;
@@ -906,9 +945,18 @@ else
 
     private async Task InitializeSimulationStateAsync()
     {
-        cockpitState =
-            selectedRuntimeScenario.Start(
-                cockpitLayout);
+        simulationStartedAt = DateTime.UtcNow;
+        manualTriggerRequested = false;
+
+        emergencyTriggered =
+            string.Equals(
+                selectedScenarioRecord.TriggerType,
+                "Immediate",
+                StringComparison.OrdinalIgnoreCase);
+
+        cockpitState = emergencyTriggered
+            ? selectedRuntimeScenario.Start(cockpitLayout)
+            : CreateNormalCockpitState();
 
         procedureSteps =
             await ScenarioDataService
@@ -943,13 +991,18 @@ else
         ScenarioProcedureStep step,
         ChangeEventArgs eventArgs)
     {
+        if (!emergencyTriggered)
+        {
+            return;
+        }
+
         var isChecked =
             eventArgs.Value is bool boolValue
                 ? boolValue
                 : bool.TryParse(
                     eventArgs.Value?.ToString(),
                     out var parsedValue) &&
-                  parsedValue;
+                parsedValue;
 
         if (isChecked)
         {
@@ -1011,6 +1064,184 @@ else
         return normalizedHeading
             .ToString("000");
     }
+    private CockpitState CreateNormalCockpitState()
+    {
+        var defaults = cockpitLayout.DefaultState;
+
+        var engineCount = cockpitLayout.EngineCount > 0
+            ? cockpitLayout.EngineCount
+            : 1;
+
+        var engines = Enumerable.Range(1, engineCount)
+            .Select(number => new EngineState
+            {
+                Number = number,
+                Power = defaults.NormalEnginePower,
+                Running = true,
+                OnFire = false,
+                EngineFire = false,
+                FuelCutoff = false,
+                FireSuppressionActivated = false,
+                FuelPercentage = defaults.FuelPercentage
+            })
+            .ToList();
+
+        return new CockpitState
+        {
+            Airspeed = defaults.CruiseAirspeed,
+            Altitude = defaults.CruiseAltitude,
+            Heading = defaults.DefaultHeading,
+            VerticalSpeed = defaults.DefaultVerticalSpeed,
+            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
+            Pitch = defaults.DefaultPitch,
+            Bank = defaults.DefaultBank,
+            FlightPhase = DetermineFlightPhase(
+                defaults.CruiseAltitude,
+                defaults.CruiseAirspeed,
+                defaults.DefaultVerticalSpeed),
+
+            Engines = engines,
+            FuelPercentage = defaults.FuelPercentage,
+            AlertMessage = "Systems Normal"
+        };
+    }
+    private void UpdateFlightPhase()
+    {
+        cockpitState.FlightPhase =
+            DetermineFlightPhase(
+                cockpitState.Altitude,
+                cockpitState.Airspeed,
+                cockpitState.VerticalSpeed);
+    }
+    private static string DetermineFlightPhase(
+    double altitude,
+    double airspeed,
+    double verticalSpeed)
+    {
+        if (altitude <= 0 && airspeed < 40)
+        {
+            return "Ground";
+        }
+
+        if (altitude < 1_500 &&
+            verticalSpeed > 300 &&
+            airspeed >= 40)
+        {
+            return "Take-off";
+        }
+
+        if (verticalSpeed > 300)
+        {
+            return "Climb";
+        }
+
+        if (verticalSpeed < -300 &&
+            altitude > 3_000)
+        {
+            return "Descent";
+        }
+
+        if (altitude <= 3_000 &&
+            altitude > 500 &&
+            verticalSpeed < 0)
+        {
+            return "Approach";
+        }
+
+        if (altitude <= 500 &&
+            verticalSpeed <= 0 &&
+            airspeed > 40)
+        {
+            return "Landing";
+        }
+
+        return "Cruise";
+    }
+    private void EvaluateEmergencyTrigger()
+    {
+        if (emergencyTriggered || !_isReady)
+        {
+            return;
+        }
+
+        var elapsed =
+            DateTime.UtcNow - simulationStartedAt;
+
+        var shouldTrigger =
+            TriggerEvaluator.ShouldTrigger(
+                selectedScenarioRecord,
+                cockpitState,
+                elapsed,
+                manualTriggerRequested);
+
+        if (!shouldTrigger)
+        {
+            return;
+        }
+
+        ActivateEmergencyScenario();
+    }
+
+    private void ActivateEmergencyScenario()
+    {
+        if (emergencyTriggered)
+        {
+            return;
+        }
+
+        emergencyTriggered = true;
+
+        cockpitState =
+            selectedRuntimeScenario.Start(
+                cockpitLayout);
+
+        cockpitState.DisplayedVerticalSpeed =
+            cockpitState.VerticalSpeed;
+    }
+
+    private void ActivateEmergencyManually()
+    {
+        if (emergencyTriggered ||
+            !string.Equals(
+                selectedScenarioRecord.TriggerType,
+                "Manual",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        manualTriggerRequested = true;
+        EvaluateEmergencyTrigger();
+    }
+
+    private string GetTriggerStatusText()
+    {
+        return selectedScenarioRecord.TriggerType switch
+        {
+            "Time" when selectedScenarioRecord.TriggerDelaySeconds.HasValue =>
+                $"Emergency will activate after " +
+                $"{selectedScenarioRecord.TriggerDelaySeconds.Value} seconds.",
+
+            "Altitude" when selectedScenarioRecord.TriggerAltitudeFeet.HasValue =>
+                $"Emergency will activate at " +
+                $"{selectedScenarioRecord.TriggerAltitudeFeet.Value:N0} feet.",
+
+            "Airspeed" when selectedScenarioRecord.TriggerAirspeedKnots.HasValue =>
+                $"Emergency will activate at " +
+                $"{selectedScenarioRecord.TriggerAirspeedKnots.Value:N0} knots.",
+
+            "Flight Phase" when !string.IsNullOrWhiteSpace(
+                selectedScenarioRecord.TriggerFlightPhase) =>
+                $"Emergency will activate during " +
+                $"{selectedScenarioRecord.TriggerFlightPhase}.",
+
+            "Manual" =>
+                "Waiting for instructor activation.",
+
+            _ =>
+                "Waiting for the configured emergency trigger."
+        };
+    }
 
     private void StartSimulationLoop()
     {
@@ -1044,6 +1275,10 @@ else
                         cockpitState.VerticalSpeed,
                         elapsedSeconds,
                         cockpitLayout.VSI.LagSeconds);
+
+                UpdateFlightPhase();
+
+                EvaluateEmergencyTrigger();
 
                 await InvokeAsync(
                     StateHasChanged);

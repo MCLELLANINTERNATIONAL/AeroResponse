@@ -46,73 +46,78 @@
             <div class="scenario-header-actions">
 
                 <a href="@($"/scenarios/edit/{scenario.Id}")"
-                   class="btn btn-primary">
-                    Edit
-                </a>
-
-                <a href="@($"/scenarios/delete/{scenario.Id}")"
-                   class="btn btn-outline-danger">
-                    Delete
-                </a>
-
-            </div>
-
-        </header>
-
-        <div class="scenario-details-grid">
-
-            <article class="scenario-detail-card">
-                <span>Emergency type</span>
-                <strong>@scenario.EmergencyType</strong>
-            </article>
-
-            <article class="scenario-detail-card">
-                <span>Difficulty</span>
-                <strong>@scenario.Difficulty</strong>
-            </article>
-
-            <article class="scenario-detail-card">
-                <span>Status</span>
-                <strong>
-                    @(scenario.IsActive ? "Active" : "Inactive")
-                </strong>
-            </article>
-
-            <article class="scenario-detail-card">
-                <span>Created</span>
-                <strong>
-                    @scenario.CreatedAt
-                        .ToLocalTime()
-                        .ToString("dd MMM yyyy")
-                </strong>
-            </article>
-
-        </div>
-
-        <div class="scenario-content-grid">
-
-            <article class="scenario-content-card">
-                <h2>Trigger condition</h2>
-
-                <p>@scenario.TriggerCondition</p>
-            </article>
-
-            <article class="scenario-content-card">
-                <h2>Expected procedure</h2>
-
-                <p class="preserve-lines">
-                    @scenario.ExpectedProcedure
-                </p>
-            </article>
-
-        </div>
-
-        <div class="scenario-bottom-actions">
-            <a href="/scenarios" class="btn btn-outline-light">
-                Back to scenarios
+                class="btn btn-primary">
+                Edit
             </a>
-        </div>
-    }
+
+            <a href="@($"/scenarios/delete/{scenario.Id}")"
+            class="btn btn-outline-danger">
+            Delete
+        </a>
+
+    </div>
+
+</header>
+
+<div class="scenario-details-grid">
+
+    <article class="scenario-detail-card">
+        <span>Emergency type</span>
+        <strong>@scenario.EmergencyType</strong>
+    </article>
+
+    <article class="scenario-detail-card">
+        <span>Difficulty</span>
+        <strong>@scenario.Difficulty</strong>
+    </article>
+
+    <article class="scenario-detail-card">
+        <span>Status</span>
+        <strong>
+            @(scenario.IsActive ? "Active" : "Inactive")
+        </strong>
+    </article>
+
+    <article class="scenario-detail-card">
+        <span>Created</span>
+        <strong>
+            @(scenario.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"))
+        </strong>
+    </article>
+
+    <article class="scenario-detail-card">
+        <span>Trigger</span>
+        <strong>
+            @GetTriggerDisplay(scenario)
+        </strong>
+    </article>
+
+</div>
+
+<div class="scenario-content-grid">
+
+    <article class="scenario-content-card">
+        <h2>Trigger condition</h2>
+
+        <p>@scenario.TriggerCondition</p>
+    </article>
+
+    <article class="scenario-content-card">
+        <h2>Expected procedure</h2>
+
+        <p class="preserve-lines">
+            @scenario.ExpectedProcedure
+        </p>
+    </article>
+
+</div>
+
+<div class="scenario-bottom-actions">
+    <a href="/scenarios" class="btn btn-outline-light">
+        Back to scenarios
+    </a>
+</div>
+}
 
 </section>
 
@@ -134,4 +139,28 @@
             isLoading = false;
         }
     }
-}
+
+    private static string GetTriggerDisplay(EmergencyScenario scenario)
+    {
+        return scenario.TriggerType switch
+        {
+            "Time" when scenario.TriggerDelaySeconds.HasValue =>
+                $"Time — {scenario.TriggerDelaySeconds.Value} seconds",
+
+            "Altitude" when scenario.TriggerAltitudeFeet.HasValue =>
+                $"Altitude — {scenario.TriggerAltitudeFeet.Value:N0} ft",
+
+            "Airspeed" when scenario.TriggerAirspeedKnots.HasValue =>
+                $"Airspeed — {scenario.TriggerAirspeedKnots.Value:N0} knots",
+
+            "Flight Phase" when !string.IsNullOrWhiteSpace(scenario.TriggerFlightPhase) =>
+                $"Flight Phase — {scenario.TriggerFlightPhase}",
+
+            "Manual" =>
+                "Manual — Instructor activation",
+
+            _ =>
+                "Immediate"
+        };
+    }
+}   }

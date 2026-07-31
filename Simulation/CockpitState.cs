@@ -11,7 +11,7 @@ public class CockpitState
     public double Heading { get; set; } = 270;
 
     public double VerticalSpeed { get; set; } = 0;
-    
+
     public double DisplayedVerticalSpeed { get; set; } = 0;
 
     public double Pitch { get; set; } = 0;
@@ -19,8 +19,10 @@ public class CockpitState
     public double Bank { get; set; } = 0;
 
     public double Slip { get; set; } = 0;
-    
+
     public double TurnRate { get; set; } = 0;
+
+    public string FlightPhase { get; set; } = "Cruise";
 
     public List<EngineState> Engines { get; set; } = [];
 

@@ -8,13 +8,17 @@
         "fieldset",
         "Gulfstream",
         "Hsts",
+        "Initiliazation",
         "Jayce",
         "labelledby",
+        "minmax",
         "Nephi",
         "onchange",
         "onclick",
+        "oninput",
         "rendermode",
         "stylesheet",
+        "valuenow",
         "wwwroot"
     ]
 }

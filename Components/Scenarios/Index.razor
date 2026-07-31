@@ -36,129 +36,129 @@
             <label for="scenario-search">Search</label>
 
             <input id="scenario-search"
-                class="form-control"
-                placeholder="Search scenarios..."
-                @bind="searchText"
-                @bind:event="oninput" />
+            class="form-control"
+            placeholder="Search scenarios..."
+            @bind="searchText"
+            @bind:event="oninput" />
         </div>
 
         <div>
             <label for="status-filter">Status</label>
 
             <select id="status-filter"
-                    class="form-select"
-                    @bind="statusFilter">
+            class="form-select"
+            @bind="statusFilter">
 
-                <option value="All">All</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
+            <option value="All">All</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
 
-            </select>
-        </div>
-
+        </select>
     </div>
 
-    @if (isLoading)
-    {
-        <div class="scenario-message">
-            Loading emergency scenarios...
-        </div>
-    }
-    else if (!FilteredScenarios.Any())
-    {
-        <div class="scenario-empty">
-            <h2>No emergency scenarios found</h2>
+</div>
 
-            <p>
-                Create a scenario or change the current search filters.
-            </p>
+@if (isLoading)
+{
+    <div class="scenario-message">
+        Loading emergency scenarios...
+    </div>
+}
+else if (!FilteredScenarios.Any())
+{
+    <div class="scenario-empty">
+        <h2>No emergency scenarios found</h2>
 
-            <a href="/scenarios/create" class="btn btn-primary">
-                Create scenario
-            </a>
-        </div>
-    }
-    else
-    {
-        <div class="scenario-table-wrapper">
+        <p>
+            Create a scenario or change the current search filters.
+        </p>
 
-            <table class="scenario-table">
+        <a href="/scenarios/create" class="btn btn-primary">
+            Create scenario
+        </a>
+    </div>
+}
+else
+{
+    <div class="scenario-table-wrapper">
 
-                <thead>
+        <table class="scenario-table">
+
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Emergency type</th>
+                    <th>Difficulty</th>
+                    <th>Status</th>
+                    <th>Trigger</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @foreach (var scenario in FilteredScenarios)
+                {
                     <tr>
-                        <th>Scenario</th>
-                        <th>Emergency type</th>
-                        <th>Difficulty</th>
-                        <th>Status</th>
-                        <th>Trigger</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
+                        <td>
+                            <strong>@scenario.Title</strong>
 
-                <tbody>
+                            <span class="scenario-description">
+                                @Shorten(scenario.Description, 90)
+                            </span>
+                        </td>
 
-                    @foreach (var scenario in FilteredScenarios)
-                    {
-                        <tr>
-                            <td>
-                                <strong>@scenario.Title</strong>
+                        <td>@scenario.EmergencyType</td>
 
-                                <span class="scenario-description">
-                                    @Shorten(scenario.Description, 90)
-                                </span>
-                            </td>
+                        <td>
+                            <span class="difficulty-badge
+                            @GetDifficultyClass(scenario.Difficulty)">
+                            @scenario.Difficulty
+                        </span>
+                    </td>
 
-                            <td>@scenario.EmergencyType</td>
+                    <td>
+                        <span class="status-badge
+                        @(scenario.IsActive
+                        ? "status-active"
+                        : "status-inactive")">
 
-                            <td>
-                                <span class="difficulty-badge
-                                            @GetDifficultyClass(scenario.Difficulty)">
-                                    @scenario.Difficulty
-                                </span>
-                            </td>
+                        @(scenario.IsActive ? "Active" : "Inactive")
 
-                            <td>
-                                <span class="status-badge
-                                            @(scenario.IsActive
-                                                ? "status-active"
-                                                : "status-inactive")">
+                    </span>
+                </td>
 
-                                    @(scenario.IsActive ? "Active" : "Inactive")
+                <td>
+                    @GetTriggerDisplay(scenario)
+                </td>
 
-                                </span>
-                            </td>
+                <td>
+                    <div class="scenario-actions">
 
-                            <td>
-                                @Shorten(scenario.TriggerCondition, 70)
-                            </td>
+                        <a href="@($"/scenarios/{scenario.Id}")">
+                            View
+                        </a>
 
-                            <td>
-                                <div class="scenario-actions">
+                        <a href="@($"/scenarios/edit/{scenario.Id}")">
+                            Edit
+                        </a>
 
-                                    <a href="@($"/scenarios/{scenario.Id}")">
-                                        View
-                                    </a>
+                        <a class="delete-link"
+                        href="@($"/scenarios/delete/{scenario.Id}")">
+                        Delete
+                    </a>
 
-                                    <a href="@($"/scenarios/edit/{scenario.Id}")">
-                                        Edit
-                                    </a>
-
-                                    <a class="delete-link"
-                                       href="@($"/scenarios/delete/{scenario.Id}")">
-                                        Delete
-                                    </a>
-
-                                </div>
-                            </td>
-                        </tr>
-                    }
-
-                </tbody>
-
-            </table>
-
-        </div>
+                </div>
+            </td>
+        </tr>
     }
+
+</tbody>
+
+</table>
+
+</div>
+}
 
 </section>
 
@@ -240,6 +240,30 @@
             "advanced" => "difficulty-advanced",
             "expert" => "difficulty-expert",
             _ => string.Empty
+        };
+    }
+
+    private static string GetTriggerDisplay(EmergencyScenario scenario)
+    {
+        return scenario.TriggerType switch
+        {
+            "Time" when scenario.TriggerDelaySeconds.HasValue =>
+                $"Time — {scenario.TriggerDelaySeconds.Value} seconds",
+
+            "Altitude" when scenario.TriggerAltitudeFeet.HasValue =>
+                $"Altitude — {scenario.TriggerAltitudeFeet.Value:N0} ft",
+
+            "Airspeed" when scenario.TriggerAirspeedKnots.HasValue =>
+                $"Airspeed — {scenario.TriggerAirspeedKnots.Value:N0} knots",
+
+            "Flight Phase" when !string.IsNullOrWhiteSpace(scenario.TriggerFlightPhase) =>
+                $"Flight Phase — {scenario.TriggerFlightPhase}",
+
+            "Manual" =>
+                "Manual — Instructor activation",
+
+            _ =>
+                "Immediate"
         };
     }
 }

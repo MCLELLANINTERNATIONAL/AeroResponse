@@ -7,7 +7,7 @@
 }
 
 /* ======================================================
-   Page shell
+    Page shell
 ====================================================== */
 
 .simulation-page-shell {
@@ -29,7 +29,7 @@
 }
 
 /* ======================================================
-   Top emergency bar
+    Top emergency bar
 ====================================================== */
 
 .emergency-status-bar {
@@ -222,7 +222,7 @@
 }
 
 /* ======================================================
-   Left sidebar
+    Left sidebar
 ====================================================== */
 
 .simulation-selector-rail {
@@ -505,7 +505,7 @@
 }
 
 /* ======================================================
-   Main cockpit
+    Main cockpit
 ====================================================== */
 
 .simulation-main-panel {
@@ -527,7 +527,7 @@
 }
 
 /* ======================================================
-   Testing controls
+    Testing controls
 ====================================================== */
 
 .testing-center {
@@ -597,7 +597,7 @@
 }
 
 /* ======================================================
-   Right emergency panel
+    Right emergency panel
 ====================================================== */
 
 .emergency-checklist-panel {
@@ -692,6 +692,29 @@
 
     font-size: 0.77rem;
     line-height: 1.55;
+}
+
+/* ======================================================
+    Manual emergency activation
+====================================================== */
+
+.manual-trigger-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    margin-top: 1rem;
+}
+
+.manual-trigger-section .btn {
+    width: 100%;
+}
+
+.manual-trigger-section small {
+    color: #91a6bb;
+
+    font-size: 0.72rem;
+    line-height: 1.4;
 }
 
 .checklist-progress-row {
@@ -894,7 +917,7 @@
 }
 
 /* ======================================================
-   Loading
+    Loading
 ====================================================== */
 
 .simulation-loading-card {
@@ -909,7 +932,7 @@
 }
 
 /* ======================================================
-   Responsive
+    Responsive
 ====================================================== */
 
 @media (max-width: 1300px) {
@@ -946,7 +969,7 @@
 
     .simulation-selector-rail {
         width: 100%;
-        min-height: auto;
+        min-height: 0;
 
         border-right: 0;
         border-bottom:
@@ -965,7 +988,7 @@
 
     .emergency-checklist-panel {
         width: 100%;
-        min-height: auto;
+        min-height: 0;
 
         box-sizing: border-box;
         overflow: visible;

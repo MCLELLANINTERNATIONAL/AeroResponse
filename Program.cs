@@ -232,6 +232,9 @@ builder.Services.AddScoped<
     SimulationScenarioDataService>();
 
 builder.Services.AddScoped<
+    ScenarioTriggerEvaluator>();
+
+builder.Services.AddScoped<
     ICockpitLayoutProvider,
     CockpitLayoutProvider>();
 

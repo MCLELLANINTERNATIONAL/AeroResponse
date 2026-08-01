@@ -217,6 +217,9 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     PerformanceDashboardService>();
 
+builder.Services.AddScoped<
+    PerformanceScoringEngine>();
+
 // Provides the system-wide Administration Dashboard.
 // This currently has no role-based access restriction.
 builder.Services.AddScoped<

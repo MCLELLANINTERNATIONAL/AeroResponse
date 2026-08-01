@@ -1,282 +1,335 @@
+===== FILE: Components/Scenarios/ScenarioForm.razor =====
 @using AeroResponse.Models
 
 <EditForm Model="Scenario"
-          FormName="@FormName"
-          OnValidSubmit="SubmitFormAsync">
+FormName="@FormName"
+OnValidSubmit="SubmitFormAsync">
 
-    <DataAnnotationsValidator />
+<DataAnnotationsValidator />
 
-    <ValidationSummary class="text-danger mb-4" />
+<ValidationSummary class="text-danger mb-4" />
 
-    <div class="scenario-form-grid">
+<div class="scenario-form-grid">
 
-        <div class="form-field">
-            <label for="scenario-title">Scenario Title</label>
+    <div class="form-field">
+        <label for="scenario-title">Scenario Title</label>
 
-            <InputText id="scenario-title"
-                       class="form-control"
-                       placeholder="Enter scenario title"
-                       @bind-Value="Scenario.Title" />
+        <InputText id="scenario-title"
+        class="form-control"
+        placeholder="Enter scenario title"
+        @bind-Value="Scenario.Title" />
 
-            <ValidationMessage For="@(() => Scenario.Title)" />
-        </div>
-
-        <div class="form-field">
-            <label for="emergency-type">Emergency Type</label>
-
-            <InputText id="emergency-type"
-                       class="form-control"
-                       placeholder="Enter emergency type"
-                       @bind-Value="Scenario.EmergencyType" />
-
-            <ValidationMessage For="@(() => Scenario.EmergencyType)" />
-
-            <small>
-                Enter an existing emergency type or create a new one.
-            </small>
-        </div>
-
-        <div class="form-field form-field-full">
-            <label for="description">Description</label>
-
-            <InputTextArea id="description"
-                           class="form-control"
-                           rows="4"
-                           placeholder="Describe the emergency scenario"
-                           @bind-Value="Scenario.Description" />
-
-            <ValidationMessage For="@(() => Scenario.Description)" />
-        </div>
-
-        <div class="form-field">
-            <label for="difficulty">Difficulty</label>
-
-            <InputSelect id="difficulty"
-                         class="form-select"
-                         @bind-Value="Scenario.Difficulty">
-
-                @foreach (var difficulty in DifficultyLevels)
-                {
-                    <option value="@difficulty">
-                        @difficulty
-                    </option>
-                }
-
-            </InputSelect>
-
-            <ValidationMessage For="@(() => Scenario.Difficulty)" />
-        </div>
-
-        <div class="form-field active-field">
-            <label class="checkbox-label">
-                <InputCheckbox @bind-Value="Scenario.IsActive" />
-
-                <span>Scenario is active</span>
-            </label>
-
-            <small>
-                Active scenarios can be selected from the simulator.
-            </small>
-        </div>
-
-        <div class="form-field">
-            <label for="trigger-type">Trigger Type</label>
-
-            <InputSelect id="trigger-type"
-                         class="form-select"
-                         @bind-Value="Scenario.TriggerType">
-
-                @foreach (var triggerType in TriggerTypes)
-                {
-                    <option value="@triggerType">
-                        @triggerType
-                    </option>
-                }
-
-            </InputSelect>
-
-            <ValidationMessage For="@(() => Scenario.TriggerType)" />
-
-            <small>
-                Select when the emergency should begin.
-            </small>
-        </div>
-
-        @if (Scenario.TriggerType == "Time")
-        {
-            <div class="form-field">
-                <label for="trigger-delay">
-                    Trigger After Seconds
-                </label>
-
-                <InputNumber id="trigger-delay"
-                             class="form-control"
-                             min="1"
-                             @bind-Value="Scenario.TriggerDelaySeconds" />
-
-                <ValidationMessage
-                    For="@(() => Scenario.TriggerDelaySeconds)" />
-
-                <small>
-                    The emergency will activate after this number of
-                    simulation seconds.
-                </small>
-            </div>
-        }
-
-        @if (Scenario.TriggerType == "Altitude")
-        {
-            <div class="form-field">
-                <label for="trigger-altitude">
-                    Trigger Altitude (Feet)
-                </label>
-
-                <InputNumber id="trigger-altitude"
-                             class="form-control"
-                             min="0"
-                             @bind-Value="Scenario.TriggerAltitudeFeet" />
-
-                <ValidationMessage
-                    For="@(() => Scenario.TriggerAltitudeFeet)" />
-
-                <small>
-                    The emergency will activate when the aircraft reaches
-                    this altitude.
-                </small>
-            </div>
-        }
-
-        @if (Scenario.TriggerType == "Airspeed")
-        {
-            <div class="form-field">
-                <label for="trigger-airspeed">
-                    Trigger Airspeed (Knots)
-                </label>
-
-                <InputNumber id="trigger-airspeed"
-                             class="form-control"
-                             min="0"
-                             @bind-Value="Scenario.TriggerAirspeedKnots" />
-
-                <ValidationMessage
-                    For="@(() => Scenario.TriggerAirspeedKnots)" />
-
-                <small>
-                    The emergency will activate when the aircraft reaches
-                    this airspeed.
-                </small>
-            </div>
-        }
-
-        @if (Scenario.TriggerType == "Flight Phase")
-        {
-            <div class="form-field">
-                <label for="flight-phase">
-                    Flight Phase
-                </label>
-
-                <InputSelect id="flight-phase"
-                             class="form-select"
-                             @bind-Value="Scenario.TriggerFlightPhase">
-
-                    <option value="">
-                        Select a flight phase
-                    </option>
-
-                    @foreach (var phase in FlightPhases)
-                    {
-                        <option value="@phase">
-                            @phase
-                        </option>
-                    }
-
-                </InputSelect>
-
-                <ValidationMessage
-                    For="@(() => Scenario.TriggerFlightPhase)" />
-
-                <small>
-                    The emergency will activate when the aircraft enters
-                    this phase of flight.
-                </small>
-            </div>
-        }
-
-        @if (Scenario.TriggerType == "Manual")
-        {
-            <div class="form-field active-field">
-                <label class="checkbox-label">
-                    <InputCheckbox
-                        @bind-Value="Scenario.RequiresManualActivation" />
-
-                    <span>Require instructor activation</span>
-                </label>
-
-                <small>
-                    The emergency will only begin when an instructor or
-                    administrator activates it.
-                </small>
-            </div>
-        }
-
-        <div class="form-field form-field-full">
-            <label for="trigger-condition">
-                Trigger Description
-            </label>
-
-            <InputTextArea id="trigger-condition"
-                           class="form-control"
-                           rows="3"
-                           placeholder="Describe the trigger for pilots and instructors"
-                           @bind-Value="Scenario.TriggerCondition" />
-
-            <ValidationMessage
-                For="@(() => Scenario.TriggerCondition)" />
-
-            <small>
-                Provide a human-readable explanation of how the emergency
-                begins.
-            </small>
-        </div>
-
-        <div class="form-field form-field-full">
-            <label for="expected-procedure">
-                Expected Procedure
-            </label>
-
-            <InputTextArea id="expected-procedure"
-                           class="form-control"
-                           rows="7"
-                           placeholder="Describe the expected pilot response"
-                           @bind-Value="Scenario.ExpectedProcedure" />
-
-            <ValidationMessage
-                For="@(() => Scenario.ExpectedProcedure)" />
-
-            <small>
-                Describe the expected response. Detailed interactive steps
-                are controlled by the simulation scenario classes.
-            </small>
-        </div>
-
+        <ValidationMessage For="@(() => Scenario.Title)" />
     </div>
 
-    <div class="scenario-form-actions">
+    <div class="form-field">
+        <label for="emergency-type">Emergency Type</label>
 
-        <button type="submit"
-                class="btn btn-primary"
-                disabled="@IsSaving">
+        <InputText id="emergency-type"
+        class="form-control"
+        placeholder="Enter emergency type"
+        @bind-Value="Scenario.EmergencyType" />
 
-            @(IsSaving ? "Saving..." : SubmitText)
+        <ValidationMessage For="@(() => Scenario.EmergencyType)" />
 
-        </button>
-
-        <a href="/scenarios"
-           class="btn btn-outline-light">
-            Cancel
-        </a>
-
+        <small>
+            Enter an existing emergency type or create a new one.
+        </small>
     </div>
+
+    <div class="form-field form-field-full">
+        <label for="description">Description</label>
+
+        <InputTextArea id="description"
+        class="form-control"
+        rows="4"
+        placeholder="Describe the emergency scenario"
+        @bind-Value="Scenario.Description" />
+
+        <ValidationMessage For="@(() => Scenario.Description)" />
+    </div>
+
+    <div class="form-field">
+        <label for="difficulty">Difficulty</label>
+
+        <InputSelect id="difficulty"
+        class="form-select"
+        @bind-Value="Scenario.Difficulty">
+
+        @foreach (var difficulty in DifficultyLevels)
+        {
+            <option value="@difficulty">
+                @difficulty
+            </option>
+        }
+
+    </InputSelect>
+
+    <ValidationMessage For="@(() => Scenario.Difficulty)" />
+</div>
+
+<div class="form-field active-field">
+    <label class="checkbox-label">
+        <InputCheckbox @bind-Value="Scenario.IsActive" />
+
+        <span>Scenario is active</span>
+    </label>
+
+    <small>
+        Active scenarios can be selected from the simulator.
+    </small>
+</div>
+
+<div class="form-field">
+    <label for="trigger-type">Trigger Type</label>
+
+    <InputSelect id="trigger-type"
+    class="form-select"
+    @bind-Value="Scenario.TriggerType">
+
+    @foreach (var triggerType in TriggerTypes)
+    {
+        <option value="@triggerType">
+            @triggerType
+        </option>
+    }
+
+</InputSelect>
+
+<ValidationMessage For="@(() => Scenario.TriggerType)" />
+
+<small>
+    Select when the emergency should begin.
+</small>
+</div>
+
+@if (Scenario.TriggerType == "Time")
+{
+    <div class="form-field">
+        <label for="trigger-delay">
+            Trigger After Seconds
+        </label>
+
+        <InputNumber id="trigger-delay"
+        class="form-control"
+        min="1"
+        @bind-Value="Scenario.TriggerDelaySeconds" />
+
+        <ValidationMessage
+        For="@(() => Scenario.TriggerDelaySeconds)" />
+
+        <small>
+            The emergency will activate after this number of
+            simulation seconds.
+        </small>
+    </div>
+}
+
+@if (Scenario.TriggerType == "Altitude")
+{
+    <div class="form-field">
+        <label for="trigger-altitude">
+            Trigger Altitude (Feet)
+        </label>
+
+        <InputNumber id="trigger-altitude"
+        class="form-control"
+        min="0"
+        @bind-Value="Scenario.TriggerAltitudeFeet" />
+
+        <ValidationMessage
+        For="@(() => Scenario.TriggerAltitudeFeet)" />
+
+        <small>
+            The emergency will activate when the aircraft reaches
+            this altitude.
+        </small>
+    </div>
+}
+
+@if (Scenario.TriggerType == "Airspeed")
+{
+    <div class="form-field">
+        <label for="trigger-airspeed">
+            Trigger Airspeed (Knots)
+        </label>
+
+        <InputNumber id="trigger-airspeed"
+        class="form-control"
+        min="0"
+        @bind-Value="Scenario.TriggerAirspeedKnots" />
+
+        <ValidationMessage
+        For="@(() => Scenario.TriggerAirspeedKnots)" />
+
+        <small>
+            The emergency will activate when the aircraft reaches
+            this airspeed.
+        </small>
+    </div>
+}
+
+@if (Scenario.TriggerType == "Flight Phase")
+{
+    <div class="form-field">
+        <label for="flight-phase">
+            Flight Phase
+        </label>
+
+        <InputSelect id="flight-phase"
+        class="form-select"
+        @bind-Value="Scenario.TriggerFlightPhase">
+
+        <option value="">
+            Select a flight phase
+        </option>
+
+        @foreach (var phase in FlightPhases)
+        {
+            <option value="@phase">
+                @phase
+            </option>
+        }
+
+    </InputSelect>
+
+    <ValidationMessage
+    For="@(() => Scenario.TriggerFlightPhase)" />
+
+    <small>
+        The emergency will activate when the aircraft enters
+        this phase of flight.
+    </small>
+</div>
+}
+
+@if (Scenario.TriggerType == "Manual")
+{
+    <div class="form-field active-field">
+        <label class="checkbox-label">
+            <InputCheckbox
+            @bind-Value="Scenario.RequiresManualActivation" />
+
+            <span>Require instructor activation</span>
+        </label>
+
+        <small>
+            The emergency will only begin when an instructor or
+            administrator activates it.
+        </small>
+    </div>
+}
+
+<div class="form-field form-field-full">
+    <label for="trigger-condition">
+        Trigger Description
+    </label>
+
+    <InputTextArea id="trigger-condition"
+    class="form-control"
+    rows="3"
+    placeholder="Describe the trigger for pilots and instructors"
+    @bind-Value="Scenario.TriggerCondition" />
+
+    <ValidationMessage
+    For="@(() => Scenario.TriggerCondition)" />
+
+    <small>
+        Provide a human-readable explanation of how the emergency
+        begins.
+    </small>
+</div>
+
+<div class="form-field">
+    <label for="time-limit">
+        Response Time Limit (Seconds)
+    </label>
+
+    <InputNumber id="time-limit"
+    class="form-control"
+    min="30"
+    max="900"
+    @bind-Value="Scenario.TimeLimitSeconds" />
+
+    <ValidationMessage
+    For="@(() => Scenario.TimeLimitSeconds)" />
+
+    <small>
+        The assessment ends automatically when this limit expires.
+    </small>
+</div>
+
+<div class="form-field form-field-full">
+    <label for="success-condition">
+        Success Condition
+    </label>
+
+    <InputTextArea id="success-condition"
+    class="form-control"
+    rows="3"
+    @bind-Value="Scenario.SuccessCondition" />
+</div>
+
+<div class="form-field form-field-full">
+    <label for="failure-condition">
+        Failure Condition
+    </label>
+
+    <InputTextArea id="failure-condition"
+    class="form-control"
+    rows="3"
+    @bind-Value="Scenario.FailureCondition" />
+</div>
+
+<div class="form-field form-field-full">
+    <label for="scoring-rules">
+        Scoring Rules
+    </label>
+
+    <InputTextArea id="scoring-rules"
+    class="form-control"
+    rows="3"
+    @bind-Value="Scenario.ScoringRules" />
+</div>
+
+<div class="form-field form-field-full">
+    <label for="expected-procedure">
+        Expected Procedure
+    </label>
+
+    <InputTextArea id="expected-procedure"
+    class="form-control"
+    rows="7"
+    placeholder="Describe the expected pilot response"
+    @bind-Value="Scenario.ExpectedProcedure" />
+
+    <ValidationMessage
+    For="@(() => Scenario.ExpectedProcedure)" />
+
+    <small>
+        Describe the expected response. Detailed interactive steps
+        are controlled by the simulation scenario classes.
+    </small>
+</div>
+
+</div>
+
+<div class="scenario-form-actions">
+
+    <button type="submit"
+    class="btn btn-primary"
+    disabled="@IsSaving">
+
+    @(IsSaving ? "Saving..." : SubmitText)
+
+</button>
+
+<a href="/scenarios"
+class="btn btn-outline-light">
+Cancel
+</a>
+
+</div>
 
 </EditForm>
 

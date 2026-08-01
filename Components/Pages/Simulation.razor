@@ -18,6 +18,7 @@
 @inject NavigationManager Navigation
 @inject AircraftService AircraftService
 @inject ScenarioTriggerEvaluator TriggerEvaluator
+@inject SimulationService SimulationSession
 
 <PageTitle>Simulation | AeroResponse</PageTitle>
 
@@ -561,7 +562,7 @@ selectedScenarioRecord.TriggerCondition))
                 <label>
                     <input type="checkbox"
                     checked="@isCompleted"
-                    disabled="@(!emergencyTriggered)"
+                    disabled="@(!emergencyTriggered || _completedReport is not null)"
                     @onchange="eventArgs =>
                     ToggleProcedureStep(
                     step,
@@ -593,6 +594,61 @@ selectedScenarioRecord.TriggerCondition))
 </ol>
 }
 </section>
+
+<section class="emergency-panel-card assessment-status-card">
+    <span class="emergency-panel-eyebrow">
+        Performance assessment
+    </span>
+
+    @if (!emergencyTriggered)
+    {
+        <p>
+            The assessment timer begins when the emergency is triggered.
+        </p>
+    }
+    else if (_completedReport is null)
+    {
+        <div class="assessment-time-row">
+            <span>Time remaining</span>
+            <strong class="@(_remainingSeconds <= 15 ? "assessment-time-warning" : null)">
+                @FormatAssessmentTime(_remainingSeconds)
+            </strong>
+        </div>
+
+        <p>
+            Complete the actions in the correct sequence before the configured
+            time limit expires.
+        </p>
+
+        <button type="button"
+                class="btn btn-primary assessment-complete-button"
+                disabled="@_isCompleting"
+                @onclick="CompleteAssessmentAsync">
+            @(_isCompleting ? "Saving assessment..." : "Complete Assessment")
+        </button>
+    }
+    else
+    {
+        <div class="assessment-result @(_completedReport.Passed ? "passed" : "failed")">
+            <strong>
+                @(_completedReport.Passed ? "Scenario Passed" : "Scenario Failed")
+            </strong>
+
+            <span>
+                Overall score: @_completedReport.OverallScore%
+            </span>
+
+            <small>
+                @_completedReport.Outcome
+            </small>
+        </div>
+
+        <a class="btn btn-outline-primary assessment-report-link"
+           href="/reports">
+            View Performance Report
+        </a>
+    }
+</section>
 </aside>
 </div>
 }
@@ -611,6 +667,12 @@ selectedScenarioRecord.TriggerCondition))
 
     private readonly HashSet<int>
         _completedProcedureStepOrders = [];
+
+    private SimulationReport? _completedReport;
+
+    private bool _isCompleting;
+
+    private int _remainingSeconds;
 
 
     private IReadOnlyList<EmergencyScenario>
@@ -958,12 +1020,40 @@ selectedScenarioRecord.TriggerCondition))
             ? selectedRuntimeScenario.Start(cockpitLayout)
             : CreateNormalCockpitState();
 
-        procedureSteps =
-            await ScenarioDataService
-                .GetProcedureStepsAsync(
-                    selectedScenarioRecord,
-                    cockpitLayout.Name);
+        // Runtime scenario definitions are the source of truth for the
+        // executable cockpit actions and their required sequence.
+        procedureSteps = SimulationEngine.GetProcedureSteps(
+            selectedScenarioRecord.EmergencyType,
+            cockpitLayout,
+            selectedScenarioRecord.Id);
 
+        // Apply scenario-wide timing defaults to executable steps.
+        foreach (var step in procedureSteps)
+        {
+            step.MaxResponseSeconds = Math.Min(
+                selectedScenarioRecord.TimeLimitSeconds,
+                Math.Max(
+                    step.MaxResponseSeconds,
+                    10 + ((step.StepOrder - 1) * 15)));
+        }
+
+        SimulationSession.StartSimulation(
+            userId: "test-pilot",
+            aircraftId: selectedAircraft.Id,
+            scenario: selectedScenarioRecord,
+            aircraft: cockpitLayout,
+            expectedSteps: procedureSteps,
+            pilotName: "Pilot");
+
+        if (emergencyTriggered &&
+            !SimulationSession.EmergencyTriggeredAt.HasValue)
+        {
+            SimulationSession.MarkEmergencyTriggered(simulationStartedAt);
+        }
+
+        _completedReport = null;
+        _isCompleting = false;
+        _remainingSeconds = selectedScenarioRecord.TimeLimitSeconds;
         _completedProcedureStepOrders.Clear();
 
         cockpitState.DisplayedVerticalSpeed =
@@ -1010,13 +1100,12 @@ selectedScenarioRecord.TriggerCondition))
                 step.StepOrder);
 
             if (!string.IsNullOrWhiteSpace(
-                step.CorrectAction))
+                step.CorrectAction) &&
+                _completedReport is null)
             {
-                cockpitState =
-                    selectedRuntimeScenario
-                        .ApplyPilotAction(
-                            cockpitState,
-                            step.CorrectAction);
+                cockpitState = SimulationSession.SubmitPilotAction(
+                    step.CorrectAction,
+                    step.StepOrder);
             }
         }
         else
@@ -1191,6 +1280,8 @@ selectedScenarioRecord.TriggerCondition))
 
         emergencyTriggered = true;
 
+        SimulationSession.MarkEmergencyTriggered();
+
         cockpitState =
             selectedRuntimeScenario.Start(
                 cockpitLayout);
@@ -1280,6 +1371,18 @@ selectedScenarioRecord.TriggerCondition))
 
                 EvaluateEmergencyTrigger();
 
+                if (emergencyTriggered && _completedReport is null)
+                {
+                    _remainingSeconds =
+                        SimulationSession.GetRemainingSeconds();
+
+                    if (SimulationSession.IsTimedOut())
+                    {
+                        await CompleteAssessmentAsync(
+                            "The configured scenario time limit expired.");
+                    }
+                }
+
                 await InvokeAsync(
                     StateHasChanged);
             }
@@ -1288,6 +1391,42 @@ selectedScenarioRecord.TriggerCondition))
         {
             // Expected when leaving the page.
         }
+    }
+
+    private Task CompleteAssessmentAsync()
+    {
+        return CompleteAssessmentAsync(null);
+    }
+
+    private async Task CompleteAssessmentAsync(
+        string? completionReason)
+    {
+        if (_completedReport is not null ||
+            _isCompleting ||
+            !emergencyTriggered)
+        {
+            return;
+        }
+
+        try
+        {
+            _isCompleting = true;
+
+            _completedReport =
+                await SimulationSession
+                    .CompleteAndSaveSimulationAsync(
+                        completionReason);
+        }
+        finally
+        {
+            _isCompleting = false;
+        }
+    }
+
+    private static string FormatAssessmentTime(int totalSeconds)
+    {
+        var safeSeconds = Math.Max(0, totalSeconds);
+        return TimeSpan.FromSeconds(safeSeconds).ToString(@"mm\:ss");
     }
 
     public async ValueTask DisposeAsync()

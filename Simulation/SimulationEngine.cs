@@ -69,8 +69,38 @@ public class SimulationEngine
         CockpitLayoutDefinition aircraft,
         int scenarioId)
     {
-        return GetScenario(scenarioType)
-            .GetProcedureSteps(aircraft, scenarioId);
+        var steps = GetScenario(scenarioType)
+            .GetProcedureSteps(aircraft, scenarioId)
+            .OrderBy(step => step.StepOrder)
+            .ToList();
+
+        foreach (var step in steps)
+        {
+            if (step.MaxResponseSeconds <= 0)
+            {
+                step.MaxResponseSeconds = 10 + ((step.StepOrder - 1) * 15);
+            }
+
+            if (step.ScoreWeight <= 0)
+            {
+                step.ScoreWeight = step.IsSafetyCritical ? 20 : 10;
+            }
+
+            if (string.IsNullOrWhiteSpace(step.PerformanceCategory))
+            {
+                step.PerformanceCategory =
+                    step.CorrectAction.Contains(
+                        "Declare",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    step.CorrectAction.Contains(
+                        "Communicat",
+                        StringComparison.OrdinalIgnoreCase)
+                        ? "Communication"
+                        : "Procedure";
+            }
+        }
+
+        return steps;
     }
 
     public bool IsActionCorrect(

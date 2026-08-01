@@ -228,6 +228,9 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
             
+        // Ensure existing and newly seeded scenarios have assessment rules.
+        await EnsureScenarioAssessmentConfigurationAsync(context);
+
         // Seed built-in cockpit layouts independently of the scenario seeding above,
         // so newly added aircraft definitions get picked up even after the
         // EmergencyScenarios table has already been seeded once.
@@ -282,6 +285,38 @@ public static class SeedData
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task EnsureScenarioAssessmentConfigurationAsync(
+        ApplicationDbContext context)
+    {
+        var scenarios = await context.EmergencyScenarios.ToListAsync();
+
+        foreach (var scenario in scenarios)
+        {
+            scenario.TimeLimitSeconds = scenario.EmergencyType switch
+            {
+                "Cabin Depressurization" => 90,
+                "Wind Shear" => 75,
+                "Smoke or Fire" => 90,
+                "Engine Fire" => 120,
+                _ => 150
+            };
+
+            scenario.SuccessCondition =
+                "Complete all safety-critical actions, follow the expected sequence, " +
+                "and achieve an overall score of at least 70% before the time limit expires.";
+
+            scenario.FailureCondition =
+                "The time limit expires, a safety-critical action is missed, " +
+                "or the overall score is below 70%.";
+
+            scenario.ScoringRules =
+                "Procedure accuracy 40%; decision making 25%; time management 15%; " +
+                "communication 10%; checklist usage 10%.";
         }
 
         await context.SaveChangesAsync();

@@ -1034,3 +1034,58 @@
         padding: 0.8rem;
     }
 }
+/* =========================================================
+   INTERACTIVE PERFORMANCE ASSESSMENT
+   ========================================================= */
+
+.assessment-status-card {
+    display: grid;
+    gap: 14px;
+}
+
+.assessment-time-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #eef5ff;
+}
+
+.assessment-time-row span {
+    color: #475569;
+    font-weight: 700;
+}
+
+.assessment-time-row strong {
+    color: #1558de;
+    font-size: 1.35rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.assessment-time-warning {
+    color: #dc2626 !important;
+}
+
+.assessment-complete-button,
+.assessment-report-link {
+    width: 100%;
+}
+
+.assessment-result {
+    display: grid;
+    gap: 6px;
+    padding: 14px;
+    border-radius: 10px;
+}
+
+.assessment-result.passed {
+    background: #ecfdf3;
+    color: #166534;
+}
+
+.assessment-result.failed {
+    background: #fef2f2;
+    color: #991b1b;
+}

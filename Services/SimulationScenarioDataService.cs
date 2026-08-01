@@ -79,7 +79,16 @@ public class SimulationScenarioDataService(
                     StepOrder = index + 1,
                     Instruction = instruction,
                     CorrectAction = instruction,
-                    IsSafetyCritical = false
+                    IsSafetyCritical = index < 2,
+                    MaxResponseSeconds = Math.Min(
+                        scenario.TimeLimitSeconds,
+                        10 + (index * 15)),
+                    ScoreWeight = index < 2 ? 20 : 10,
+                    PerformanceCategory =
+                        instruction.Contains("declare", StringComparison.OrdinalIgnoreCase) ||
+                        instruction.Contains("communicat", StringComparison.OrdinalIgnoreCase)
+                            ? "Communication"
+                            : "Procedure"
                 })
             .ToList();
     }

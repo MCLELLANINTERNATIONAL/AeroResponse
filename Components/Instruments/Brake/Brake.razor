@@ -1,0 +1,28 @@
+@namespace AeroResponse.Components.Instruments.Brake
+
+<div class="cockpit-control brake-control">
+
+    <h3>Brake</h3>
+
+    <input type="range"
+           min="0"
+           max="100"
+           step="1"
+           value="@BrakePressure"
+           @oninput="HandleBrakeInput" />
+
+    <p>
+        @BrakePressure.ToString("0")%
+    </p>
+
+    <button type="button"
+            @onclick="ApplyFullBrake">
+        Full Brake
+    </button>
+
+    <button type="button"
+            @onclick="ReleaseBrake">
+        Release
+    </button>
+
+</div>

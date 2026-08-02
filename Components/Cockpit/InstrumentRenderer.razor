@@ -1,8 +1,29 @@
+@using AeroResponse.Components.Instruments.Rudder
+@using AeroResponse.Components.Instruments.Throttle
+@using AeroResponse.Components.Instruments.Brake
+@using AeroResponse.Components.Instruments.FireSuppression
+
 <div class="instrument-position"
      style="@PositionStyle">
 
     @switch (Definition.Type)
     {
+        case InstrumentType.Rudder:
+            <Rudder State="@State" />
+            break;
+
+        case InstrumentType.Throttle:
+            <Throttle State="@State"
+                    EngineCount="@EngineCount" />
+            break;
+
+        case InstrumentType.Brake:
+            <Brake State="@State" />
+            break;
+
+        case InstrumentType.FireSuppression:
+            <FireSuppression State="@State" />
+            break;
         case InstrumentType.AirspeedIndicator:
             <AirspeedIndicator Airspeed="@State.Airspeed"
                             Config="@Layout" />
@@ -52,6 +73,8 @@
     [Parameter]
     [EditorRequired]
     public CockpitLayoutDefinition Layout {get; set; } = default!;
+    [Parameter]
+    public int EngineCount { get; set; }
 
     private string PositionStyle =>
         $"grid-row: {Definition.GridRow} / span {Definition.RowSpan}; " +

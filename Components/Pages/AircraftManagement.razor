@@ -231,7 +231,11 @@
                                                 <article class="@GetInstrumentEditorClass(instrument)">
                                                     <div class="instrument-selection-row">
                                                         <label class="instrument-checkbox">
-                                                            <input type="checkbox" @bind="instrument.IsSelected" @bind:after="() => InstrumentSelectionChanged(instrument)" />
+                                                            <input type="checkbox"
+                                                                disabled="@IsRequiredInstrument(instrument.Type)"
+                                                                @bind="instrument.IsSelected"
+                                                                @bind:after="() =>
+                                                                    InstrumentSelectionChanged(instrument)" />
                                                             <span>@GetInstrumentDisplayName(instrument.Type)</span>
                                                         </label>
                                                     </div>

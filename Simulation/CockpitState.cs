@@ -29,4 +29,9 @@ public class CockpitState
     public string AlertMessage { get; set; } = "Systems Normal";
 
     public double FuelPercentage { get; set; } = 100;
+    public double RudderPosition { get; set; } = 0;
+    public double EngineOnePower { get; set; } = 0;
+    public double EngineTwoPower { get; set; } = 0;
+    public double BrakePressure { get; set; } = 0;
+    public bool FireSuppressionActivated { get; set; } = false;
 }

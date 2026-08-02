@@ -4,8 +4,9 @@
     @foreach (var instrument in Layout.Instruments)
     {
         <InstrumentRenderer Definition="@instrument"
-                            State="@State"
-                            Layout="@Layout" />
+                    State="@State"
+                    Layout="@Layout"
+                    EngineCount="@EngineCount" />
     }
 
 </div>
@@ -18,6 +19,9 @@
     [Parameter]
     [EditorRequired]
     public CockpitState State { get; set; } = default!;
+
+    [Parameter]
+    public int EngineCount { get; set; }
 
 
     private string GridStyle =>

@@ -426,6 +426,17 @@ public partial class AircraftManagement : ComponentBase
         instrument.GridColumn = 1;
     }
 
+// Required Instruements all Aircraft must have therefore cannot be disabled in the layout editor
+    private static bool IsRequiredInstrument(
+        InstrumentType type)
+    {
+        return type is
+            InstrumentType.Rudder or
+            InstrumentType.Throttle or
+            InstrumentType.Brake or
+            InstrumentType.FireSuppression;
+    }
+
     private static IEnumerable<(int Row, int Column)> GetOccupiedCells(InstrumentPlacementEditor instrument)
     {
         for (var row = instrument.GridRow; row < instrument.GridRow + instrument.RowSpan; row++)
@@ -440,6 +451,15 @@ public partial class AircraftManagement : ComponentBase
     private bool ValidateLayoutEditor()
     {
         layoutEditorError = null;
+
+        var requiredInstruments =
+            new[]
+            {
+                InstrumentType.Rudder,
+                InstrumentType.Throttle,
+                InstrumentType.Brake,
+                InstrumentType.FireSuppression
+            };
 
         if (string.IsNullOrWhiteSpace(layoutEditor.Name))
         {
@@ -495,6 +515,17 @@ public partial class AircraftManagement : ComponentBase
                 }
 
                 occupiedCells[cell] = instrument.Type;
+            }
+        }
+
+        foreach (var required in requiredInstruments)
+        {
+            if (!layoutEditor.Instruments.Any(
+                    instrument =>
+                        instrument.Type == required))
+            {
+                layoutEditorError = $"The cockpit layout must contain {GetInstrumentDisplayName(required)}.";
+                return false;
             }
         }
 
@@ -961,11 +992,16 @@ public partial class AircraftManagement : ComponentBase
             Name = string.Empty,
             Rows = 2,
             Columns = 3,
-            Instruments = Enum.GetValues<InstrumentType>()
+
+            Instruments = Enum
+                .GetValues<InstrumentType>()
                 .Select(type => new InstrumentPlacementEditor
                 {
                     Type = type,
-                    IsSelected = false,
+
+                    IsSelected =
+                        IsRequiredInstrument(type),
+
                     GridRow = 1,
                     GridColumn = 1,
                     RowSpan = 1,

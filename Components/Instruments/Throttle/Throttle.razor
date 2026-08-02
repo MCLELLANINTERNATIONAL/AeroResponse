@@ -1,0 +1,30 @@
+@namespace AeroResponse.Components.Instruments.Throttle
+
+<div class="cockpit-control throttle-control">
+    <h3>Throttle</h3>
+
+    @for (var i = 0; i < EngineCount; i++)
+    {
+        var engineNumber = i + 1;
+
+        <div class="throttle-lever">
+            <label>
+                Engine @engineNumber
+            </label>
+
+            <input type="range"
+                   min="0"
+                   max="100"
+                   step="1"
+                   value="@GetEnginePower(engineNumber)"
+                   @oninput="args =>
+                       HandleThrottleInput(
+                           engineNumber,
+                           args)" />
+
+            <span>
+                @GetEnginePower(engineNumber).ToString("0")%
+            </span>
+        </div>
+    }
+</div>

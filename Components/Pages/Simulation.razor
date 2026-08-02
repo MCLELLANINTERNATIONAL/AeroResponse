@@ -300,7 +300,8 @@ Main cockpit
 <main class="simulation-main-panel">
     <div class="simulation-content-card">
         <CockpitLayout Layout="@cockpitLayout"
-        State="@cockpitState" />
+               State="@cockpitState"
+               EngineCount="@selectedAircraft.EngineCount" />  
 
         <div class="testing-center">
             <div class="testing-control">

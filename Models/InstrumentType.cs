@@ -20,5 +20,10 @@ public enum InstrumentType
     Rudder,
     Throttle,
     Brake,
-    FireSuppression
+    FireSuppression,
+    Tachometer,
+    OilPressureGauge,
+    OilTemperatureGauge,
+    FuelQuantityGauge,
+    AmmeterOrVacuumGauge
 }

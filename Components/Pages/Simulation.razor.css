@@ -530,70 +530,63 @@
     Testing controls
 ====================================================== */
 
-.testing-center {
+.flight-controls-panel {
     display: grid;
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
-    gap: 1.25rem;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: linear-gradient(180deg, #1d2430 0%, #11161f 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #e8eef8;
+}
 
-    width: 100%;
-    padding: 1.5rem;
+.flight-controls-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
 
-    box-sizing: border-box;
+.control-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.9rem;
+    padding: 1rem;
+}
 
-    border-top:
-        1px solid rgba(101, 167, 218, 0.2);
-
-    background:
-        linear-gradient(
-            135deg,
-            #071a2d 0%,
-            #0a2c4c 55%,
-            #0c477c 100%
-        );
+.rudder-card {
+    grid-column: 1 / -1;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.9rem;
+    padding: 1rem;
 }
 
 .testing-control {
-    min-width: 0;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.9rem;
     padding: 1rem;
-
-    border:
-        1px solid rgba(101, 167, 218, 0.12);
-    border-radius: 10px;
-
-    background:
-        rgba(2, 14, 25, 0.18);
 }
 
-.testing-center h2 {
-    margin: 0 0 0.8rem;
-
-    color: #f4f8fc;
-
-    font-size: 1.1rem;
+.testing-control h3 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    color: #f6f8fc;
 }
 
-.testing-center h3 {
-    margin: 1rem 0 0.55rem;
-
-    color: #d8e8f5;
-
-    font-size: 0.95rem;
+.testing-control label {
+    display: block;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.85rem;
+    color: #aeb9c8;
 }
 
-.testing-center p {
-    margin: 0.55rem 0 0;
-
-    color: #79c4f5;
-
-    font-size: 0.95rem;
-    font-weight: 750;
-}
-
-.testing-center input[type="range"] {
-    width: 100%;
-
-    accent-color: #238ee9;
+.testing-control p {
+    margin: 0.35rem 0 0;
+    color: #dbe4f2;
+    font-variant-numeric: tabular-nums;
 }
 
 /* ======================================================

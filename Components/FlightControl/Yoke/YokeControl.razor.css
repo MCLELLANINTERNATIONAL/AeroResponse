@@ -1,0 +1,52 @@
+/* ======================================================
+    Yoke Control
+====================================================== */
+.yoke-control {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+
+.yoke-control:active {
+    cursor: grabbing;
+}
+
+.yoke-rim {
+    fill: none;
+    stroke: #1f2937;
+    stroke-width: 14;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+}
+
+.yoke-arm {
+    fill: none;
+    stroke: #374151;
+    stroke-width: 12;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.yoke-hub {
+    fill: #111827;
+    stroke: #d1d5db;
+    stroke-width: 3;
+}
+
+.yoke-column {
+    stroke: #94a3b8;
+    stroke-width: 10;
+    stroke-linecap: round;
+}
+
+.yoke-button {
+    fill: #b91c1c;
+    stroke: #fecaca;
+    stroke-width: 2;
+}

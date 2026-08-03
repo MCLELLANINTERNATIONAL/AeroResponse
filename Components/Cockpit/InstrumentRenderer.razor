@@ -1,6 +1,3 @@
-@using AeroResponse.Components.Instruments.Rudder
-@using AeroResponse.Components.Instruments.Throttle
-@using AeroResponse.Components.Instruments.Brake
 @using AeroResponse.Components.Instruments.FireSuppression
 
 <div class="instrument-position"
@@ -8,19 +5,6 @@
 
     @switch (Definition.Type)
     {
-        case InstrumentType.Rudder:
-            <Rudder State="@State" />
-            break;
-
-        case InstrumentType.Throttle:
-            <Throttle State="@State"
-                    EngineCount="@EngineCount" />
-            break;
-
-        case InstrumentType.Brake:
-            <Brake State="@State" />
-            break;
-
         case InstrumentType.FireSuppression:
             <FireSuppression State="@State" />
             break;

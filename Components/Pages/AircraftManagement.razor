@@ -233,10 +233,15 @@
                                                         <label class="instrument-checkbox">
                                                             <input type="checkbox"
                                                                 disabled="@IsRequiredInstrument(instrument.Type)"
-                                                                @bind="instrument.IsSelected"
-                                                                @bind:after="() =>
-                                                                    InstrumentSelectionChanged(instrument)" />
-                                                            <span>@GetInstrumentDisplayName(instrument.Type)</span>
+                                                                checked="@instrument.IsSelected"
+                                                                @onchange="e => instrument.IsSelected = (bool)e.Value!" />
+                                                            <span>
+                                                                @GetInstrumentDisplayName(instrument.Type)
+                                                                @if (IsRequiredInstrument(instrument.Type))
+                                                                {
+                                                                    <small>(required)</small>
+                                                                }
+                                                            </span>
                                                         </label>
                                                     </div>
 

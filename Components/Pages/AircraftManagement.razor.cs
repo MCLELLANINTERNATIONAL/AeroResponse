@@ -426,15 +426,21 @@ public partial class AircraftManagement : ComponentBase
         instrument.GridColumn = 1;
     }
 
-// Required Instruements all Aircraft must have therefore cannot be disabled in the layout editor
-    private static bool IsRequiredInstrument(
-        InstrumentType type)
+// Required Instruements all Aircraft must have therefore cannot be disabled in the layout editor | Big 6 Display, Oil Gauges, Fuel Gauge, Eletrical Load, and Tachometer
+    private static bool IsRequiredInstrument(InstrumentType type)
     {
         return type is
-            InstrumentType.Rudder or
-            InstrumentType.Throttle or
-            InstrumentType.Brake or
-            InstrumentType.FireSuppression;
+            InstrumentType.AirspeedIndicator or
+            InstrumentType.ArtificialHorizon or
+            InstrumentType.Altimeter or
+            InstrumentType.TurnCoordinator or
+            InstrumentType.HeadingIndicator or
+            InstrumentType.VerticalSpeedIndicator or
+            InstrumentType.Tachometer or
+            InstrumentType.OilPressureGauge or
+            InstrumentType.OilTemperatureGauge or
+            InstrumentType.FuelQuantityGauge or
+            InstrumentType.AmmeterOrVacuumGauge;
     }
 
     private static IEnumerable<(int Row, int Column)> GetOccupiedCells(InstrumentPlacementEditor instrument)
@@ -826,7 +832,6 @@ public partial class AircraftManagement : ComponentBase
             isDeletingLayout = false;
         }
     }
-
     private static CockpitLayoutDefinition CloneLayoutDefinition(CockpitLayoutDefinition layout)
     {
         return new CockpitLayoutDefinition

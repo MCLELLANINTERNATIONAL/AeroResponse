@@ -1,0 +1,48 @@
+.throttle-control {
+    width: 100%;
+    max-width: 180px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    cursor: ns-resize;
+    user-select: none;
+    touch-action: none;
+}
+
+.throttle-base {
+    fill: #111827;
+    stroke: #94a3b8;
+    stroke-width: 4;
+    filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.35));
+}
+
+.throttle-track {
+    fill: #0f172a;
+    stroke: #334155;
+    stroke-width: 2;
+}
+
+.throttle-knob {
+    fill: #1f2937;
+    stroke: #d1d5db;
+    stroke-width: 2;
+}
+
+.throttle-stem {
+    fill: #374151;
+    stroke: #cbd5e1;
+    stroke-width: 2;
+}
+
+.throttle-drag-point {
+    fill: #d97706;
+    stroke: #fef3c7;
+    stroke-width: 2;
+}
+
+.throttle-label {
+    fill: #cbd5e1;
+    font-size: 14px;
+    font-family: system-ui, sans-serif;
+    letter-spacing: 1px;
+}

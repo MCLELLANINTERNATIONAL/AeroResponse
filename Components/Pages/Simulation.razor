@@ -4,6 +4,10 @@
 @implements IAsyncDisposable
 
 @using AeroResponse.Components.Cockpit
+@using AeroResponse.Components.SystemGauges
+@using AeroResponse.Components.FlightControl.Yoke
+@using AeroResponse.Components.FlightControl.Rudder
+@using AeroResponse.Components.FlightControl.Throttle
 @using AeroResponse.Models
 @using AeroResponse.Services
 @using AeroResponse.Simulation
@@ -302,137 +306,60 @@ Main cockpit
         <CockpitLayout Layout="@cockpitLayout"
                State="@cockpitState"
                EngineCount="@selectedAircraft.EngineCount" />  
-
-        <div class="testing-center">
-            <div class="testing-control">
-                <h2>Airspeed</h2>
-
-                <input type="range"
-                min="0"
-                max="@cockpitLayout.Airspeed.MaximumSpeed"
-                step="10"
-                aria-label="Airspeed"
-                @bind="cockpitState.Airspeed"
-                @bind:event="oninput" />
-
-                <p>
-                    @cockpitState.Airspeed.ToString("N0")
-                    knots
-                </p>
+        <section class="system-gauges-panel">
+            <div class="system-gauges-grid">
+                @foreach (var engine in cockpitState.Engines)
+                {
+                    <Tachometer Value="@engine.Power" Minimum="0" Maximum="100" />
+                }
             </div>
+        </section>
 
-            <div class="testing-control">
-                <h2>Attitude</h2>
+        <section class="flight-controls-panel">
+            <h2>Flight Controls</h2>
 
-                <h3>Pitch</h3>
+            <div class="flight-controls-grid">
+                <div class="control-card">
+                    <div id="throttle-controls">
+                        @foreach (var engine in cockpitState.Engines)
+                        {
+                            if (cockpitState.Engines.Count > 1)
+                            {
+                                <h3>Engine @engine.Number</h3>
+                            }
 
-                <input type="range"
-                min="-30"
-                max="30"
-                step="1"
-                aria-label="Pitch"
-                @bind="cockpitState.Pitch"
-                @bind:event="oninput" />
+                            <ThrottleControl Power="@engine.Power"
+                                            PowerChanged="value => engine.Power = value" />
+                        }
+                    </div>
+                </div>
+                
+                <div class="control-card">
+                    <YokeControl Pitch="@cockpitState.Pitch"
+                                PitchChanged="value => cockpitState.Pitch = value"
+                                Bank="@cockpitState.Bank"
+                                BankChanged="value => cockpitState.Bank = value" />
+                </div>
 
-                <p>
-                    @cockpitState.Pitch°
-                </p>
+                <div class="control-card">
+                    <h3>Emergency</h3>
+                    <button type="button"
+                            class="btn btn-outline-danger"
+                            @onclick="ActivateFireSuppression">
+                        Activate Fire Suppression
+                    </button>
+                </div>
 
-                <h3>Bank</h3>
-
-                <input type="range"
-                min="-90"
-                max="90"
-                step="1"
-                aria-label="Bank"
-                @bind="cockpitState.Bank"
-                @bind:event="oninput" />
-
-                <p>
-                    @cockpitState.Bank°
-                </p>
+                <div class="rudder-card">
+                    <RudderControl RudderPosition="@cockpitState.RudderPosition"
+                                RudderPositionChanged="value => cockpitState.RudderPosition = value"
+                                LeftBrakePressure="@cockpitState.LeftBrakePressure"
+                                LeftBrakePressureChanged="value => cockpitState.LeftBrakePressure = value"
+                                RightBrakePressure="@cockpitState.RightBrakePressure"
+                                RightBrakePressureChanged="value => cockpitState.RightBrakePressure = value" />
+                </div>
             </div>
-
-            <div class="testing-control">
-                <h2>Altitude</h2>
-
-                <input type="range"
-                min="0"
-                max="20000"
-                step="10"
-                aria-label="Altitude"
-                @bind="cockpitState.Altitude"
-                @bind:event="oninput" />
-
-                <p>
-                    @cockpitState.Altitude.ToString("N0")
-                    feet
-                </p>
-            </div>
-
-            <div class="testing-control">
-                <h2>Turn Rate</h2>
-
-                <input type="range"
-                min="-3"
-                max="3"
-                step="0.1"
-                aria-label="Turn rate"
-                @bind="cockpitState.TurnRate"
-                @bind:event="oninput" />
-
-                <p>
-                    @cockpitState.TurnRate.ToString("0.0")°/sec
-                </p>
-
-                <h3>Slip / Skid</h3>
-
-                <input type="range"
-                min="-1"
-                max="1"
-                step="0.05"
-                aria-label="Slip or skid"
-                @bind="cockpitState.Slip"
-                @bind:event="oninput" />
-
-                <p>
-                    @cockpitState.Slip.ToString("0.00")
-                </p>
-            </div>
-
-            <div class="testing-control">
-                <h2>Heading</h2>
-
-                <input type="range"
-                min="0"
-                max="359"
-                step="1"
-                aria-label="Heading"
-                @bind="cockpitState.Heading"
-                @bind:event="oninput" />
-
-                <p>
-                    @FormatHeading(cockpitState.Heading)°
-                </p>
-            </div>
-
-            <div class="testing-control">
-                <h2>Vertical Speed</h2>
-
-                <input type="range"
-                min="@cockpitLayout.VSI.MinimumVerticalSpeed"
-                max="@cockpitLayout.VSI.MaximumVerticalSpeed"
-                step="100"
-                aria-label="Vertical speed"
-                @bind="cockpitState.VerticalSpeed"
-                @bind:event="oninput" />
-
-                <p>
-                    @cockpitState.VerticalSpeed.ToString("N0")
-                    FPM
-                </p>
-            </div>
-        </div>
+        </section>
     </div>
 </main>
 
@@ -869,7 +796,6 @@ selectedScenarioRecord.TriggerCondition))
             {
                 await SaveCurrentSelectionAsync();
             }
-            UpdateSimulationUrl();
         }
         catch (Exception ex)
         {
@@ -903,6 +829,10 @@ selectedScenarioRecord.TriggerCondition))
             !_isAircraftMenuOpen;
 
         _isScenarioMenuOpen = false;
+    }
+    private void ActivateFireSuppression()
+    {
+        cockpitState.FireSuppressionActivated = true;
     }
 
     private void ToggleScenarioMenu()
@@ -993,17 +923,14 @@ selectedScenarioRecord.TriggerCondition))
 
     private void UpdateSimulationUrl()
     {
-        var aircraftKey =
-            Uri.EscapeDataString(
-                selectedAircraft.Id.ToString());
+        var targetUrl = $"/simulation/{Uri.EscapeDataString(selectedAircraft.Id.ToString())}/{Uri.EscapeDataString(selectedScenarioRecord.EmergencyType)}";
 
-        var scenarioType =
-            Uri.EscapeDataString(
-                selectedScenarioRecord.EmergencyType);
+        if (string.Equals(Navigation.Uri, Navigation.ToAbsoluteUri(targetUrl).ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
 
-        Navigation.NavigateTo(
-            $"/simulation/{aircraftKey}/{scenarioType}",
-            replace: true);
+        Navigation.NavigateTo(targetUrl, replace: true);
     }
 
     private async Task InitializeSimulationStateAsync()

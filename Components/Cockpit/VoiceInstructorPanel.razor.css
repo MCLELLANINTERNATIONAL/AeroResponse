@@ -1,0 +1,9 @@
+.voice-instructor-panel { padding: 1.25rem; border: 1px solid rgba(100,181,246,.25); border-radius: 1rem; background: #071b2d; }
+.voice-instructor-heading { display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+.voice-instructor-heading span,.voice-transcript small { color:#7ec8ff; font-weight:800; text-transform:uppercase; }
+.voice-transcript,.instructor-feedback { padding:1rem; margin-top:1rem; border-radius:.75rem; background:rgba(255,255,255,.05); }
+.voice-transcript strong { display:block; margin-top:.35rem; }
+.instructor-feedback.positive { border-left:4px solid #26c281; }
+.instructor-feedback.information { border-left:4px solid #49a7ff; }
+.instructor-feedback.caution,.instructor-feedback.warning { border-left:4px solid #ffb020; }
+.instructor-feedback.critical { border-left:4px solid #ff5252; }

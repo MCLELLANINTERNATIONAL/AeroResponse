@@ -6,7 +6,9 @@ public class ScenarioProcedureStep
 
     public int EmergencyScenarioId { get; set; }
 
-    public string AircraftType { get; set; } = string.Empty;
+    public EmergencyScenario? EmergencyScenario { get; set; }
+
+    public string AircraftType { get; set; } = "All";
 
     public int StepOrder { get; set; }
 

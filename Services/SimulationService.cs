@@ -23,7 +23,6 @@ public sealed class SimulationService(
     private readonly List<PilotAction> _pilotActions = [];
 
     public bool HasActiveSimulation =>
-        _currentRun is not null &&
         _currentRun.Status == "In Progress";
 
     public DateTime? EmergencyTriggeredAt => _emergencyTriggeredAt;
@@ -130,7 +129,7 @@ public sealed class SimulationService(
             WasCorrect = wasCorrect,
             WasInCorrectOrder = wasInCorrectOrder,
             WasWithinTimeLimit = matchingStep is not null &&
-                                 responseSeconds <= matchingStep.MaxResponseSeconds,
+                                responseSeconds <= matchingStep.MaxResponseSeconds,
             IsSafetyCritical = matchingStep?.IsSafetyCritical ?? false,
             ResponseTimeSeconds = responseSeconds,
             PerformedAt = DateTime.UtcNow
@@ -154,7 +153,7 @@ public sealed class SimulationService(
         }
 
         return (now ?? DateTime.UtcNow) - _emergencyTriggeredAt.Value >=
-               TimeSpan.FromSeconds(_currentScenario.TimeLimitSeconds);
+            TimeSpan.FromSeconds(_currentScenario.TimeLimitSeconds);
     }
 
     public int GetRemainingSeconds(DateTime? now = null)

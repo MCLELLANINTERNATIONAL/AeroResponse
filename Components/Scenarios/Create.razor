@@ -3,8 +3,10 @@
 
 @using AeroResponse.Models
 @using AeroResponse.Services
+
 @inject ScenarioService ScenarioService
 @inject NavigationManager NavigationManager
+@inject SimulationEngine SimulationEngine
 
 <PageTitle>Create Scenario | AeroResponse</PageTitle>
 
@@ -34,11 +36,14 @@
 
     <div class="scenario-form-card">
 
-        <ScenarioForm Scenario="scenario"
-                      FormName="create-scenario"
-                      SubmitText="Create scenario"
-                      IsSaving="isSaving"
-                      OnValidSubmit="CreateScenarioAsync" />
+        <ScenarioForm
+            Scenario="scenario"
+            ProcedureSteps="procedureSteps"
+            EmergencyTypes="emergencyTypes"
+            FormName="create-scenario"
+            SubmitText="Create scenario"
+            IsSaving="isSaving"
+            OnValidSubmit="CreateScenarioAsync" />
 
     </div>
 
@@ -48,12 +53,40 @@
     private readonly EmergencyScenario scenario = new()
     {
         Difficulty = "Beginner",
+        TriggerType = "Immediate",
+        TimeLimitSeconds = 120,
         IsActive = true,
         CreatedAt = DateTime.UtcNow
     };
 
+    private readonly List<ScenarioProcedureStep> procedureSteps =
+    [
+        new()
+        {
+            AircraftType = "All",
+            StepOrder = 1,
+            Instruction = "Maintain aircraft control.",
+            CorrectAction = "Maintain aircraft control.",
+            IsSafetyCritical = true,
+            MaxResponseSeconds = 10,
+            ScoreWeight = 20,
+            PerformanceCategory = "Procedure"
+        }
+    ];
+
+    private List<string> emergencyTypes = [];
+
     private bool isSaving;
     private string? errorMessage;
+
+    protected override void OnInitialized()
+    {
+        emergencyTypes = SimulationEngine
+            .GetScenarios()
+            .Select(s => s.ScenarioType)
+            .OrderBy(s => s)
+            .ToList();
+    }
 
     private async Task CreateScenarioAsync()
     {
@@ -69,7 +102,9 @@
 
             scenario.CreatedAt = DateTime.UtcNow;
 
-            await ScenarioService.CreateAsync(scenario);
+            await ScenarioService.CreateAsync(
+                scenario,
+                procedureSteps);
 
             NavigationManager.NavigateTo("/scenarios");
         }

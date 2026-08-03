@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 
 namespace AeroResponse.Data;
 
-
 public class ApplicationUser : IdentityUser
 {
 
@@ -14,7 +13,6 @@ public class ApplicationUser : IdentityUser
     [MaxLength(100)]
     public string Surname { get; set; } = string.Empty;
 
- 
     [MaxLength(100)]
     public string? ReferenceCode { get; set; }
 

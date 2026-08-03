@@ -16,6 +16,8 @@ public class Aircraft
 
     public int CruiseSpeed { get; set; }
     public int EngineCount { get; set; }
+    public int FuelTankCount { get; set; }
+    public int BrakeCount { get; set; }
 
     public string CockpitLayoutKey { get; set; } = string.Empty;
 

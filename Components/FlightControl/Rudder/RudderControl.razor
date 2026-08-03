@@ -1,6 +1,7 @@
 @using Microsoft.AspNetCore.Components.Web
+@using AeroResponse.Simulation
 
-<svg viewBox="0 0 420 220"
+<svg viewBox="0 0 420 240"
      class="rudder-control"
      style="touch-action: none;"
      @onpointerdown="OnPointerDown"
@@ -43,17 +44,27 @@
     </g>
 
     <line x1="210" y1="42" x2="210" y2="178" class="rudder-centerline" />
+
+    @if (Brakes.Count > 0)
+    {
+        <svg:text x="100" y="34" text-anchor="middle" class="brake-label">
+            @(Brakes.Count > 0 ? $"L Brake: {Brakes[0].Pressure:N0}%" : "")
+        </svg:text>
+    }
+
+    @if (Brakes.Count > 1)
+    {
+        <svg:text x="320" y="34" text-anchor="middle" class="brake-label">
+            @($"{Brakes[1].Pressure:N0}% R Brake")
+        </svg:text>
+    }
 </svg>
 
 @code {
     [Parameter] public double RudderPosition { get; set; }
     [Parameter] public EventCallback<double> RudderPositionChanged { get; set; }
 
-    [Parameter] public double LeftBrakePressure { get; set; }
-    [Parameter] public EventCallback<double> LeftBrakePressureChanged { get; set; }
-
-    [Parameter] public double RightBrakePressure { get; set; }
-    [Parameter] public EventCallback<double> RightBrakePressureChanged { get; set; }
+    [Parameter] public IReadOnlyList<BrakePressureState> Brakes { get; set; } = [];
 
     private bool _dragging;
     private double _startX;

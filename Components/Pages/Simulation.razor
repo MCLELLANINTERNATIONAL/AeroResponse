@@ -303,17 +303,21 @@ Main cockpit
 
 <main class="simulation-main-panel">
     <div class="simulation-content-card">
-        <CockpitLayout Layout="@cockpitLayout"
-               State="@cockpitState"
-               EngineCount="@selectedAircraft.EngineCount" />  
-        <section class="system-gauges-panel">
-            <div class="system-gauges-grid">
-                @foreach (var engine in cockpitState.Engines)
-                {
-                    <Tachometer Value="@engine.Power" Minimum="0" Maximum="100" />
-                }
-            </div>
-        </section>
+        <div id="instrument-panel">
+            <CockpitLayout Layout="@cockpitLayout"
+                State="@cockpitState"
+                EngineCount="@selectedAircraft.EngineCount" />  
+            <section class="system-gauges-panel">
+                <div class="system-gauges-grid">
+                    @foreach (var engine in cockpitState.Engines)
+                    {
+                        <Tachometer Value="@engine.Power" Minimum="0" Maximum="100" />
+                    }
+                    <OilGauges OilPressure="@cockpitState.OilPressure" OilTemperature="@cockpitState.OilTemperature" />
+                    <FuelGauges FuelTanks="@cockpitState.FuelTanks" />
+                </div>
+            </section>
+        </div>
 
         <section class="flight-controls-panel">
             <h2>Flight Controls</h2>
@@ -352,11 +356,8 @@ Main cockpit
 
                 <div class="rudder-card">
                     <RudderControl RudderPosition="@cockpitState.RudderPosition"
-                                RudderPositionChanged="value => cockpitState.RudderPosition = value"
-                                LeftBrakePressure="@cockpitState.LeftBrakePressure"
-                                LeftBrakePressureChanged="value => cockpitState.LeftBrakePressure = value"
-                                RightBrakePressure="@cockpitState.RightBrakePressure"
-                                RightBrakePressureChanged="value => cockpitState.RightBrakePressure = value" />
+                        RudderPositionChanged="value => cockpitState.RudderPosition = value"
+                        Brakes="@cockpitState.Brakes" />
                 </div>
             </div>
         </section>
@@ -1103,6 +1104,22 @@ selectedScenarioRecord.TriggerCondition))
             })
             .ToList();
 
+        var brakes = Enumerable.Range(1, selectedAircraft.BrakeCount)
+            .Select(number => new BrakePressureState
+            {
+                Number = number,
+                Pressure = 0
+            })
+            .ToList();
+
+        var fuelTanks = Enumerable.Range(1, selectedAircraft.FuelTankCount)
+            .Select(number => new FuelState
+            {
+                Number = number,
+                Quantity = 26.5
+            })
+            .ToList();
+
         return new CockpitState
         {
             Airspeed = defaults.CruiseAirspeed,
@@ -1118,8 +1135,13 @@ selectedScenarioRecord.TriggerCondition))
                 defaults.DefaultVerticalSpeed),
 
             Engines = engines,
+            Brakes = brakes,
+            FuelTanks = fuelTanks,
             FuelPercentage = defaults.FuelPercentage,
-            AlertMessage = "Systems Normal"
+            AlertMessage = "Systems Normal",
+
+            OilPressure = 70,
+            OilTemperature = 180
         };
     }
     private void UpdateFlightPhase()

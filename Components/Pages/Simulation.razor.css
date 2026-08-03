@@ -525,10 +525,23 @@
 
     background: #071a2d;
 }
+#instrument-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: linear-gradient(180deg, #1d2430 0%, #11161f 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
 
 /* ======================================================
     Testing controls
 ====================================================== */
+.system-gauges-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+}
 
 .flight-controls-panel {
     display: grid;

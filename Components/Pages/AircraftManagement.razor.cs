@@ -269,6 +269,8 @@ public partial class AircraftManagement : ComponentBase
         return new Aircraft
         {
             EngineCount = 1,
+            FuelTankCount = 2,
+            BrakeCount = 2,
             IsActive = true
         };
     }

@@ -1020,21 +1020,21 @@ selectedScenarioRecord.TriggerCondition))
             ? selectedRuntimeScenario.Start(cockpitLayout)
             : CreateNormalCockpitState();
 
-        // Runtime scenario definitions are the source of truth for the
-        // executable cockpit actions and their required sequence.
-        procedureSteps = SimulationEngine.GetProcedureSteps(
-            selectedScenarioRecord.EmergencyType,
-            cockpitLayout,
-            selectedScenarioRecord.Id);
+        // Load the executable procedure steps from SQLite.
+        procedureSteps =
+            await ScenarioDataService.GetProcedureStepsAsync(
+                selectedScenarioRecord,
+                cockpitLayout.Name);
 
-        // Apply scenario-wide timing defaults to executable steps.
+        // Ensure every step has a valid response time.
         foreach (var step in procedureSteps)
         {
-            step.MaxResponseSeconds = Math.Min(
-                selectedScenarioRecord.TimeLimitSeconds,
-                Math.Max(
-                    step.MaxResponseSeconds,
-                    10 + ((step.StepOrder - 1) * 15)));
+            if (step.MaxResponseSeconds <= 0)
+            {
+                step.MaxResponseSeconds = Math.Min(
+                    selectedScenarioRecord.TimeLimitSeconds,
+                    10 + ((step.StepOrder - 1) * 15));
+            }
         }
 
         SimulationSession.StartSimulation(

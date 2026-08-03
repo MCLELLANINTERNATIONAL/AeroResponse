@@ -11,67 +11,92 @@ OnValidSubmit="SubmitFormAsync">
 <div class="scenario-form-grid">
 
     <div class="form-field">
-        <label for="scenario-title">Scenario Title</label>
+        <label for="scenario-title">
+            Scenario Title
+        </label>
 
         <InputText id="scenario-title"
         class="form-control"
         placeholder="Enter scenario title"
         @bind-Value="Scenario.Title" />
 
-        <ValidationMessage For="@(() => Scenario.Title)" />
+        <ValidationMessage
+        For="@(() => Scenario.Title)" />
     </div>
 
     <div class="form-field">
-        <label for="emergency-type">Emergency Type</label>
+        <label for="emergency-type">
+            Emergency Type
+        </label>
 
-        <InputText id="emergency-type"
-        class="form-control"
-        placeholder="Enter emergency type"
-        @bind-Value="Scenario.EmergencyType" />
-
-        <ValidationMessage For="@(() => Scenario.EmergencyType)" />
-
-        <small>
-            Enter an existing emergency type or create a new one.
-        </small>
-    </div>
-
-    <div class="form-field form-field-full">
-        <label for="description">Description</label>
-
-        <InputTextArea id="description"
-        class="form-control"
-        rows="4"
-        placeholder="Describe the emergency scenario"
-        @bind-Value="Scenario.Description" />
-
-        <ValidationMessage For="@(() => Scenario.Description)" />
-    </div>
-
-    <div class="form-field">
-        <label for="difficulty">Difficulty</label>
-
-        <InputSelect id="difficulty"
+        <InputSelect id="emergency-type"
         class="form-select"
-        @bind-Value="Scenario.Difficulty">
+        @bind-Value="Scenario.EmergencyType">
 
-        @foreach (var difficulty in DifficultyLevels)
+        @foreach (var type in EmergencyTypes)
         {
-            <option value="@difficulty">
-                @difficulty
+            <option value="@type">
+                @type
             </option>
         }
 
     </InputSelect>
+    <ValidationMessage
+    For="@(() => Scenario.EmergencyType)" />
 
-    <ValidationMessage For="@(() => Scenario.Difficulty)" />
+    <small>
+        Enter an emergency type supported by the
+        interactive simulation engine.
+    </small>
+</div>
+
+<div class="form-field form-field-full">
+    <label for="description">
+        Description
+    </label>
+
+    <InputTextArea id="description"
+    class="form-control"
+    rows="4"
+    placeholder="Describe the emergency scenario"
+    @bind-Value="Scenario.Description" />
+
+    <ValidationMessage
+    For="@(() => Scenario.Description)" />
+</div>
+
+<div class="form-field">
+    <label for="difficulty">
+        Difficulty
+    </label>
+
+    <InputSelect id="difficulty"
+    class="form-select"
+    @bind-Value="Scenario.Difficulty">
+
+    @foreach (var difficulty in DifficultyLevels)
+    {
+        <option value="@difficulty">
+            @difficulty
+        </option>
+    }
+
+</InputSelect>
+
+<ValidationMessage
+For="@(() => Scenario.Difficulty)" />
 </div>
 
 <div class="form-field active-field">
     <label class="checkbox-label">
-        <InputCheckbox @bind-Value="Scenario.IsActive" />
 
-        <span>Scenario is active</span>
+        <InputCheckbox
+        @bind-Value="Scenario.IsActive" />
+
+        <span>
+            Scenario is active
+        </span>
+
     </label>
 
     <small>
@@ -80,7 +105,9 @@ OnValidSubmit="SubmitFormAsync">
 </div>
 
 <div class="form-field">
-    <label for="trigger-type">Trigger Type</label>
+    <label for="trigger-type">
+        Trigger Type
+    </label>
 
     <InputSelect id="trigger-type"
     class="form-select"
@@ -95,7 +122,8 @@ OnValidSubmit="SubmitFormAsync">
 
 </InputSelect>
 
-<ValidationMessage For="@(() => Scenario.TriggerType)" />
+<ValidationMessage
+For="@(() => Scenario.TriggerType)" />
 
 <small>
     Select when the emergency should begin.
@@ -118,8 +146,8 @@ OnValidSubmit="SubmitFormAsync">
         For="@(() => Scenario.TriggerDelaySeconds)" />
 
         <small>
-            The emergency will activate after this number of
-            simulation seconds.
+            The emergency will activate after this number
+            of simulation seconds.
         </small>
     </div>
 }
@@ -140,8 +168,8 @@ OnValidSubmit="SubmitFormAsync">
         For="@(() => Scenario.TriggerAltitudeFeet)" />
 
         <small>
-            The emergency will activate when the aircraft reaches
-            this altitude.
+            The emergency will activate when the aircraft
+            reaches this altitude.
         </small>
     </div>
 }
@@ -162,8 +190,8 @@ OnValidSubmit="SubmitFormAsync">
         For="@(() => Scenario.TriggerAirspeedKnots)" />
 
         <small>
-            The emergency will activate when the aircraft reaches
-            this airspeed.
+            The emergency will activate when the aircraft
+            reaches this airspeed.
         </small>
     </div>
 }
@@ -196,8 +224,8 @@ OnValidSubmit="SubmitFormAsync">
     For="@(() => Scenario.TriggerFlightPhase)" />
 
     <small>
-        The emergency will activate when the aircraft enters
-        this phase of flight.
+        The emergency will activate when the aircraft
+        enters this phase of flight.
     </small>
 </div>
 }
@@ -206,15 +234,19 @@ OnValidSubmit="SubmitFormAsync">
 {
     <div class="form-field active-field">
         <label class="checkbox-label">
+
             <InputCheckbox
             @bind-Value="Scenario.RequiresManualActivation" />
 
-            <span>Require instructor activation</span>
+            <span>
+                Require instructor activation
+            </span>
+
         </label>
 
         <small>
-            The emergency will only begin when an instructor or
-            administrator activates it.
+            The emergency will only begin when an instructor
+            or administrator activates it.
         </small>
     </div>
 }
@@ -234,8 +266,8 @@ OnValidSubmit="SubmitFormAsync">
     For="@(() => Scenario.TriggerCondition)" />
 
     <small>
-        Provide a human-readable explanation of how the emergency
-        begins.
+        Provide a human-readable explanation of how the
+        emergency begins.
     </small>
 </div>
 
@@ -254,7 +286,8 @@ OnValidSubmit="SubmitFormAsync">
     For="@(() => Scenario.TimeLimitSeconds)" />
 
     <small>
-        The assessment ends automatically when this limit expires.
+        The assessment ends automatically when this limit
+        expires.
     </small>
 </div>
 
@@ -306,9 +339,201 @@ OnValidSubmit="SubmitFormAsync">
     For="@(() => Scenario.ExpectedProcedure)" />
 
     <small>
-        Describe the expected response. Detailed interactive steps
-        are controlled by the simulation scenario classes.
+        Provide a readable summary of the expected response.
+        The interactive procedure steps below control the
+        actual sequence, timing and scoring.
     </small>
+</div>
+
+@* =====================================================
+Interactive procedure-step editor
+===================================================== *@
+
+<div class="form-field form-field-full">
+
+    <div class="procedure-editor-heading">
+
+        <div>
+            <label>
+                Interactive Procedure Steps
+            </label>
+
+            <small>
+                These steps control action order, timing and
+                scoring during the simulation.
+            </small>
+        </div>
+
+        <button type="button"
+        class="btn btn-outline-primary"
+        @onclick="AddStep">
+        + Add Step
+    </button>
+
+</div>
+
+@if (ProcedureSteps.Count == 0)
+{
+    <div class="alert alert-warning">
+        Add at least one interactive procedure step.
+    </div>
+}
+else
+{
+    <div class="procedure-step-editor">
+
+        @for (var index = 0;
+        index < ProcedureSteps.Count;
+        index++)
+        {
+            var stepIndex = index;
+            var step = ProcedureSteps[stepIndex];
+
+            <article class="procedure-step-card">
+
+                <div class="procedure-step-header">
+
+                    <strong>
+                        Step @(stepIndex + 1)
+                    </strong>
+
+                    <div class="procedure-step-actions">
+
+                        <button type="button"
+                        class="step-order-button"
+                        title="Move step up"
+                        disabled="@(stepIndex == 0)"
+                        @onclick="() => MoveStepUp(stepIndex)">
+                        ↑
+                    </button>
+
+                    <button type="button"
+                    class="step-order-button"
+                    title="Move step down"
+                    disabled="@(stepIndex == ProcedureSteps.Count - 1)"
+                    @onclick="() => MoveStepDown(stepIndex)">
+                    ↓
+                </button>
+
+                <button type="button"
+                class="delete-step-button"
+                @onclick="() => RemoveStep(stepIndex)">
+                Remove
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="procedure-step-grid">
+
+        <div class="form-field form-field-full">
+            <label>
+                Pilot Instruction
+            </label>
+
+            <InputText class="form-control"
+            placeholder="For example: Pull the fire handle"
+            @bind-Value="step.Instruction" />
+        </div>
+
+        <div class="form-field form-field-full">
+            <label>
+                Correct Cockpit Action
+            </label>
+
+            <InputText class="form-control"
+            placeholder="Enter the cockpit action name"
+            @bind-Value="step.CorrectAction" />
+
+            <small>
+                This must match the action name produced
+                by the cockpit control.
+            </small>
+        </div>
+
+        <div class="form-field">
+            <label>
+                Aircraft Type
+            </label>
+
+            <InputText class="form-control"
+            placeholder="All"
+            @bind-Value="step.AircraftType" />
+
+            <small>
+                Use All when the step applies to every
+                aircraft.
+            </small>
+        </div>
+
+        <div class="form-field">
+            <label>
+                Performance Category
+            </label>
+
+            <InputSelect class="form-select"
+            @bind-Value="step.PerformanceCategory">
+
+            @foreach (var category in
+            PerformanceCategories)
+            {
+                <option value="@category">
+                    @category
+                </option>
+            }
+
+        </InputSelect>
+    </div>
+
+    <div class="form-field">
+        <label>
+            Maximum Response Seconds
+        </label>
+
+        <InputNumber class="form-control"
+        min="1"
+        max="@Scenario.TimeLimitSeconds"
+        @bind-Value="step.MaxResponseSeconds" />
+    </div>
+
+    <div class="form-field">
+        <label>
+            Score Weight
+        </label>
+
+        <InputNumber class="form-control"
+        min="1"
+        max="100"
+        @bind-Value="step.ScoreWeight" />
+    </div>
+
+    <div class="form-field active-field">
+        <label class="checkbox-label">
+
+            <InputCheckbox
+            @bind-Value="step.IsSafetyCritical" />
+
+            <span>
+                Safety-critical action
+            </span>
+
+        </label>
+
+        <small>
+            Missing this action will count as a
+            safety-critical error.
+        </small>
+    </div>
+
+</div>
+
+</article>
+}
+
+</div>
+}
+
 </div>
 
 </div>
@@ -335,6 +560,12 @@ Cancel
 @code {
     [Parameter, EditorRequired]
     public EmergencyScenario Scenario { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public List<ScenarioProcedureStep> ProcedureSteps { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> EmergencyTypes { get; set; } = [];
 
     [Parameter, EditorRequired]
     public EventCallback OnValidSubmit { get; set; }
@@ -377,11 +608,124 @@ Cancel
         "Landing"
     ];
 
+    private static readonly string[] PerformanceCategories =
+    [
+        "Procedure",
+        "Decision",
+        "Communication",
+        "Checklist"
+    ];
+
     private Task SubmitFormAsync()
     {
         NormalizeTriggerValues();
+        NormalizeProcedureSteps();
 
         return OnValidSubmit.InvokeAsync();
+    }
+
+    private void AddStep()
+    {
+        var stepNumber = ProcedureSteps.Count + 1;
+
+        ProcedureSteps.Add(
+            new ScenarioProcedureStep
+            {
+                AircraftType = "All",
+                StepOrder = stepNumber,
+                MaxResponseSeconds = Math.Min(
+                    Math.Max(1, Scenario.TimeLimitSeconds),
+                    10 + ((stepNumber - 1) * 15)),
+                ScoreWeight = 10,
+                PerformanceCategory = "Procedure"
+            });
+    }
+
+    private void RemoveStep(int index)
+    {
+        if (index < 0 ||
+            index >= ProcedureSteps.Count)
+        {
+            return;
+        }
+
+        ProcedureSteps.RemoveAt(index);
+
+        RenumberSteps();
+    }
+
+    private void MoveStepUp(int index)
+    {
+        if (index <= 0 ||
+            index >= ProcedureSteps.Count)
+        {
+            return;
+        }
+
+        (ProcedureSteps[index - 1], ProcedureSteps[index]) =
+            (ProcedureSteps[index], ProcedureSteps[index - 1]);
+
+        RenumberSteps();
+    }
+
+    private void MoveStepDown(int index)
+    {
+        if (index < 0 ||
+            index >= ProcedureSteps.Count - 1)
+        {
+            return;
+        }
+
+        (ProcedureSteps[index], ProcedureSteps[index + 1]) =
+            (ProcedureSteps[index + 1], ProcedureSteps[index]);
+
+        RenumberSteps();
+    }
+
+    private void RenumberSteps()
+    {
+        for (var index = 0;
+             index < ProcedureSteps.Count;
+             index++)
+        {
+            ProcedureSteps[index].StepOrder =
+                index + 1;
+        }
+    }
+
+    private void NormalizeProcedureSteps()
+    {
+        RenumberSteps();
+
+        foreach (var step in ProcedureSteps)
+        {
+            step.AircraftType =
+                string.IsNullOrWhiteSpace(step.AircraftType)
+                    ? "All"
+                    : step.AircraftType.Trim();
+
+            step.Instruction =
+                step.Instruction.Trim();
+
+            step.CorrectAction =
+                step.CorrectAction.Trim();
+
+            step.PerformanceCategory =
+                string.IsNullOrWhiteSpace(
+                    step.PerformanceCategory)
+                    ? "Procedure"
+                    : step.PerformanceCategory.Trim();
+
+            step.MaxResponseSeconds = Math.Clamp(
+                step.MaxResponseSeconds,
+                1,
+                Math.Max(1, Scenario.TimeLimitSeconds));
+
+            step.ScoreWeight = Math.Clamp(
+                step.ScoreWeight,
+                1,
+                100);
+        }
     }
 
     private void NormalizeTriggerValues()
@@ -409,4 +753,5 @@ Cancel
             Scenario.TriggerFlightPhase = null;
         }
     }
+}   }
 }

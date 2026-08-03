@@ -3,8 +3,10 @@
 
 @using AeroResponse.Models
 @using AeroResponse.Services
+
 @inject ScenarioService ScenarioService
 @inject NavigationManager NavigationManager
+@inject SimulationEngine SimulationEngine
 
 <PageTitle>Edit Scenario | AeroResponse</PageTitle>
 
@@ -25,45 +27,50 @@
                 The requested emergency scenario could not be found.
             </p>
 
-            <a href="/scenarios" class="btn btn-primary">
-                Return to scenarios
-            </a>
+            <a href="/scenarios"
+            class="btn btn-primary">
+            Return to scenarios
+        </a>
+    </div>
+}
+else
+{
+    <header class="scenario-header">
+        <div>
+            <span class="scenario-eyebrow">
+                Scenario management
+            </span>
+
+            <h1>Edit Emergency Scenario</h1>
+
+            <p>
+                Update the scenario information,
+                trigger conditions and interactive
+                procedure steps.
+            </p>
         </div>
-    }
-    else
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
     {
-        <header class="scenario-header">
-            <div>
-                <span class="scenario-eyebrow">
-                    Scenario management
-                </span>
-
-                <h1>Edit Emergency Scenario</h1>
-
-                <p>
-                    Update the scenario information, trigger conditions
-                    and expected procedure.
-                </p>
-            </div>
-        </header>
-
-        @if (!string.IsNullOrWhiteSpace(errorMessage))
-        {
-            <div class="alert alert-danger">
-                @errorMessage
-            </div>
-        }
-
-        <div class="scenario-form-card">
-
-            <ScenarioForm Scenario="scenario"
-                          FormName="edit-scenario"
-                          SubmitText="Save changes"
-                          IsSaving="isSaving"
-                          OnValidSubmit="UpdateScenarioAsync" />
-
+        <div class="alert alert-danger">
+            @errorMessage
         </div>
     }
+
+    <div class="scenario-form-card">
+
+        <ScenarioForm
+        Scenario="scenario"
+        ProcedureSteps="procedureSteps"
+        EmergencyTypes="emergencyTypes"
+        FormName="edit-scenario"
+        SubmitText="Save changes"
+        IsSaving="isSaving"
+        OnValidSubmit="UpdateScenarioAsync" />
+
+    </div>
+}
 
 </section>
 
@@ -72,18 +79,68 @@
     public int Id { get; set; }
 
     private EmergencyScenario? scenario;
+
+    private List<ScenarioProcedureStep> procedureSteps = [];
+
+    private List<string> emergencyTypes = [];
+
     private bool isLoading = true;
     private bool isSaving;
     private string? errorMessage;
+
+    protected override void OnInitialized()
+    {
+        emergencyTypes = SimulationEngine
+            .GetScenarios()
+            .Select(s => s.ScenarioType)
+            .OrderBy(s => s)
+            .ToList();
+    }
 
     protected override async Task OnParametersSetAsync()
     {
         try
         {
-            scenario = await ScenarioService.GetByIdAsync(Id);
+            isLoading = true;
+            errorMessage = null;
+
+            scenario =
+                await ScenarioService.GetByIdAsync(Id);
+
+            procedureSteps =
+                scenario?.ProcedureSteps
+                    .OrderBy(step => step.StepOrder)
+                    .Select(step =>
+                        new ScenarioProcedureStep
+                        {
+                            Id = step.Id,
+                            EmergencyScenarioId =
+                                step.EmergencyScenarioId,
+                            AircraftType =
+                                step.AircraftType,
+                            StepOrder =
+                                step.StepOrder,
+                            Instruction =
+                                step.Instruction,
+                            CorrectAction =
+                                step.CorrectAction,
+                            IsSafetyCritical =
+                                step.IsSafetyCritical,
+                            MaxResponseSeconds =
+                                step.MaxResponseSeconds,
+                            ScoreWeight =
+                                step.ScoreWeight,
+                            PerformanceCategory =
+                                step.PerformanceCategory
+                        })
+                    .ToList()
+                ?? [];
         }
         catch (Exception)
         {
+            scenario = null;
+            procedureSteps = [];
+
             errorMessage =
                 "The emergency scenario could not be loaded.";
         }
@@ -105,7 +162,9 @@
             isSaving = true;
             errorMessage = null;
 
-            await ScenarioService.UpdateAsync(scenario);
+            await ScenarioService.UpdateAsync(
+                scenario,
+                procedureSteps);
 
             NavigationManager.NavigateTo(
                 $"/scenarios/{scenario.Id}");
@@ -120,4 +179,4 @@
             isSaving = false;
         }
     }
-}
+}do

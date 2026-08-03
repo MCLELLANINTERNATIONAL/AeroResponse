@@ -621,33 +621,33 @@ selectedScenarioRecord.TriggerCondition))
         </p>
 
         <button type="button"
-                class="btn btn-primary assessment-complete-button"
-                disabled="@_isCompleting"
-                @onclick="CompleteAssessmentAsync">
-            @(_isCompleting ? "Saving assessment..." : "Complete Assessment")
-        </button>
-    }
-    else
-    {
-        <div class="assessment-result @(_completedReport.Passed ? "passed" : "failed")">
-            <strong>
-                @(_completedReport.Passed ? "Scenario Passed" : "Scenario Failed")
-            </strong>
+        class="btn btn-primary assessment-complete-button"
+        disabled="@_isCompleting"
+        @onclick="CompleteAssessmentAsync">
+        @(_isCompleting ? "Saving assessment..." : "Complete Assessment")
+    </button>
+}
+else
+{
+    <div class="assessment-result @(_completedReport.Passed ? "passed" : "failed")">
+        <strong>
+            @(_completedReport.Passed ? "Scenario Passed" : "Scenario Failed")
+        </strong>
 
-            <span>
-                Overall score: @_completedReport.OverallScore%
-            </span>
+        <span>
+            Overall score: @_completedReport.OverallScore%
+        </span>
 
-            <small>
-                @_completedReport.Outcome
-            </small>
-        </div>
+        <small>
+            @_completedReport.Outcome
+        </small>
+    </div>
 
-        <a class="btn btn-outline-primary assessment-report-link"
-           href="/reports">
-            View Performance Report
-        </a>
-    }
+    <a class="btn btn-outline-primary assessment-report-link"
+    href="/reports">
+    View Performance Report
+</a>
+}
 </section>
 </aside>
 </div>
@@ -1025,6 +1025,16 @@ selectedScenarioRecord.TriggerCondition))
             await ScenarioDataService.GetProcedureStepsAsync(
                 selectedScenarioRecord,
                 cockpitLayout.Name);
+
+        // If there are no SQLite steps, use the built-in scenario.
+        if (procedureSteps.Count == 0)
+        {
+            procedureSteps =
+                SimulationEngine.GetProcedureSteps(
+                    selectedScenarioRecord.EmergencyType,
+                    cockpitLayout,
+                    selectedScenarioRecord.Id);
+        }
 
         // Ensure every step has a valid response time.
         foreach (var step in procedureSteps)
@@ -1448,4 +1458,4 @@ selectedScenarioRecord.TriggerCondition))
         _simulationTimer?.Dispose();
         _simulationCancellation?.Dispose();
     }
-}
+}   }

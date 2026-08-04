@@ -390,27 +390,101 @@ class="report-card feedback-card">
 
 <h2>Feedback</h2>
 
-<div class="feedback-tabs">
-    <b>Instructor Feedback</b>
-    <span>AI Feedback</span>
+<div class="feedback-tabs"
+     role="tablist"
+     aria-label="Feedback type">
+
+    <button type="button"
+            role="tab"
+            aria-selected="@(_activeFeedbackTab == FeedbackTab.Instructor)"
+            class="@GetFeedbackTabClass(FeedbackTab.Instructor)"
+            @onclick="() => SelectFeedbackTab(FeedbackTab.Instructor)">
+        Instructor Feedback
+    </button>
+
+    <button type="button"
+            role="tab"
+            aria-selected="@(_activeFeedbackTab == FeedbackTab.Ai)"
+            class="@GetFeedbackTabClass(FeedbackTab.Ai)"
+            @onclick="() => SelectFeedbackTab(FeedbackTab.Ai)">
+        AI Feedback
+    </button>
+
 </div>
 
-<div class="feedback-good">
-    <strong>☆ Great Job!</strong>
-    <p>@report.Feedback</p>
-</div>
+@if (_activeFeedbackTab == FeedbackTab.Instructor)
+{
+    <section class="feedback-tab-content"
+             role="tabpanel">
 
-<h3>AI Performance Analysis</h3>
-<p>@report.AiFeedback</p>
+        <div class="@GetInstructorFeedbackClass(report)">
+            <strong>
+                @GetInstructorHeading(report)
+            </strong>
 
-<h3>Areas to Improve</h3>
+            <p>
+                @report.Feedback
+            </p>
+        </div>
 
-<ul>
-    @foreach (var item in ImprovementItems(report))
-    {
-        <li>@item</li>
-    }
-</ul>
+        <h3>Areas to Improve</h3>
+
+        <ul>
+            @foreach (var item in ImprovementItems(report))
+            {
+                <li>@item</li>
+            }
+        </ul>
+
+        <a class="card-link"
+           href="/reports/feedback">
+            View full instructor feedback →
+        </a>
+
+    </section>
+}
+else
+{
+    <section class="feedback-tab-content"
+             role="tabpanel">
+
+        <div class="feedback-ai">
+
+            <h3>AI Performance Analysis</h3>
+
+            @if (string.IsNullOrWhiteSpace(report.AiFeedback))
+            {
+                <p>
+                    No AI-generated analysis is available
+                    for this assessment.
+                </p>
+            }
+            else
+            {
+                <p>
+                    @report.AiFeedback
+                </p>
+            }
+
+        </div>
+
+        <h3>AI Recommended Focus</h3>
+
+        <ul>
+            @foreach (var item in AiImprovementItems(report))
+            {
+                <li>@item</li>
+            }
+        </ul>
+
+        <a class="card-link"
+           href="/reports/feedback">
+            View full AI feedback →
+        </a>
+
+    </section>
+}
+
 </article>
 
 @* =================================================
@@ -477,6 +551,9 @@ LIVE DASHBOARD STATUS
     private PerformanceDashboardVm? _dashboard;
 
     private bool _loading = true;
+
+    private FeedbackTab _activeFeedbackTab =
+        FeedbackTab.Instructor;
 
     protected override async Task OnInitializedAsync()
     {
@@ -662,6 +739,111 @@ LIVE DASHBOARD STATUS
         }
     }
 
+    private void SelectFeedbackTab(
+        FeedbackTab tab)
+    {
+        _activeFeedbackTab = tab;
+    }
+
+    private string GetFeedbackTabClass(
+        FeedbackTab tab)
+    {
+        return _activeFeedbackTab == tab
+            ? "feedback-tab-button active"
+            : "feedback-tab-button";
+    }
+
+    private static string GetInstructorHeading(
+        SimulationReport report)
+    {
+        if (report.ActionsTaken == 0)
+        {
+            return "Review Required";
+        }
+
+        if (!report.Passed)
+        {
+            return "Further Practice Required";
+        }
+
+        return report.OverallScore >= 85
+            ? "☆ Great Job!"
+            : "Good Attempt";
+    }
+
+    private static string GetInstructorFeedbackClass(
+        SimulationReport report)
+    {
+        if (report.ActionsTaken == 0 ||
+            !report.Passed)
+        {
+            return "feedback-good feedback-review";
+        }
+
+        return "feedback-good";
+    }
+
+    private static IEnumerable<string>
+        AiImprovementItems(
+            SimulationReport report)
+    {
+        var hasRecommendation = false;
+
+        if (report.ActionsTaken == 0)
+        {
+            hasRecommendation = true;
+
+            yield return
+                "Begin the response immediately after the emergency warning appears.";
+        }
+
+        if (report.ProcedureAccuracyScore < 85)
+        {
+            hasRecommendation = true;
+
+            yield return
+                "Review the gold-standard procedure and practise the exact action sequence.";
+        }
+
+        if (report.TimeManagementScore < 80)
+        {
+            hasRecommendation = true;
+
+            yield return
+                "Reduce the delay between the warning and the first cockpit action.";
+        }
+
+        if (report.DecisionMakingScore < 80)
+        {
+            hasRecommendation = true;
+
+            yield return
+                "Prioritise safety-critical actions before secondary tasks.";
+        }
+
+        if (report.CommunicationScore < 90)
+        {
+            hasRecommendation = true;
+
+            yield return
+                "Declare the emergency and communicate intentions earlier.";
+        }
+
+        if (report.SafetyCriticalErrors > 0)
+        {
+            hasRecommendation = true;
+
+            yield return
+                "Repeat the safety-critical memory actions before attempting the scenario again.";
+        }
+
+        if (!hasRecommendation)
+        {
+            yield return
+                "Maintain the current standard and practise at a higher difficulty level.";
+        }
+    }
+
     private async Task DownloadReportAsync()
     {
         if (_dashboard?.Latest is null)
@@ -710,6 +892,12 @@ LIVE DASHBOARD STATUS
         return value
             .Replace(' ', '-')
             .Trim('-');
+    }
+
+    private enum FeedbackTab
+    {
+        Instructor,
+        Ai
     }
 
     public void Dispose()

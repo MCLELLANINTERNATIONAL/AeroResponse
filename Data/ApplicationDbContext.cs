@@ -1,37 +1,38 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using AeroResponse.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using System.Text.Json.Serialization;
 
 namespace AeroResponse.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
-    public DbSet<Aircraft> Aircraft { get; set; }
-    public DbSet<CockpitLayout> CockpitLayouts { get; set; }
+    public DbSet<Aircraft> Aircraft { get; set; } = default!;
 
-    public DbSet<EmergencyScenario> EmergencyScenarios { get; set; }
+    public DbSet<CockpitLayout> CockpitLayouts { get; set; } = default!;
 
-    public DbSet<Membership> Memberships { get; set; }
+    public DbSet<EmergencyScenario> EmergencyScenarios { get; set; } = default!;
+
+    public DbSet<Membership> Memberships { get; set; } = default!;
 
     public DbSet<PilotProfile> PilotProfiles { get; set; }
 
-    public DbSet<FlightLog> FlightLogs { get; set; }
+    public DbSet<FlightLog> FlightLogs { get; set; } = default!;
 
-    public DbSet<PerformanceResult> PerformanceResults { get; set; }
+    public DbSet<PerformanceResult> PerformanceResults { get; set; } = default!;
 
-    public DbSet<ScenarioRun> ScenarioRuns { get; set; }
+    public DbSet<ScenarioRun> ScenarioRuns { get; set; } = default!;
 
-    public DbSet<PilotAction> PilotActions { get; set; }
+    public DbSet<PilotAction> PilotActions { get; set; } = default!;
 
-    public DbSet<ScenarioProcedureStep> ScenarioProcedureSteps { get; set; }
+    public DbSet<ScenarioProcedureStep> ScenarioProcedureSteps { get; set; } = default!;
 
-    public DbSet<SimulationReport> SimulationReports { get; set; }
+    public DbSet<SimulationReport> SimulationReports { get; set; } = default!;
 
-    public DbSet<PilotAchievement> PilotAchievements { get; set; }
+    public DbSet<PilotAchievement> PilotAchievements { get; set; } = default!;
 
     protected override void OnModelCreating(
         ModelBuilder builder)
@@ -85,6 +86,34 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                             json,
                             jsonOptions) ?? new CockpitLayoutDetails())
                 .Metadata.SetValueComparer(detailsComparer);
+        });
+
+        builder.Entity<EmergencyScenario>(scenario =>
+        {
+            scenario.HasKey(item => item.Id);
+
+            scenario.HasMany(item => item.ProcedureSteps)
+                .WithOne(item => item.EmergencyScenario)
+                .HasForeignKey(item => item.EmergencyScenarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<ScenarioProcedureStep>(step =>
+        {
+            step.HasKey(item => item.Id);
+
+            step.Property(item => item.Instruction)
+                .IsRequired();
+
+            step.Property(item => item.CorrectAction)
+                .IsRequired();
+
+            step.HasIndex(item => new
+            {
+                item.EmergencyScenarioId,
+                item.AircraftType,
+                item.StepOrder
+            });
         });
         builder.Entity<Aircraft>(entity =>
         {

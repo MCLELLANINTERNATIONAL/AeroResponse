@@ -16,7 +16,9 @@ else if (_dashboard?.Latest is null)
 {
     <div class="reports-empty">
         <h1>No feedback available yet</h1>
-        <p>Complete a practice scenario to receive performance feedback.</p>
+        <p>
+            Complete a practice scenario to receive performance feedback.
+        </p>
     </div>
 }
 else
@@ -28,7 +30,9 @@ else
         <header class="reports-header">
             <div>
                 <h1>PERFORMANCE FEEDBACK</h1>
-                <p>Review instructor and AI-generated recommendations</p>
+                <p>
+                    Review instructor and AI-generated recommendations
+                </p>
             </div>
 
             <div class="pilot-chip">
@@ -42,34 +46,35 @@ else
         </header>
 
         <nav class="reports-tabs">
-            <NavLink href="/reports" Match="NavLinkMatch.All">
-                ◉ Overview
-            </NavLink>
+            <NavLink href="/reports"
+            Match="NavLinkMatch.All">
+            ◉ Overview
+        </NavLink>
 
-            <NavLink href="/reports/flight-logs">
-                ✈ Flight Logs
-            </NavLink>
+        <NavLink href="/reports/flight-logs">
+            ✈ Flight Logs
+        </NavLink>
 
-            <NavLink href="/reports/scoring">
-                ⚙ Scoring
-            </NavLink>
+        <NavLink href="/reports/scoring">
+            ⚙ Scoring
+        </NavLink>
 
-            <NavLink href="/reports/analytics">
-                ▥ Analytics
-            </NavLink>
+        <NavLink href="/reports/analytics">
+            ▥ Analytics
+        </NavLink>
 
-            <NavLink href="/reports/feedback">
-                ✪ Feedback
-            </NavLink>
+        <NavLink href="/reports/feedback">
+            ✪ Feedback
+        </NavLink>
 
-            <NavLink href="/reports/badges">
-                🏆 Badges
-            </NavLink>
+        <NavLink href="/reports/badges">
+            🏆 Badges
+        </NavLink>
 
-            <NavLink href="/reports/admin">
-                ▦ Admin Reports
-            </NavLink>
-        </nav>
+        <NavLink href="/reports/admin">
+            ▦ Admin Reports
+        </NavLink>
+    </nav>
 
     <section class="reports-grid">
 
@@ -77,85 +82,156 @@ else
 
             <h2>Feedback</h2>
 
-            <div class="feedback-tabs">
-                <b>Instructor Feedback</b>
-                <span>AI Feedback</span>
-            </div>
+            <div class="feedback-tabs"
+            role="tablist"
+            aria-label="Feedback type">
 
-            <div class="feedback-good">
-                <strong>☆ Great Job!</strong>
-                <p>@report.Feedback</p>
-            </div>
+            <button type="button"
+            role="tab"
+            aria-selected="@(_activeFeedbackTab == FeedbackTab.Instructor)"
+            class="@GetFeedbackTabClass(FeedbackTab.Instructor)"
+            @onclick="() => SelectFeedbackTab(FeedbackTab.Instructor)">
+            Instructor Feedback
+        </button>
 
-            <h3>AI Performance Analysis</h3>
-            <p>@report.AiFeedback</p>
+        <button type="button"
+        role="tab"
+        aria-selected="@(_activeFeedbackTab == FeedbackTab.Ai)"
+        class="@GetFeedbackTabClass(FeedbackTab.Ai)"
+        @onclick="() => SelectFeedbackTab(FeedbackTab.Ai)">
+        AI Feedback
+    </button>
 
-            <h3>Areas to Improve</h3>
+</div>
 
-            <ul>
-                @foreach (var item in ImprovementItems(report))
-                {
-                    <li>@item</li>
-                }
-            </ul>
-        </article>
+@if (_activeFeedbackTab == FeedbackTab.Instructor)
+{
+    <section class="feedback-tab-content"
+    role="tabpanel">
 
-        <article class="report-card">
-            <h2>Scenario Reviewed</h2>
+    <div class="feedback-good">
+        <strong>
+            @GetInstructorHeading(report)
+        </strong>
 
-            <div class="scenario-title">
-                <span>✈</span>
+        <p>
+            @report.Feedback
+        </p>
+    </div>
 
-                <div>
-                    <strong>@report.ScenarioName</strong>
+    <h3>Areas to Improve</h3>
 
-                    <small>
-                        Completed:
-                        @report.CompletedAt
-                        .ToLocalTime()
-                        .ToString("dd MMM yyyy 'at' HH:mm")
-                    </small>
+    <ul>
+        @foreach (var item in ImprovementItems(report))
+        {
+            <li>@item</li>
+        }
+    </ul>
 
-                    <small>
-                        Difficulty: @report.Difficulty
-                    </small>
-                </div>
+</section>
+}
+else
+{
+    <section class="feedback-tab-content"
+    role="tabpanel">
 
-                <b>EMERGENCY</b>
-            </div>
+    <div class="feedback-ai">
 
-            <hr />
+        <h3>AI Performance Analysis</h3>
 
-            <div class="info-row">
-                <span>◷</span>
-                <label>Reaction Time</label>
-                <strong>@report.ReactionTimeSeconds seconds</strong>
-            </div>
+        @if (string.IsNullOrWhiteSpace(report.AiFeedback))
+        {
+            <p>
+                No AI-generated analysis is available
+                for this assessment.
+            </p>
+        }
+        else
+        {
+            <p>
+                @report.AiFeedback
+            </p>
+        }
 
-            <div class="info-row">
-                <span>☑</span>
-                <label>Actions Taken</label>
-                <strong>@report.ActionsTaken</strong>
-            </div>
+    </div>
 
-            <div class="info-row">
-                <span>⚠</span>
-                <label>Safety-Critical Errors</label>
-                <strong>@report.SafetyCriticalErrors</strong>
-            </div>
+    <h3>AI Recommended Focus</h3>
 
-            <div class="info-row">
-                <span>▣</span>
-                <label>Checklist Accuracy</label>
-                <strong>@report.ChecklistAccuracyScore%</strong>
-            </div>
-        </article>
+    <ul>
+        @foreach (var item in AiImprovementItems(report))
+        {
+            <li>@item</li>
+        }
+    </ul>
 
-    </section>
+</section>
+}
 
-    <p class="live-note">
-        ● Feedback updates automatically when a pilot completes a scenario.
-    </p>
+</article>
+
+<article class="report-card">
+    <h2>Scenario Reviewed</h2>
+
+    <div class="scenario-title">
+        <span>✈</span>
+
+        <div>
+            <strong>@report.ScenarioName</strong>
+
+            <small>
+                Completed:
+                @report.CompletedAt
+                .ToLocalTime()
+                .ToString("dd MMM yyyy 'at' HH:mm")
+            </small>
+
+            <small>
+                Difficulty: @report.Difficulty
+            </small>
+        </div>
+
+        <b>EMERGENCY</b>
+    </div>
+
+    <hr />
+
+    <div class="info-row">
+        <span>◷</span>
+        <label>Reaction Time</label>
+        <strong>
+            @report.ReactionTimeSeconds seconds
+        </strong>
+    </div>
+
+    <div class="info-row">
+        <span>☑</span>
+        <label>Actions Taken</label>
+        <strong>@report.ActionsTaken</strong>
+    </div>
+
+    <div class="info-row">
+        <span>⚠</span>
+        <label>Safety-Critical Errors</label>
+        <strong>
+            @report.SafetyCriticalErrors
+        </strong>
+    </div>
+
+    <div class="info-row">
+        <span>▣</span>
+        <label>Checklist Accuracy</label>
+        <strong>
+            @report.ChecklistAccuracyScore%
+        </strong>
+    </div>
+</article>
+
+</section>
+
+<p class="live-note">
+    ● Feedback updates automatically when a pilot
+    completes a scenario.
+</p>
 
 </main>
 }
@@ -164,26 +240,62 @@ else
     private const string UserId = "test-pilot";
 
     private PerformanceDashboardVm? _dashboard;
+
     private bool _loading = true;
+
+    private FeedbackTab _activeFeedbackTab =
+        FeedbackTab.Instructor;
 
     protected override async Task OnInitializedAsync()
     {
         PerformanceFeed.ReportSaved += OnReportSaved;
+
         await LoadAsync();
     }
 
-    private async void OnReportSaved(string userId)
+    private void SelectFeedbackTab(
+        FeedbackTab tab)
+    {
+        _activeFeedbackTab = tab;
+    }
+
+    private string GetFeedbackTabClass(
+        FeedbackTab tab)
+    {
+        return _activeFeedbackTab == tab
+            ? "feedback-tab-button active"
+            : "feedback-tab-button";
+    }
+
+    private static string GetInstructorHeading(
+        SimulationReport report)
+    {
+        if (report.ActionsTaken == 0 ||
+            !report.Passed)
+        {
+            return "Review Required";
+        }
+
+        return report.OverallScore >= 85
+            ? "☆ Great Job!"
+            : "Good Attempt";
+    }
+
+    private async void OnReportSaved(
+        string userId)
     {
         if (userId != UserId)
         {
             return;
         }
 
-        await InvokeAsync(async () =>
-        {
-            await LoadAsync();
-            StateHasChanged();
-        });
+        await InvokeAsync(
+            async () =>
+            {
+                await LoadAsync();
+
+                StateHasChanged();
+            });
     }
 
     private async Task LoadAsync()
@@ -191,7 +303,10 @@ else
         try
         {
             _loading = true;
-            _dashboard = await DashboardService.GetDashboardAsync(UserId);
+
+            _dashboard =
+                await DashboardService
+                    .GetDashboardAsync(UserId);
         }
         finally
         {
@@ -199,10 +314,19 @@ else
         }
     }
 
-    private static IEnumerable<string> ImprovementItems(
-        SimulationReport report)
+    private static IEnumerable<string>
+        ImprovementItems(
+            SimulationReport report)
     {
         var hasImprovementItem = false;
+
+        if (report.ActionsTaken == 0)
+        {
+            hasImprovementItem = true;
+
+            yield return
+                "Begin the response immediately after the warning appears.";
+        }
 
         if (report.ReactionTimeSeconds > 10)
         {
@@ -245,8 +369,59 @@ else
         }
     }
 
+    private static IEnumerable<string>
+        AiImprovementItems(
+            SimulationReport report)
+    {
+        if (report.ActionsTaken == 0)
+        {
+            yield return
+                "Practise recognising the initial warning and beginning the first memory action.";
+        }
+
+        if (report.ProcedureAccuracyScore < 85)
+        {
+            yield return
+                "Review the gold-standard procedure and practise the exact action sequence.";
+        }
+
+        if (report.TimeManagementScore < 80)
+        {
+            yield return
+                "Reduce the delay between the warning and the first cockpit action.";
+        }
+
+        if (report.DecisionMakingScore < 80)
+        {
+            yield return
+                "Prioritise safety-critical actions before secondary tasks.";
+        }
+
+        if (report.CommunicationScore < 90)
+        {
+            yield return
+                "Declare the emergency and communicate intentions earlier.";
+        }
+
+        if (report.ProcedureAccuracyScore >= 85 &&
+            report.TimeManagementScore >= 80 &&
+            report.DecisionMakingScore >= 80 &&
+            report.CommunicationScore >= 90)
+        {
+            yield return
+                "Maintain the current standard and practise under a higher difficulty level.";
+        }
+    }
+
     public void Dispose()
     {
-        PerformanceFeed.ReportSaved -= OnReportSaved;
+        PerformanceFeed.ReportSaved -=
+            OnReportSaved;
+    }
+
+    private enum FeedbackTab
+    {
+        Instructor,
+        Ai
     }
 }

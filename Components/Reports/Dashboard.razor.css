@@ -816,3 +816,50 @@
 .metric-fill.cyan {
     background-color: #06b6d4 !important;
 }
+
+.feedback-tabs {
+    display: flex;
+    gap: 2rem;
+    border-bottom: 1px solid #d9e2ef;
+    margin-bottom: 1.75rem;
+}
+
+.feedback-tab-button {
+    appearance: none;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    padding: 0.75rem 0;
+    color: #63728c;
+    font: inherit;
+    font-size: 1.15rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.feedback-tab-button:hover {
+    color: #2563eb;
+}
+
+.feedback-tab-button.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+    font-weight: 800;
+}
+
+.feedback-tab-button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.3);
+    outline-offset: 3px;
+    border-radius: 0.25rem;
+}
+
+.feedback-tab-content {
+    min-height: 20rem;
+}
+
+.feedback-ai {
+    padding: 1.25rem;
+    border-radius: 1rem;
+    background: #f3f7ff;
+    margin-bottom: 1.5rem;
+}

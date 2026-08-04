@@ -48,4 +48,6 @@ public class EmergencyScenario
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public List<ScenarioProcedureStep> ProcedureSteps { get; set; } = [];
 }

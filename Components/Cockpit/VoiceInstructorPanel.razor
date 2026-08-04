@@ -1,0 +1,40 @@
+@using AeroResponse.Services
+
+<section class="voice-instructor-panel">
+    <div class="voice-instructor-heading">
+        <div><span>AI Instructor</span><h2>Voice Cockpit Control</h2></div>
+        <button type="button"
+                class="btn @(IsListening ? "btn-danger" : "btn-primary")"
+                disabled="@(!IsSupported)"
+                @onclick="() => ToggleListening.InvokeAsync()">
+            @(IsListening ? "Stop Listening" : "Start Voice Control")
+        </button>
+    </div>
+
+    <p>@StatusMessage</p>
+
+    @if (!string.IsNullOrWhiteSpace(LastTranscript))
+    {
+        <div class="voice-transcript"><small>Recognized command</small><strong>@LastTranscript</strong></div>
+    }
+
+    @if (Feedback is not null)
+    {
+        <div class="instructor-feedback @Feedback.Severity.ToLowerInvariant()">
+            <strong>@Feedback.Severity</strong><p>@Feedback.Message</p>
+            @if (!string.IsNullOrWhiteSpace(Feedback.RecommendedAction))
+            {
+                <small>Recommended next action: @Feedback.RecommendedAction</small>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter] public bool IsSupported { get; set; }
+    [Parameter] public bool IsListening { get; set; }
+    [Parameter] public string StatusMessage { get; set; } = string.Empty;
+    [Parameter] public string? LastTranscript { get; set; }
+    [Parameter] public AiInstructorFeedback? Feedback { get; set; }
+    [Parameter, EditorRequired] public EventCallback ToggleListening { get; set; }
+}

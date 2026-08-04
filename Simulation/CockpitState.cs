@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore.Storage;
-
 namespace AeroResponse.Simulation;
 
 public class CockpitState
@@ -48,4 +46,7 @@ public class CockpitState
     public double RudderPosition { get; set; } = 0;
     public bool FireSuppressionActivated { get; set; } = false;
     public bool FireDetected { get; set; } = false;
+
+    public Dictionary<string, object?> DynamicValues { get; set; } =
+    new(StringComparer.OrdinalIgnoreCase);
 }

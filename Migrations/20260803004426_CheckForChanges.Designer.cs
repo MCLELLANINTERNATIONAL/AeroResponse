@@ -3,6 +3,7 @@ using System;
 using AeroResponse.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AeroResponse.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260803004426_CheckForChanges")]
+    partial class CheckForChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -106,9 +109,6 @@ namespace AeroResponse.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("BrakeCount")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("CockpitLayoutKey")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -124,9 +124,6 @@ namespace AeroResponse.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int>("EngineCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("FuelTankCount")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsActive")
@@ -824,63 +821,6 @@ namespace AeroResponse.Migrations
                         .IsRequired();
 
                     b.Navigation("EmergencyScenario");
-                });
-
-            modelBuilder.Entity("AeroResponse.Models.Aircraft", b =>
-                {
-                    b.OwnsOne("AeroResponse.Models.AircraftLandingGearConfig", "LandingGearConfig", b1 =>
-                        {
-                            b1.Property<int>("AircraftId")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Kind")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("LandingGearKind");
-
-                            b1.HasKey("AircraftId");
-
-                            b1.ToTable("Aircraft");
-
-                            b1.WithOwner()
-                                .HasForeignKey("AircraftId");
-
-                            b1.OwnsMany("AeroResponse.Models.LandingGearUnit", "Units", b2 =>
-                                {
-                                    b2.Property<int>("Id")
-                                        .ValueGeneratedOnAdd()
-                                        .HasColumnType("INTEGER");
-
-                                    b2.Property<int>("AircraftId")
-                                        .HasColumnType("INTEGER");
-
-                                    b2.Property<string>("Label")
-                                        .IsRequired()
-                                        .HasColumnType("TEXT");
-
-                                    b2.Property<int>("Order")
-                                        .HasColumnType("INTEGER");
-
-                                    b2.Property<int>("Position")
-                                        .HasColumnType("INTEGER");
-
-                                    b2.Property<int>("Status")
-                                        .HasColumnType("INTEGER");
-
-                                    b2.HasKey("Id");
-
-                                    b2.HasIndex("AircraftId");
-
-                                    b2.ToTable("LandingGearUnit");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("AircraftId");
-                                });
-
-                            b1.Navigation("Units");
-                        });
-
-                    b.Navigation("LandingGearConfig")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

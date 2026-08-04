@@ -3,6 +3,8 @@ using AeroResponse.Simulation;
 using AeroResponse.Simulation.Layouts;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
+using AeroResponse.Services;
 using SimulationSelectionModel = AeroResponse.Models.SimulationSelection;
 using VSIMath = AeroResponse.Simulation.Instruments.VerticalSpeedIndicator.VSIMath;
 namespace AeroResponse.Components.Pages;
@@ -37,6 +39,13 @@ public partial class Simulation : IAsyncDisposable
 
     private int _remainingSeconds;
 
+    // Voice control / AI instructor state
+    private DotNetObjectReference<Simulation>? _voiceReference;
+    private bool _voiceSupported;
+    private bool _voiceListening;
+    private string _voiceStatus = "Select Start Voice Control.";
+    private string? _lastVoiceTranscript;
+    private AiInstructorFeedback? _latestInstructorFeedback;
 
     private IReadOnlyList<EmergencyScenario>
         _scenarioRecords = [];
@@ -155,45 +164,66 @@ public partial class Simulation : IAsyncDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!_needsStorageCheck)
+        // JS interop must occur after the component has rendered.
+        if (firstRender)
         {
-            return;
+            _voiceReference = DotNetObjectReference.Create(this);
+
+            var status =
+                await JSRuntime.InvokeAsync<VoiceInitializationResult>(
+                    "aeroVoice.initialize",
+                    _voiceReference);
+
+            _voiceSupported = status.Supported;
+            _voiceStatus = status.Message;
         }
 
-        _needsStorageCheck = false;
-
-        var savedSelection = await SelectionStorage.GetAsync();
-
-        string aircraftKey;
-        string scenarioType;
-
-        if (savedSelection?.IsValid == true &&
-            int.TryParse(savedSelection.AircraftKey, out _)) // Making sure we have a valid Aircraft Key
+        if (_needsStorageCheck)
         {
-            aircraftKey = savedSelection.AircraftKey;
-            scenarioType = savedSelection.ScenarioType;
-        }
-        else
-        {
-            // Fallback to first Aircraft and Scenario if none is present in load
+            _needsStorageCheck = false;
 
-            var defaultAircraft = _aircraftOptions.FirstOrDefault();
-            var defaultScenario = _scenarioRecords.FirstOrDefault();
+            var savedSelection =
+                await SelectionStorage.GetAsync();
 
-            if (defaultAircraft is null || defaultScenario is null)
+            string aircraftKey;
+            string scenarioType;
+
+            if (savedSelection?.IsValid == true &&
+                int.TryParse(savedSelection.AircraftKey, out _))
             {
-                _loadFailed = true;
-                await InvokeAsync(StateHasChanged);
-                return;
+                aircraftKey = savedSelection.AircraftKey;
+                scenarioType = savedSelection.ScenarioType;
+            }
+            else
+            {
+                var defaultAircraft =
+                    _aircraftOptions.FirstOrDefault();
+
+                var defaultScenario =
+                    _scenarioRecords.FirstOrDefault();
+
+                if (defaultAircraft is null ||
+                    defaultScenario is null)
+                {
+                    _loadFailed = true;
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+
+                aircraftKey = defaultAircraft.Id.ToString();
+                scenarioType = defaultScenario.EmergencyType;
             }
 
-            aircraftKey = defaultAircraft.Id.ToString();
-            scenarioType = defaultScenario.EmergencyType;
+            await LoadSelectionAsync(
+                aircraftKey,
+                scenarioType,
+                saveSelection: true);
         }
 
-        await LoadSelectionAsync(aircraftKey, scenarioType, true);
-
-        await InvokeAsync(StateHasChanged);
+        if (firstRender || _isReady || _loadFailed)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task LoadSelectionAsync(
@@ -246,6 +276,8 @@ public partial class Simulation : IAsyncDisposable
             {
                 await SaveCurrentSelectionAsync();
             }
+
+            UpdateSimulationUrl();
         }
         catch (Exception ex)
         {
@@ -998,6 +1030,147 @@ public partial class Simulation : IAsyncDisposable
         }
     }
 
+    private async Task ToggleVoiceControlAsync()
+    {
+        if (!_voiceSupported)
+        {
+            return;
+        }
+
+        _voiceListening = !_voiceListening;
+
+        if (_voiceListening)
+        {
+            var started =
+                await JSRuntime.InvokeAsync<bool>(
+                    "aeroVoice.start");
+
+            _voiceListening = started;
+            _voiceStatus = started
+                ? "Listening for cockpit commands."
+                : "Voice recognition could not start.";
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync(
+                "aeroVoice.stop");
+
+            _voiceStatus = "Voice control stopped.";
+        }
+    }
+
+    [JSInvokable]
+    public async Task ReceiveVoiceTranscript(
+        string transcript,
+        double confidence)
+    {
+        _lastVoiceTranscript = transcript;
+
+        if (!_isReady ||
+            !emergencyTriggered ||
+            _completedReport is not null)
+        {
+            _latestInstructorFeedback = new AiInstructorFeedback
+            {
+                Severity = "Information",
+                Message =
+                    "The emergency assessment must be active before " +
+                    "commands can be processed."
+            };
+
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var request =
+            CockpitCommands.Parse(
+                transcript,
+                cockpitLayout);
+
+        if (request is null)
+        {
+            _latestInstructorFeedback = new AiInstructorFeedback
+            {
+                Severity = "Warning",
+                Message =
+                    $"I could not match '{transcript}' to an " +
+                    "available cockpit control.",
+                RecommendedAction =
+                    "Use the instrument name, action and value."
+            };
+
+            await JSRuntime.InvokeVoidAsync(
+                "aeroVoice.speak",
+                _latestInstructorFeedback.Message);
+
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var result =
+            CockpitCommands.Execute(
+                request,
+                cockpitLayout,
+                cockpitState);
+
+        if (result.Succeeded)
+        {
+            var matchedStep =
+                procedureSteps.FirstOrDefault(step =>
+                    step.CorrectAction.Equals(
+                        result.ActionName,
+                        StringComparison.OrdinalIgnoreCase));
+
+            var selectedOrder =
+                matchedStep?.StepOrder ??
+                Math.Max(1, CompletedStepCount + 1);
+
+            cockpitState =
+                SimulationSession.RecordPilotAction(
+                    result.ActionName,
+                    selectedOrder,
+                    cockpitState);
+
+            if (matchedStep is not null)
+            {
+                _completedProcedureStepOrders.Add(
+                    matchedStep.StepOrder);
+            }
+        }
+
+        _latestInstructorFeedback =
+            AiInstructor.EvaluateAction(
+                result,
+                procedureSteps,
+                SimulationSession.PilotActions,
+                _remainingSeconds);
+
+        _voiceStatus = result.SpokenFeedback;
+
+        await JSRuntime.InvokeVoidAsync(
+            "aeroVoice.speak",
+            _latestInstructorFeedback.Message);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task VoiceRecognitionError(string error)
+    {
+        _voiceListening = false;
+        _voiceStatus =
+            $"Voice recognition error: {error}";
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private sealed class VoiceInitializationResult
+    {
+        public bool Supported { get; set; }
+
+        public string Message { get; set; } = string.Empty;
+    }
+
     private static string FormatAssessmentTime(int totalSeconds)
     {
         var safeSeconds = Math.Max(0, totalSeconds);
@@ -1020,7 +1193,28 @@ public partial class Simulation : IAsyncDisposable
             }
         }
 
+        if (_voiceReference is not null)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync(
+                    "aeroVoice.dispose");
+            }
+            catch (JSDisconnectedException)
+            {
+                // Expected if the browser circuit has already closed.
+            }
+            catch (InvalidOperationException)
+            {
+                // JS interop may be unavailable during prerender disposal.
+            }
+
+            _voiceReference.Dispose();
+            _voiceReference = null;
+        }
+        _voiceReference?.Dispose();
         _simulationTimer?.Dispose();
         _simulationCancellation?.Dispose();
     }
+
 }

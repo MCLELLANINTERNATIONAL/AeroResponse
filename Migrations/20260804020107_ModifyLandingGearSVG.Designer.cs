@@ -3,6 +3,7 @@ using System;
 using AeroResponse.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AeroResponse.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260804020107_ModifyLandingGearSVG")]
+    partial class ModifyLandingGearSVG
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -840,6 +843,9 @@ namespace AeroResponse.Migrations
                                     b2.Property<int>("AircraftId")
                                         .HasColumnType("INTEGER");
 
+                                    b2.Property<bool>("IsWarningActive")
+                                        .HasColumnType("INTEGER");
+
                                     b2.Property<string>("Label")
                                         .IsRequired()
                                         .HasColumnType("TEXT");
@@ -848,9 +854,6 @@ namespace AeroResponse.Migrations
                                         .HasColumnType("INTEGER");
 
                                     b2.Property<int>("Position")
-                                        .HasColumnType("INTEGER");
-
-                                    b2.Property<int>("Status")
                                         .HasColumnType("INTEGER");
 
                                     b2.HasKey("Id");

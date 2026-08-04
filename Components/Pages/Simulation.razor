@@ -8,12 +8,9 @@
 @using AeroResponse.Components.FlightControl.Yoke
 @using AeroResponse.Components.FlightControl.Rudder
 @using AeroResponse.Components.FlightControl.Throttle
-@using AeroResponse.Models
 @using AeroResponse.Services
 @using AeroResponse.Simulation
-@using AeroResponse.Simulation.Instruments.VerticalSpeedIndicator
 @using AeroResponse.Simulation.Layouts
-@using SimulationSelectionModel = AeroResponse.Models.SimulationSelection
 
 
 @inject ICockpitLayoutProvider LayoutProvider
@@ -348,11 +345,20 @@ Main cockpit
 
                 <div class="control-card">
                     <h3>Emergency</h3>
+                    <FireDetection Status="@GetFireStatus()" Label="@GetFireLabel()" />
                     <button type="button"
                             class="btn btn-outline-danger"
                             @onclick="ActivateFireSuppression">
                         Activate Fire Suppression
                     </button>
+                    <div class="switch-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); height: 4rem; grid-column: span 3;">
+                        @foreach (var unit in selectedAircraft.LandingGearConfig.Units.OrderBy(u => u.Order))
+                        {
+                            <div class="switch-slot" @key="unit.Order">
+                                <LandingGearStatus Unit="unit" OnClick="HandleUnitClick" @key="unit.Id" />
+                            </div>
+                        }
+                    </div>
                 </div>
 
                 <div class="rudder-card">

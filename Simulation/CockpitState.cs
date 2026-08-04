@@ -26,6 +26,18 @@ public class CockpitState
 
     public List<EngineState> Engines { get; set; } = [];
     public List<BrakePressureState> Brakes { get; set; } = [];
+    public double BrakePressure
+    {
+        get
+        {
+            var totalPressure = 0.0;
+            foreach (var brake in Brakes)
+            {
+                totalPressure += brake.Pressure;
+            }
+            return totalPressure;
+        }
+    }
     public List<FuelState> FuelTanks { get; set; } = [];
 
     public string AlertMessage { get; set; } = "Systems Normal";
@@ -35,4 +47,5 @@ public class CockpitState
     public double OilTemperature { get; set; } = 180;
     public double RudderPosition { get; set; } = 0;
     public bool FireSuppressionActivated { get; set; } = false;
+    public bool FireDetected { get; set; } = false;
 }

@@ -5,10 +5,13 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using CockpitLayoutModel = AeroResponse.Models.CockpitLayout;
 
+
 namespace AeroResponse.Components.Pages;
 
 public partial class AircraftManagement : ComponentBase
 {
+    [Inject]
+    private ILogger<AircraftManagement> Logger { get; set; } = default!;
     [Inject]
     private AircraftService AircraftService { get; set; } = default!;
 
@@ -138,7 +141,7 @@ public partial class AircraftManagement : ComponentBase
             return;
         }
 
-        var aircraft = await AircraftService.GetByIdAsync(aircraftId);
+        var aircraft = await AircraftService.GetByIdWithLandingGearAsync(aircraftId);
 
         if (aircraft is null)
         {
@@ -157,6 +160,81 @@ public partial class AircraftManagement : ComponentBase
         statusMessage = null;
     }
 
+    private void AddLandingGearUnit()
+    {
+        selectedAircraft.LandingGearConfig.Units.Add(new LandingGearUnit
+        {
+            Id = selectedAircraft.LandingGearConfig.Units.Count + 1,
+            Label = $"Gear {selectedAircraft.LandingGearConfig.Units.Count + 1}",
+            Position = LandingGearPosition.Custom,
+            Order = selectedAircraft.LandingGearConfig.Units.Count
+        });
+    }
+    private void OnLandingGearKindChanged()
+    {
+        var config = selectedAircraft.LandingGearConfig;
+        config.Units.Clear();
+
+        switch (config.Kind)
+        {
+            case LandingGearKind.FixedTricycle:
+            case LandingGearKind.RetractableTricycle:
+                config.Units.AddRange(new[]
+                {
+                    new LandingGearUnit { Id = 1, Label = "N", Position = LandingGearPosition.Nose, Order = 0 },
+                    new LandingGearUnit { Id = 2, Label = "L", Position = LandingGearPosition.LeftMain, Order = 1 },
+                    new LandingGearUnit { Id = 3, Label = "R", Position = LandingGearPosition.RightMain, Order = 2 }
+                });
+                break;
+
+            case LandingGearKind.Tailwheel:
+                config.Units.AddRange(new[]
+                {
+                    new LandingGearUnit { Id = 1, Label = "L", Position = LandingGearPosition.LeftMain, Order = 0 },
+                    new LandingGearUnit { Id = 2, Label = "R", Position = LandingGearPosition.RightMain, Order = 1 },
+                    new LandingGearUnit { Id = 3, Label = "T", Position = LandingGearPosition.Tail, Order = 2 }
+                });
+                break;
+
+            case LandingGearKind.Tandem:
+                config.Units.AddRange(new[]
+                {
+                    new LandingGearUnit { Id = 1, Label = "F", Position = LandingGearPosition.Nose, Order = 0 },
+                    new LandingGearUnit { Id = 2, Label = "A", Position = LandingGearPosition.Tail, Order = 1 }
+                });
+                break;
+
+            case LandingGearKind.MultiBogey:
+                config.Units.AddRange(new[]
+                {
+                    new LandingGearUnit { Id = 1, Label = "L1", Position = LandingGearPosition.LeftMain, Order = 0 },
+                    new LandingGearUnit { Id = 2, Label = "L2", Position = LandingGearPosition.LeftMain, Order = 1 },
+                    new LandingGearUnit { Id = 3, Label = "R1", Position = LandingGearPosition.RightMain, Order = 2 },
+                    new LandingGearUnit { Id = 4, Label = "R2", Position = LandingGearPosition.RightMain, Order = 3 }
+                });
+                break;
+
+            case LandingGearKind.Floats:
+                config.Units.AddRange(new[]
+                {
+                    new LandingGearUnit { Id = 1, Label = "L Float", Position = LandingGearPosition.LeftMain, Order = 0 },
+                    new LandingGearUnit { Id = 2, Label = "R Float", Position = LandingGearPosition.RightMain, Order = 1 }
+                });
+                break;
+
+            case LandingGearKind.Skis:
+                config.Units.AddRange(new[]
+                {
+                    new LandingGearUnit { Id = 1, Label = "L Ski", Position = LandingGearPosition.LeftMain, Order = 0 },
+                    new LandingGearUnit { Id = 2, Label = "R Ski", Position = LandingGearPosition.RightMain, Order = 1 }
+                });
+                break;
+
+            default:
+                break;
+        }
+    }
+
     private async Task SaveAircraftAsync(EditContext editContext)
     {
         if (string.IsNullOrWhiteSpace(selectedAircraft.CockpitLayoutKey))
@@ -173,6 +251,13 @@ public partial class AircraftManagement : ComponentBase
 
         isSaving = true;
         statusMessage = null;
+
+        Logger.LogInformation(
+            "Saving aircraft {AircraftId} {Name} with gear kind {Kind} and {UnitCount} units",
+            selectedAircraft.Id,
+            selectedAircraft.Name,
+            selectedAircraft.LandingGearConfig.Kind,
+            selectedAircraft.LandingGearConfig.Units.Count);
 
         try
         {

@@ -1,0 +1,53 @@
+.landing-gear-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.landing-gear-svg text {
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    fill: #bbb;
+}
+
+.landing-gear-svg circle {
+    transition: fill 0.2s ease, stroke 0.2s ease, transform 0.2s ease;
+    fill: #2e7d32;
+}
+
+.landing-gear-svg .gear-circle-normal {
+    fill: #2e7d32;
+}
+
+.landing-gear-svg .gear-circle-warning {
+    fill: #d32f2f;
+}
+
+.landing-gear-svg .gear-circle-caution, .landing-gear-svg .gear-circle-up {
+    fill: #f9a825;
+}
+
+.gear-strut {
+    fill: #616161;
+}
+
+.landing-gear-svg g:hover circle {
+    stroke: #777;
+    stroke-width: 4;
+}
+
+.switch-grid {
+    width: 3rem;
+    gap: 1rem;
+    align-items: center;
+}
+
+.switch-slot {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.gear-hitarea {
+    cursor: pointer;
+}

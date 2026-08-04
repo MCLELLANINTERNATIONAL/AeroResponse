@@ -86,5 +86,20 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                             jsonOptions) ?? new CockpitLayoutDetails())
                 .Metadata.SetValueComparer(detailsComparer);
         });
+        builder.Entity<Aircraft>(entity =>
+        {
+            entity.OwnsOne(a => a.LandingGearConfig, cfg =>
+            {
+                cfg.Property(p => p.Kind)
+                .HasColumnName("LandingGearKind");
+
+                cfg.OwnsMany(p => p.Units, units =>
+                {
+                    units.WithOwner().HasForeignKey("AircraftId");
+                    units.Property(u => u.Id);
+                    units.HasKey(u => u.Id);
+                });
+            });
+        });
     }
 }

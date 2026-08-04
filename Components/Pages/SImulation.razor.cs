@@ -2,13 +2,22 @@ using AeroResponse.Models;
 using AeroResponse.Simulation;
 using AeroResponse.Simulation.Layouts;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using SimulationSelectionModel = AeroResponse.Models.SimulationSelection;
 using VSIMath = AeroResponse.Simulation.Instruments.VerticalSpeedIndicator.VSIMath;
 namespace AeroResponse.Components.Pages;
 
 public partial class Simulation : IAsyncDisposable
 {
+
+/* ====================================================================================================
+ |                                      Variable Decleration                                           |
+ ====================================================================================================== */
+
+    [Inject]
+    private ILogger<Simulation> Logger { get; set; } = default!;
     private CockpitState cockpitState = new();
+    private bool isOnGround = false;
 
     private EmergencyScenario
         selectedScenarioRecord = default!;
@@ -62,6 +71,17 @@ public partial class Simulation : IAsyncDisposable
     [Parameter]
     public string? ScenarioType { get; set; }
 
+    private string GetFireLabel()
+    {
+        if (selectedScenarioRecord.EmergencyType == "Engine Fire")
+        {
+            var engine = GetAffectedEngine();
+            return engine is null ? "ENGINE FIRE" : $"ENGINE {engine.Number} FIRE";
+        }
+
+        return "SMOKE / FIRE";
+    }
+
     private CockpitLayoutDefinition
         cockpitLayout = default!;
 
@@ -88,6 +108,10 @@ public partial class Simulation : IAsyncDisposable
             ScenarioType,
             saveSelection: false);
     }*/
+
+/* ====================================================================================================
+ |                                      State Based Actions                                            |
+ ====================================================================================================== */
 
     protected override async Task OnParametersSetAsync()
     {
@@ -186,7 +210,7 @@ public partial class Simulation : IAsyncDisposable
             }
 
             var requestedAircraft =
-                await AircraftService.GetByIdAsync(aircraftId);
+                await AircraftService.GetByIdWithLandingGearAsync(aircraftId);
 
             if (requestedAircraft is null)
             {
@@ -249,6 +273,10 @@ public partial class Simulation : IAsyncDisposable
                     StringComparison.OrdinalIgnoreCase));
     }
 
+/* ====================================================================================================
+ |                                      Toggle and Switches                                           |
+ ====================================================================================================== */
+
     private void ToggleAircraftMenu()
     {
         _isAircraftMenuOpen =
@@ -256,9 +284,25 @@ public partial class Simulation : IAsyncDisposable
 
         _isScenarioMenuOpen = false;
     }
-    private void ActivateFireSuppression()
+    private async Task ActivateFireSuppression()
     {
-        cockpitState.FireSuppressionActivated = true;
+        var engine = GetAffectedEngine();
+        if (engine is null)
+            return;
+
+        engine.FireSuppressionActivated = true;
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(1500);
+
+        if (selectedScenarioRecord.EmergencyType == "Engine Fire")
+        {
+            var fireStillActive = engine.EngineFire || engine.OnFire;
+            engine.EngineFire = fireStillActive;
+            engine.OnFire = fireStillActive;
+        }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private void ToggleScenarioMenu()
@@ -347,6 +391,10 @@ public partial class Simulation : IAsyncDisposable
             });
     }
 
+/* ====================================================================================================
+ |                                      Simulation Specific                                            |
+ ====================================================================================================== */
+
     private void UpdateSimulationUrl()
     {
         var targetUrl = $"/simulation/{Uri.EscapeDataString(selectedAircraft.Id.ToString())}/{Uri.EscapeDataString(selectedScenarioRecord.EmergencyType)}";
@@ -415,7 +463,6 @@ public partial class Simulation : IAsyncDisposable
 
         _isReady = true;
         _loadFailed = false;
-
         CloseSelectorMenus();
 
         if (_simulationLoop is null)
@@ -423,6 +470,17 @@ public partial class Simulation : IAsyncDisposable
             StartSimulationLoop();
         }
     }
+    private EngineState? GetAffectedEngine()
+    {
+        return cockpitState.Engines.FirstOrDefault(e => e.EngineFire || e.OnFire)
+            ?? cockpitState.Engines.FirstOrDefault(e => e.Number == 2)
+            ?? cockpitState.Engines.FirstOrDefault();
+    }
+
+
+/* ====================================================================================================
+ |                                  Procedure Checklist Code                                           |
+ ===================================================================================================== */
 
     private bool IsProcedureStepCompleted(
         ScenarioProcedureStep step)
@@ -507,6 +565,11 @@ public partial class Simulation : IAsyncDisposable
         return normalizedHeading
             .ToString("000");
     }
+
+/* ====================================================================================================
+ |                                  Cockpit State Management                                          |
+ ===================================================================================================== */
+
     private CockpitState CreateNormalCockpitState()
     {
         var defaults = cockpitLayout.DefaultState;
@@ -621,6 +684,126 @@ public partial class Simulation : IAsyncDisposable
 
         return "Cruise";
     }
+
+    private void UpdatePerformance(double elapsedSeconds)
+    {
+        var engineCount = cockpitState.Engines.Count;
+        if (engineCount == 0)
+        {
+            return;
+        }
+        if (cockpitState.Altitude <= 0)
+        {
+            isOnGround = true;
+        }
+        else
+        {
+            isOnGround = false;
+        }
+
+        var averagePower = cockpitState.Engines.Average(engine => engine.Power);
+        var powerPct = Math.Clamp(averagePower / 100.0, 0, 1);
+        var pitchPct = Math.Clamp(cockpitState.Pitch / 15.0, -1, 1);
+
+        var baseTargetSpeed = 20 + (powerPct * 90);
+        var pitchDrag = cockpitState.Pitch * 1.2;
+        var targetAirspeed = Math.Clamp(baseTargetSpeed - pitchDrag, 0, 160);
+
+        var rudderInput = cockpitState.RudderPosition; // -1 to 1
+        var brakeDiff = (cockpitState.BrakePressure) / 100.0;
+        var yawInput = rudderInput + brakeDiff;
+
+        var turnRate = 0.0;
+
+        if (isOnGround)
+        {
+            turnRate = yawInput * (cockpitState.Airspeed < 20 ? 6 : 2);
+        }
+        else
+        {
+            var bankFactor = cockpitState.Bank / 30.0;
+            turnRate = (bankFactor * 3.0) + (rudderInput * 1.5);
+        }
+
+        cockpitState.TurnRate = turnRate;
+        cockpitState.Heading = NormalizeHeading(cockpitState.Heading + turnRate * elapsedSeconds);
+
+        if (cockpitState.Altitude <= 0 && cockpitState.Airspeed <= 1)
+        {
+            if (cockpitState.Engines.All(e => e.Power <= 5))
+            {
+                cockpitState.Airspeed = 0;
+                cockpitState.VerticalSpeed = 0;
+                return;
+            }
+        }
+
+        cockpitState.Airspeed = MoveToward(
+            cockpitState.Airspeed,
+            targetAirspeed,
+            25 * elapsedSeconds);
+
+        var vsiTarget =
+            (pitchPct * 1200) +
+            ((powerPct - 0.5) * 500) -
+            ((cockpitState.Airspeed - targetAirspeed) * 2);
+
+        cockpitState.VerticalSpeed = MoveToward(
+            cockpitState.VerticalSpeed,
+            vsiTarget,
+            300 * elapsedSeconds);
+
+        cockpitState.Altitude = Math.Max(
+            0,
+            cockpitState.Altitude + cockpitState.VerticalSpeed / 60.0 * elapsedSeconds);
+    }
+    private async Task HandleUnitClick(LandingGearUnit unit)
+    {
+        var wasUp = unit.Status == LandingGearStatusValue.UpAndLocked;
+
+        unit.Status = LandingGearStatusValue.Moving;
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(1500);
+
+        if (selectedScenarioRecord.EmergencyType == "Landing Gear Malfunction")
+        {
+            unit.Status = LandingGearStatusValue.Unsafe;
+        }
+        else
+        {
+            unit.Status = wasUp
+                ? LandingGearStatusValue.DownAndLocked
+                : LandingGearStatusValue.UpAndLocked;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+    private static double MoveToward(double current, double target, double maxDelta)
+    {
+        if (current < target)
+        {
+            return Math.Min(current + maxDelta, target);
+        }
+
+        return Math.Max(current - maxDelta, target);
+    }
+
+    private static double NormalizeHeading(double heading)
+    {
+        heading %= 360;
+        if (heading < 0)
+        {
+            heading += 360;
+        }
+
+        return heading;
+    }
+
+/* ====================================================================================================
+ |                                       Emergency Trigger                                             |
+ ===================================================================================================== */
+
     private void EvaluateEmergencyTrigger()
     {
         if (emergencyTriggered || !_isReady)
@@ -649,20 +832,13 @@ public partial class Simulation : IAsyncDisposable
     private void ActivateEmergencyScenario()
     {
         if (emergencyTriggered)
-        {
             return;
-        }
 
         emergencyTriggered = true;
-
         SimulationSession.MarkEmergencyTriggered();
 
-        cockpitState =
-            selectedRuntimeScenario.Start(
-                cockpitLayout);
-
-        cockpitState.DisplayedVerticalSpeed =
-            cockpitState.VerticalSpeed;
+        cockpitState = selectedRuntimeScenario.Start(cockpitLayout);
+        cockpitState.DisplayedVerticalSpeed = cockpitState.VerticalSpeed;
     }
 
     private void ActivateEmergencyManually()
@@ -708,6 +884,29 @@ public partial class Simulation : IAsyncDisposable
                 "Waiting for the configured emergency trigger."
         };
     }
+    private FireDetectionStatus GetFireStatus()
+    {
+        var engine = GetAffectedEngine();
+        if (engine is null)
+            return FireDetectionStatus.Normal;
+
+        if (engine.FireSuppressionActivated)
+            return (engine.EngineFire || engine.OnFire)
+                ? FireDetectionStatus.Suppressed
+                : FireDetectionStatus.Extinguished;
+
+        if (engine.EngineFire || engine.OnFire)
+            return FireDetectionStatus.Warning;
+
+        if (selectedScenarioRecord.EmergencyType == "Smoke or Fire")
+            return FireDetectionStatus.Caution;
+
+        return FireDetectionStatus.Normal;
+    }
+
+/* ====================================================================================================
+ |                               Simulation Loop and Completion                                        |
+ ===================================================================================================== */
 
     private void StartSimulationLoop()
     {
@@ -742,6 +941,7 @@ public partial class Simulation : IAsyncDisposable
                         elapsedSeconds,
                         cockpitLayout.VSI.LagSeconds);
 
+                UpdatePerformance(elapsedSeconds);
                 UpdateFlightPhase();
 
                 EvaluateEmergencyTrigger();

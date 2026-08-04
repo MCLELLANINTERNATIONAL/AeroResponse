@@ -16,7 +16,7 @@ public class EfGenericRepository<TEntity>(
         .ContinueWith<IReadOnlyList<TEntity>>(task => task.Result);
     }
 
-    public Task<TEntity?> GetByIdAsync(int id)
+    public virtual Task<TEntity?> GetByIdAsync(int id)
     {
         return context.Set<TEntity>()
             .FindAsync(id)
@@ -33,7 +33,7 @@ public class EfGenericRepository<TEntity>(
         return entity;
     }
 
-    public async Task UpdateAsync(TEntity entity)
+    public virtual async Task UpdateAsync(TEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 

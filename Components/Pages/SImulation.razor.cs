@@ -306,7 +306,7 @@ public partial class Simulation : IAsyncDisposable
     }
 
 /* ====================================================================================================
- |                                      Toggle and Switches                                           |
+ |                                     Aircraft/Scenario Menu                                          |
  ====================================================================================================== */
 
     private void ToggleAircraftMenu()
@@ -315,26 +315,6 @@ public partial class Simulation : IAsyncDisposable
             !_isAircraftMenuOpen;
 
         _isScenarioMenuOpen = false;
-    }
-    private async Task ActivateFireSuppression()
-    {
-        var engine = GetAffectedEngine();
-        if (engine is null)
-            return;
-
-        engine.FireSuppressionActivated = true;
-        await InvokeAsync(StateHasChanged);
-
-        await Task.Delay(1500);
-
-        if (selectedScenarioRecord.EmergencyType == "Engine Fire")
-        {
-            var fireStillActive = engine.EngineFire || engine.OnFire;
-            engine.EngineFire = fireStillActive;
-            engine.OnFire = fireStillActive;
-        }
-
-        await InvokeAsync(StateHasChanged);
     }
 
     private void ToggleScenarioMenu()
@@ -502,16 +482,10 @@ public partial class Simulation : IAsyncDisposable
             StartSimulationLoop();
         }
     }
-    private EngineState? GetAffectedEngine()
-    {
-        return cockpitState.Engines.FirstOrDefault(e => e.EngineFire || e.OnFire)
-            ?? cockpitState.Engines.FirstOrDefault(e => e.Number == 2)
-            ?? cockpitState.Engines.FirstOrDefault();
-    }
 
 
 /* ====================================================================================================
- |                                  Procedure Checklist Code                                           |
+ |                                Procedure Checklist Management                                       |
  ===================================================================================================== */
 
     private bool IsProcedureStepCompleted(
@@ -789,48 +763,6 @@ public partial class Simulation : IAsyncDisposable
             0,
             cockpitState.Altitude + cockpitState.VerticalSpeed / 60.0 * elapsedSeconds);
     }
-    private async Task HandleUnitClick(LandingGearUnit unit)
-    {
-        var wasUp = unit.Status == LandingGearStatusValue.UpAndLocked;
-
-        unit.Status = LandingGearStatusValue.Moving;
-        await InvokeAsync(StateHasChanged);
-
-        await Task.Delay(1500);
-
-        if (selectedScenarioRecord.EmergencyType == "Landing Gear Malfunction")
-        {
-            unit.Status = LandingGearStatusValue.Unsafe;
-        }
-        else
-        {
-            unit.Status = wasUp
-                ? LandingGearStatusValue.DownAndLocked
-                : LandingGearStatusValue.UpAndLocked;
-        }
-
-        await InvokeAsync(StateHasChanged);
-    }
-    private static double MoveToward(double current, double target, double maxDelta)
-    {
-        if (current < target)
-        {
-            return Math.Min(current + maxDelta, target);
-        }
-
-        return Math.Max(current - maxDelta, target);
-    }
-
-    private static double NormalizeHeading(double heading)
-    {
-        heading %= 360;
-        if (heading < 0)
-        {
-            heading += 360;
-        }
-
-        return heading;
-    }
 
 /* ====================================================================================================
  |                                       Emergency Trigger                                             |
@@ -1030,6 +962,9 @@ public partial class Simulation : IAsyncDisposable
         }
     }
 
+
+
+
     private async Task ToggleVoiceControlAsync()
     {
         if (!_voiceSupported)
@@ -1217,4 +1152,76 @@ public partial class Simulation : IAsyncDisposable
         _simulationCancellation?.Dispose();
     }
 
+/* ====================================================================================================
+ |                                     Instrument Management                                           |
+ ===================================================================================================== */
+
+    private async Task HandleUnitClick(LandingGearUnit unit)
+    {
+        var wasUp = unit.Status == LandingGearStatusValue.UpAndLocked;
+
+        unit.Status = LandingGearStatusValue.Moving;
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(1500);
+
+        if (selectedScenarioRecord.EmergencyType == "Landing Gear Malfunction")
+        {
+            unit.Status = LandingGearStatusValue.Unsafe;
+        }
+        else
+        {
+            unit.Status = wasUp
+                ? LandingGearStatusValue.DownAndLocked
+                : LandingGearStatusValue.UpAndLocked;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+    private EngineState? GetAffectedEngine()
+    {
+        return cockpitState.Engines.FirstOrDefault(e => e.EngineFire || e.OnFire)
+            ?? cockpitState.Engines.FirstOrDefault(e => e.Number == 2)
+            ?? cockpitState.Engines.FirstOrDefault();
+    }
+    private async Task ActivateFireSuppression()
+    {
+        var engine = GetAffectedEngine();
+        if (engine is null)
+            return;
+
+        engine.FireSuppressionActivated = true;
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(1500);
+
+        if (selectedScenarioRecord.EmergencyType == "Engine Fire")
+        {
+            var fireStillActive = engine.EngineFire || engine.OnFire;
+            engine.EngineFire = fireStillActive;
+            engine.OnFire = fireStillActive;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+    private static double MoveToward(double current, double target, double maxDelta)
+    {
+        if (current < target)
+        {
+            return Math.Min(current + maxDelta, target);
+        }
+
+        return Math.Max(current - maxDelta, target);
+    }
+
+    private static double NormalizeHeading(double heading)
+    {
+        heading %= 360;
+        if (heading < 0)
+        {
+            heading += 360;
+        }
+
+        return heading;
+    }
 }

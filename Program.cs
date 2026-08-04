@@ -9,6 +9,7 @@ using AeroResponse.Hubs;
 using AeroResponse.Repositories;
 using AeroResponse.Services;
 using AeroResponse.Simulation;
+using AeroResponse.Simulation.Controls;
 using AeroResponse.Simulation.Layouts;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -241,8 +242,25 @@ builder.Services.AddScoped<
     ICockpitLayoutProvider,
     CockpitLayoutProvider>();
 
+
 builder.Services.AddSingleton<
     SimulationEngine>();
+
+builder.Services.AddSingleton<
+    CockpitControlCatalog>();
+
+builder.Services.AddSingleton<
+    VoiceCommandParser>();
+
+builder.Services.AddScoped<
+    ICockpitControlHandler,
+    StandardCockpitControlHandler>();
+
+builder.Services.AddScoped<
+    CockpitCommandService>();
+
+builder.Services.AddScoped<
+    AiInstructorService>();
 
 // =========================================================
 // BUILD APPLICATION

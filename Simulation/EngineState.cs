@@ -4,7 +4,7 @@ public class EngineState
 {
     public int Number { get; init; }
 
-    public int Power { get; set; } = 90;
+    public double Power { get; set; } = 90;
 
     public bool Running { get; set; } = true;
 

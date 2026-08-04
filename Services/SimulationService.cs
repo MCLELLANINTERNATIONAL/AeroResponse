@@ -9,25 +9,37 @@ public sealed class SimulationService(
     SimulationEngine simulationEngine,
     PerformanceScoringEngine scoringEngine,
     PerformanceDashboardService dashboardService,
+    AiInstructorService aiInstructor,
     ApplicationDbContext context)
 {
     private ScenarioRun? _currentRun;
+
     private EmergencyScenario? _currentScenario;
+
     private CockpitState? _currentState;
+
     private CockpitLayoutDefinition? _currentAircraft;
+
     private string? _currentScenarioType;
+
     private string _pilotName = "Pilot";
+
     private string _difficulty = "Intermediate";
+
     private DateTime? _emergencyTriggeredAt;
+
     private List<ScenarioProcedureStep> _expectedSteps = [];
+
     private readonly List<PilotAction> _pilotActions = [];
 
     public bool HasActiveSimulation =>
-        _currentRun.Status == "In Progress";
+        _currentRun?.Status == "In Progress";
 
-    public DateTime? EmergencyTriggeredAt => _emergencyTriggeredAt;
+    public DateTime? EmergencyTriggeredAt =>
+        _emergencyTriggeredAt;
 
-    public IReadOnlyList<PilotAction> PilotActions => _pilotActions;
+    public IReadOnlyList<PilotAction> PilotActions =>
+        _pilotActions;
 
     public CockpitState StartSimulation(
         string userId,
@@ -37,6 +49,10 @@ public sealed class SimulationService(
         IReadOnlyList<ScenarioProcedureStep> expectedSteps,
         string pilotName = "Pilot")
     {
+        ArgumentNullException.ThrowIfNull(scenario);
+        ArgumentNullException.ThrowIfNull(aircraft);
+        ArgumentNullException.ThrowIfNull(expectedSteps);
+
         _currentAircraft = aircraft;
         _currentScenario = scenario;
         _currentScenarioType = scenario.EmergencyType;
@@ -60,16 +76,24 @@ public sealed class SimulationService(
             .ToList();
 
         _pilotActions.Clear();
-        _currentState = CreateInitialState(aircraft, scenario);
+
+        _currentState =
+            CreateInitialState(
+                aircraft,
+                scenario);
 
         return _currentState;
     }
 
-    public void MarkEmergencyTriggered(DateTime? triggeredAt = null)
+    public void MarkEmergencyTriggered(
+        DateTime? triggeredAt = null)
     {
-        if (_currentRun is null || _currentScenario is null || _currentAircraft is null)
+        if (_currentRun is null ||
+            _currentScenario is null ||
+            _currentAircraft is null)
         {
-            throw new InvalidOperationException("No active simulation.");
+            throw new InvalidOperationException(
+                "No active simulation.");
         }
 
         if (_emergencyTriggeredAt.HasValue)
@@ -77,140 +101,182 @@ public sealed class SimulationService(
             return;
         }
 
-        _emergencyTriggeredAt = triggeredAt ?? DateTime.UtcNow;
-        _currentRun.StartedAt = _emergencyTriggeredAt.Value;
-        _currentState = simulationEngine.StartScenario(
-            _currentScenario.EmergencyType,
-            _currentAircraft);
+        _emergencyTriggeredAt =
+            triggeredAt ?? DateTime.UtcNow;
+
+        _currentRun.StartedAt =
+            _emergencyTriggeredAt.Value;
+
+        _currentState =
+            simulationEngine.StartScenario(
+                _currentScenario.EmergencyType,
+                _currentAircraft);
     }
 
+    /// <summary>
+    /// Records a normal pilot action and then lets the existing
+    /// runtime scenario class update the cockpit state.
+    /// </summary>
     public CockpitState SubmitPilotAction(
         string actionName,
         int selectedStepOrder)
     {
         EnsureActiveSimulation();
+        EnsureEmergencyTriggered();
 
-        if (!_emergencyTriggeredAt.HasValue)
-        {
-            throw new InvalidOperationException(
-                "The emergency has not been triggered yet.");
-        }
+        RecordActionOnly(
+            actionName,
+            selectedStepOrder);
 
-        var actionNumber = _pilotActions.Count + 1;
-        var matchingStep = _expectedSteps.FirstOrDefault(step =>
-            string.Equals(
-                step.CorrectAction,
-                actionName,
-                StringComparison.OrdinalIgnoreCase));
-
-        var nextExpectedStep = _expectedSteps
-            .Where(step => !_pilotActions.Any(action =>
-                action.WasCorrect &&
-                action.ExpectedStepOrder == step.StepOrder))
-            .OrderBy(step => step.StepOrder)
-            .FirstOrDefault();
-
-        var wasCorrect = matchingStep is not null;
-        var wasInCorrectOrder = wasCorrect &&
-                                nextExpectedStep?.StepOrder == matchingStep!.StepOrder &&
-                                selectedStepOrder == matchingStep.StepOrder;
-
-        var responseSeconds = Math.Max(
-            0,
-            (int)Math.Round(
-                (DateTime.UtcNow - _emergencyTriggeredAt.Value)
-                .TotalSeconds));
-
-        var action = new PilotAction
-        {
-            ActionName = actionName,
-            StepOrder = actionNumber,
-            ExpectedStepOrder = matchingStep?.StepOrder,
-            WasCorrect = wasCorrect,
-            WasInCorrectOrder = wasInCorrectOrder,
-            WasWithinTimeLimit = matchingStep is not null &&
-                                responseSeconds <= matchingStep.MaxResponseSeconds,
-            IsSafetyCritical = matchingStep?.IsSafetyCritical ?? false,
-            ResponseTimeSeconds = responseSeconds,
-            PerformedAt = DateTime.UtcNow
-        };
-
-        _pilotActions.Add(action);
-
-        _currentState = simulationEngine.ApplyAction(
-            _currentScenarioType!,
-            _currentState!,
-            actionName);
+        _currentState =
+            simulationEngine.ApplyAction(
+                _currentScenarioType!,
+                _currentState!,
+                actionName);
 
         return _currentState;
     }
 
-    public bool IsTimedOut(DateTime? now = null)
+    /// <summary>
+    /// Records an action when another service has already updated
+    /// the cockpit state, such as a dynamic voice command.
+    /// This prevents SimulationEngine.ApplyAction from running
+    /// against the same action a second time.
+    /// </summary>
+
+    public CockpitState RecordPilotAction(
+        string actionName,
+        int selectedStepOrder,
+        CockpitState externallyUpdatedState)
     {
-        if (_currentScenario is null || !_emergencyTriggeredAt.HasValue)
+        ArgumentNullException.ThrowIfNull(
+            externallyUpdatedState);
+
+        EnsureActiveSimulation();
+        EnsureEmergencyTriggered();
+
+        _currentState =
+            externallyUpdatedState;
+
+        RecordActionOnly(
+            actionName,
+            selectedStepOrder);
+
+        return _currentState;
+    }
+
+    public bool IsTimedOut(
+        DateTime? now = null)
+    {
+        if (_currentScenario is null ||
+            !_emergencyTriggeredAt.HasValue)
         {
             return false;
         }
 
-        return (now ?? DateTime.UtcNow) - _emergencyTriggeredAt.Value >=
-            TimeSpan.FromSeconds(_currentScenario.TimeLimitSeconds);
+        var currentTime =
+            now ?? DateTime.UtcNow;
+
+        return currentTime -
+            _emergencyTriggeredAt.Value >=
+            TimeSpan.FromSeconds(
+                _currentScenario.TimeLimitSeconds);
     }
 
-    public int GetRemainingSeconds(DateTime? now = null)
+    public int GetRemainingSeconds(
+        DateTime? now = null)
     {
-        if (_currentScenario is null || !_emergencyTriggeredAt.HasValue)
+        if (_currentScenario is null ||
+            !_emergencyTriggeredAt.HasValue)
         {
-            return _currentScenario?.TimeLimitSeconds ?? 0;
+            return _currentScenario?
+                .TimeLimitSeconds ?? 0;
         }
 
-        var elapsed = (int)Math.Floor(
-            ((now ?? DateTime.UtcNow) - _emergencyTriggeredAt.Value)
-            .TotalSeconds);
+        var currentTime =
+            now ?? DateTime.UtcNow;
 
-        return Math.Max(0, _currentScenario.TimeLimitSeconds - elapsed);
+        var elapsedSeconds =
+            (int)Math.Floor(
+                (currentTime -
+                _emergencyTriggeredAt.Value)
+                .TotalSeconds);
+
+        return Math.Max(
+            0,
+            _currentScenario.TimeLimitSeconds -
+            elapsedSeconds);
     }
 
-    public async Task<SimulationReport> CompleteAndSaveSimulationAsync(
-        string? completionReason = null)
+    public async Task<SimulationReport>
+        CompleteAndSaveSimulationAsync(
+            string? completionReason = null)
     {
         EnsureActiveSimulation();
 
-        _currentRun!.CompletedAt = DateTime.UtcNow;
-        _currentRun.Status = "Completed";
-        _currentRun.Outcome = completionReason ?? string.Empty;
+        _currentRun!.CompletedAt =
+            DateTime.UtcNow;
 
-        context.ScenarioRuns.Add(_currentRun);
+        _currentRun.Status =
+            "Completed";
+
+        _currentRun.Outcome =
+            completionReason ?? string.Empty;
+
+        context.ScenarioRuns.Add(
+            _currentRun);
+
         await context.SaveChangesAsync();
 
         foreach (var action in _pilotActions)
         {
-            action.ScenarioRunId = _currentRun.Id;
+            action.ScenarioRunId =
+                _currentRun.Id;
         }
 
         if (_pilotActions.Count > 0)
         {
-            context.PilotActions.AddRange(_pilotActions);
+            context.PilotActions.AddRange(
+                _pilotActions);
+
             await context.SaveChangesAsync();
         }
 
-        var report = scoringEngine.GenerateReport(
-            _currentRun,
-            _currentScenario!,
-            _pilotActions,
-            _expectedSteps);
+        var report =
+            scoringEngine.GenerateReport(
+                _currentRun,
+                _currentScenario!,
+                _pilotActions,
+                _expectedSteps);
 
         Enrich(report);
 
-        if (!string.IsNullOrWhiteSpace(completionReason))
+        report.AiFeedback =
+            aiInstructor.GenerateFinalComment(
+                report,
+                _pilotActions);
+
+        if (!string.IsNullOrWhiteSpace(
+                completionReason))
         {
-            report.Feedback = $"{report.Feedback} {completionReason}".Trim();
+            report.Feedback =
+                $"{report.Feedback} " +
+                $"{completionReason}";
+
+            report.Feedback =
+                report.Feedback.Trim();
         }
 
-        return await dashboardService.SaveCompletedPracticeAsync(report);
+        return await dashboardService
+            .SaveCompletedPracticeAsync(
+                report);
     }
 
-    public IReadOnlyList<ScenarioProcedureStep> GetCurrentChecklist() =>
-        _expectedSteps;
+    public IReadOnlyList<ScenarioProcedureStep>
+        GetCurrentChecklist()
+    {
+        return _expectedSteps;
+    }
 
     private CockpitState CreateInitialState(
         CockpitLayoutDefinition aircraft,
@@ -221,8 +287,12 @@ public sealed class SimulationService(
                 "Immediate",
                 StringComparison.OrdinalIgnoreCase))
         {
-            _emergencyTriggeredAt = DateTime.UtcNow;
-            _currentRun!.StartedAt = _emergencyTriggeredAt.Value;
+            _emergencyTriggeredAt =
+                DateTime.UtcNow;
+
+            _currentRun!.StartedAt =
+                _emergencyTriggeredAt.Value;
+
             return simulationEngine.StartScenario(
                 scenario.EmergencyType,
                 aircraft);
@@ -231,14 +301,111 @@ public sealed class SimulationService(
         return new CockpitState();
     }
 
-    private void Enrich(SimulationReport report)
+    private void RecordActionOnly(
+        string actionName,
+        int selectedStepOrder)
     {
-        report.PilotName = _pilotName;
-        report.AircraftName = _currentRun!.AircraftName;
-        report.ScenarioName = _currentRun.ScenarioName;
-        report.Difficulty = _difficulty;
-        report.AiFeedback =
-            PerformanceDashboardService.GenerateAiStyleFeedback(report);
+        var actionNumber =
+            _pilotActions.Count + 1;
+
+        var matchingStep =
+            _expectedSteps.FirstOrDefault(
+                step =>
+                    string.Equals(
+                        step.CorrectAction,
+                        actionName,
+                        StringComparison
+                            .OrdinalIgnoreCase));
+
+        var nextExpectedStep =
+            _expectedSteps
+                .Where(step =>
+                    !_pilotActions.Any(
+                        action =>
+                            action.WasCorrect &&
+                            action.ExpectedStepOrder ==
+                            step.StepOrder))
+                .OrderBy(step =>
+                    step.StepOrder)
+                .FirstOrDefault();
+
+        var wasCorrect =
+            matchingStep is not null;
+
+        var wasInCorrectOrder =
+            wasCorrect &&
+            nextExpectedStep?.StepOrder ==
+            matchingStep!.StepOrder &&
+            selectedStepOrder ==
+            matchingStep.StepOrder;
+
+        var responseSeconds =
+            Math.Max(
+                0,
+                (int)Math.Round(
+                    (DateTime.UtcNow -
+                    _emergencyTriggeredAt!.Value)
+                    .TotalSeconds));
+
+        _pilotActions.Add(
+            new PilotAction
+            {
+                ActionName =
+                    actionName,
+
+                StepOrder =
+                    actionNumber,
+
+                ExpectedStepOrder =
+                    matchingStep?.StepOrder,
+
+                WasCorrect =
+                    wasCorrect,
+
+                WasInCorrectOrder =
+                    wasInCorrectOrder,
+
+                WasWithinTimeLimit =
+                    matchingStep is not null &&
+                    responseSeconds <=
+                    matchingStep
+                        .MaxResponseSeconds,
+
+                IsSafetyCritical =
+                    matchingStep?
+                        .IsSafetyCritical ?? false,
+
+                ResponseTimeSeconds =
+                    responseSeconds,
+
+                PerformedAt =
+                    DateTime.UtcNow
+            });
+    }
+
+    private void Enrich(
+        SimulationReport report)
+    {
+        report.PilotName =
+            _pilotName;
+
+        report.AircraftName =
+            _currentRun!.AircraftName;
+
+        report.ScenarioName =
+            _currentRun.ScenarioName;
+
+        report.Difficulty =
+            _difficulty;
+    }
+
+    private void EnsureEmergencyTriggered()
+    {
+        if (!_emergencyTriggeredAt.HasValue)
+        {
+            throw new InvalidOperationException(
+                "The emergency has not been triggered yet.");
+        }
     }
 
     private void EnsureActiveSimulation()
@@ -247,10 +414,12 @@ public sealed class SimulationService(
             _currentScenario is null ||
             _currentState is null ||
             _currentAircraft is null ||
-            string.IsNullOrWhiteSpace(_currentScenarioType) ||
+            string.IsNullOrWhiteSpace(
+                _currentScenarioType) ||
             _currentRun.Status != "In Progress")
         {
-            throw new InvalidOperationException("No active simulation.");
+            throw new InvalidOperationException(
+                "No active simulation.");
         }
     }
 }

@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore.Storage;
-
 namespace AeroResponse.Simulation;
 
 public class CockpitState
@@ -29,4 +27,7 @@ public class CockpitState
     public string AlertMessage { get; set; } = "Systems Normal";
 
     public double FuelPercentage { get; set; } = 100;
+
+    public Dictionary<string, object?> DynamicValues { get; set; } =
+    new(StringComparer.OrdinalIgnoreCase);
 }

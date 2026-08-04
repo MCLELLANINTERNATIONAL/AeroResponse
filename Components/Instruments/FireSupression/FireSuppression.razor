@@ -1,0 +1,32 @@
+@namespace AeroResponse.Components.Instruments.FireSuppression
+
+<div class="cockpit-control fire-suppression-control">
+
+    <h3>Fire Suppression</h3>
+
+    <div class="fire-status">
+        @if (State.FireSuppressionActivated)
+        {
+            <strong>
+                SUPPRESSION ACTIVE
+            </strong>
+        }
+        else
+        {
+            <span>
+                System Armed
+            </span>
+        }
+    </div>
+
+    <button type="button"
+            disabled="@State.FireSuppressionActivated"
+            @onclick="ActivateSuppression">
+
+        @(State.FireSuppressionActivated
+            ? "Activated"
+            : "Activate Fire Suppression")
+
+    </button>
+
+</div>

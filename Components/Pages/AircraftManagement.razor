@@ -125,10 +125,58 @@
                             <label for="cruise-speed">Cruise speed</label>
                             <InputNumber id="cruise-speed" class="form-control" @bind-Value="selectedAircraft.CruiseSpeed" />
                         </div>
-
+                        
                         <div class="form-field">
                             <label for="engine-count">Engine count</label>
                             <InputNumber id="engine-count" class="form-control" @bind-Value="selectedAircraft.EngineCount" />
+                            <label for="brake-count">Brake count</label>
+                            <InputNumber id="brake-count" class="form-control" @bind-Value="selectedAircraft.BrakeCount" />
+                            <label for="FuelTanks">Fuel tanks</label>
+                            <InputNumber id="FuelTanks" class="form-control" @bind-Value="selectedAircraft.FuelTankCount" />
+                        </div>
+
+                        <div class="form-field">
+                            <div class="form-field">
+                                <label for="landing-gear-kind">Landing Gear Configuration</label>
+                                <InputSelect id="landing-gear-kind"
+                                            class="form-select"
+                                            @bind-Value="selectedAircraft.LandingGearConfig.Kind"
+                                            @bind-Value:after="OnLandingGearKindChanged">
+                                    <option value="">Select a landing gear configuration</option>
+                                    @foreach (var kind in Enum.GetValues<LandingGearKind>())
+                                    {
+                                        <option value="@kind">@kind</option>
+                                    }
+                                </InputSelect>
+                                <p>Units: @(selectedAircraft.LandingGearConfig.Units?.Count ?? 0)</p>
+                                <button type="button" class="btn btn-outline-secondary" @onclick="AddLandingGearUnit">
+                                    Add landing gear unit
+                                </button>
+                            </div>
+
+                            @if (selectedAircraft.LandingGearConfig.Kind != default)
+                            {
+                                <div class="form-field">
+                                    <label>Landing Gear Units</label>
+
+                                    @foreach (var unit in selectedAircraft.LandingGearConfig.Units.OrderBy(u => u.Order))
+                                    {
+                                        <div class="d-flex gap-2 mb-2 align-items-center">
+                                            <InputText class="form-control" @bind-Value="unit.Label" placeholder="Label" />
+                                            <InputSelect class="form-select" @bind-Value="unit.Position">
+                                                @foreach (var pos in Enum.GetValues<LandingGearPosition>())
+                                                {
+                                                    <option value="@pos">@pos</option>
+                                                }
+                                            </InputSelect>
+                                        </div>
+                                    }
+
+                                    <button type="button" class="btn btn-outline-secondary" @onclick="AddLandingGearUnit">
+                                        Add landing gear unit
+                                    </button>
+                                </div>
+                            }
                         </div>
                     </div>
 
@@ -231,8 +279,17 @@
                                                 <article class="@GetInstrumentEditorClass(instrument)">
                                                     <div class="instrument-selection-row">
                                                         <label class="instrument-checkbox">
-                                                            <input type="checkbox" @bind="instrument.IsSelected" @bind:after="() => InstrumentSelectionChanged(instrument)" />
-                                                            <span>@GetInstrumentDisplayName(instrument.Type)</span>
+                                                            <input type="checkbox"
+                                                                disabled="@IsRequiredInstrument(instrument.Type)"
+                                                                checked="@instrument.IsSelected"
+                                                                @onchange="e => instrument.IsSelected = (bool)e.Value!" />
+                                                            <span>
+                                                                @GetInstrumentDisplayName(instrument.Type)
+                                                                @if (IsRequiredInstrument(instrument.Type))
+                                                                {
+                                                                    <small>(required)</small>
+                                                                }
+                                                            </span>
                                                         </label>
                                                     </div>
 

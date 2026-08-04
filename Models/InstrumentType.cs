@@ -16,5 +16,14 @@ public enum InstrumentType
     RadioStack,
     NavigationDisplay,
     PrimaryFlightDisplay,
-    EngineDisplay
+    EngineDisplay,
+    Rudder,
+    Throttle,
+    Brake,
+    FireSuppression,
+    Tachometer,
+    OilPressureGauge,
+    OilTemperatureGauge,
+    FuelQuantityGauge,
+    AmmeterOrVacuumGauge
 }

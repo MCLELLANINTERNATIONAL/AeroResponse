@@ -14,6 +14,10 @@ public class AircraftService(AircraftRepository repository)
     {
         return repository.GetByIdAsync(id);
     }
+    public Task<Aircraft?> GetByIdWithLandingGearAsync(int id)
+    {
+        return repository.GetByIdWithLandingGearAsync(id);
+    }
 
     public Task<Aircraft> CreateAsync(Aircraft aircraft)
     {

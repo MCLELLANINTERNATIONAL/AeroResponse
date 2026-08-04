@@ -1,0 +1,39 @@
+@using AeroResponse.Models
+
+<svg viewBox="0 0 300 120" class="landing-gear-svg" role="img" aria-label="Landing gear status">
+    <g transform="@GetTransform(Unit.Position)"
+       class="gear-hitarea"
+       @onclick="HandleClick">
+        <rect x="24" y="48" width="12" height="18" class="gear-strut" />
+        <circle cx="30" cy="30" r="18" class="@GetCircleClass(Unit.Status)" />
+        <text x="30" y="77" text-anchor="middle" class="gear-label">
+            @Unit.Label
+        </text>
+    </g>
+</svg>
+
+@code {
+    [Parameter] public LandingGearUnit Unit { get; set; } = default!;
+    [Parameter] public EventCallback<LandingGearUnit> OnClick { get; set; }
+
+    private Task HandleClick() => OnClick.InvokeAsync(Unit);
+
+    private static string GetCircleClass(LandingGearStatusValue status) => status switch
+    {
+        LandingGearStatusValue.DownAndLocked => "gear-circle-normal",
+        LandingGearStatusValue.Moving => "gear-circle-caution",
+        LandingGearStatusValue.Unsafe => "gear-circle-warning",
+        LandingGearStatusValue.Unknown => "gear-circle-warning",
+        LandingGearStatusValue.UpAndLocked => "gear-circle-up",
+        _ => "gear-circle-warning"
+    };
+
+    private static string GetTransform(LandingGearPosition position) => position switch
+    {
+        LandingGearPosition.Nose => "translate(120, 10)",
+        LandingGearPosition.LeftMain => "translate(50, 35)",
+        LandingGearPosition.RightMain => "translate(190, 35)",
+        LandingGearPosition.Tail => "translate(120, 70)",
+        _ => "translate(120, 35)"
+    };
+}

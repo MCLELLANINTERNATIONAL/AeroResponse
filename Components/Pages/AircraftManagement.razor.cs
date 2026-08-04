@@ -5,10 +5,13 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using CockpitLayoutModel = AeroResponse.Models.CockpitLayout;
 
+
 namespace AeroResponse.Components.Pages;
 
 public partial class AircraftManagement : ComponentBase
 {
+    [Inject]
+    private ILogger<AircraftManagement> Logger { get; set; } = default!;
     [Inject]
     private AircraftService AircraftService { get; set; } = default!;
 
@@ -138,7 +141,7 @@ public partial class AircraftManagement : ComponentBase
             return;
         }
 
-        var aircraft = await AircraftService.GetByIdAsync(aircraftId);
+        var aircraft = await AircraftService.GetByIdWithLandingGearAsync(aircraftId);
 
         if (aircraft is null)
         {
@@ -157,6 +160,81 @@ public partial class AircraftManagement : ComponentBase
         statusMessage = null;
     }
 
+    private void AddLandingGearUnit()
+    {
+        selectedAircraft.LandingGearConfig.Units.Add(new LandingGearUnit
+        {
+            Id = selectedAircraft.LandingGearConfig.Units.Count + 1,
+            Label = $"Gear {selectedAircraft.LandingGearConfig.Units.Count + 1}",
+            Position = LandingGearPosition.Custom,
+            Order = selectedAircraft.LandingGearConfig.Units.Count
+        });
+    }
+    private void OnLandingGearKindChanged()
+    {
+        var config = selectedAircraft.LandingGearConfig;
+        config.Units.Clear();
+
+        switch (config.Kind)
+        {
+            case LandingGearKind.FixedTricycle:
+            case LandingGearKind.RetractableTricycle:
+                config.Units.AddRange(new[]
+                {
+                    new LandingGearUnit { Id = 1, Label = "N", Position = LandingGearPosition.Nose, Order = 0 },
+                    new LandingGearUnit { Id = 2, Label = "L", Position = LandingGearPosition.LeftMain, Order = 1 },
+                    new LandingGearUnit { Id = 3, Label = "R", Position = LandingGearPosition.RightMain, Order = 2 }
+                });
+                break;
+
+            case LandingGearKind.Tailwheel:
+                config.Units.AddRange(new[]
+                {
+                    new LandingGearUnit { Id = 1, Label = "L", Position = LandingGearPosition.LeftMain, Order = 0 },
+                    new LandingGearUnit { Id = 2, Label = "R", Position = LandingGearPosition.RightMain, Order = 1 },
+                    new LandingGearUnit { Id = 3, Label = "T", Position = LandingGearPosition.Tail, Order = 2 }
+                });
+                break;
+
+            case LandingGearKind.Tandem:
+                config.Units.AddRange(new[]
+                {
+                    new LandingGearUnit { Id = 1, Label = "F", Position = LandingGearPosition.Nose, Order = 0 },
+                    new LandingGearUnit { Id = 2, Label = "A", Position = LandingGearPosition.Tail, Order = 1 }
+                });
+                break;
+
+            case LandingGearKind.MultiBogey:
+                config.Units.AddRange(new[]
+                {
+                    new LandingGearUnit { Id = 1, Label = "L1", Position = LandingGearPosition.LeftMain, Order = 0 },
+                    new LandingGearUnit { Id = 2, Label = "L2", Position = LandingGearPosition.LeftMain, Order = 1 },
+                    new LandingGearUnit { Id = 3, Label = "R1", Position = LandingGearPosition.RightMain, Order = 2 },
+                    new LandingGearUnit { Id = 4, Label = "R2", Position = LandingGearPosition.RightMain, Order = 3 }
+                });
+                break;
+
+            case LandingGearKind.Floats:
+                config.Units.AddRange(new[]
+                {
+                    new LandingGearUnit { Id = 1, Label = "L Float", Position = LandingGearPosition.LeftMain, Order = 0 },
+                    new LandingGearUnit { Id = 2, Label = "R Float", Position = LandingGearPosition.RightMain, Order = 1 }
+                });
+                break;
+
+            case LandingGearKind.Skis:
+                config.Units.AddRange(new[]
+                {
+                    new LandingGearUnit { Id = 1, Label = "L Ski", Position = LandingGearPosition.LeftMain, Order = 0 },
+                    new LandingGearUnit { Id = 2, Label = "R Ski", Position = LandingGearPosition.RightMain, Order = 1 }
+                });
+                break;
+
+            default:
+                break;
+        }
+    }
+
     private async Task SaveAircraftAsync(EditContext editContext)
     {
         if (string.IsNullOrWhiteSpace(selectedAircraft.CockpitLayoutKey))
@@ -173,6 +251,13 @@ public partial class AircraftManagement : ComponentBase
 
         isSaving = true;
         statusMessage = null;
+
+        Logger.LogInformation(
+            "Saving aircraft {AircraftId} {Name} with gear kind {Kind} and {UnitCount} units",
+            selectedAircraft.Id,
+            selectedAircraft.Name,
+            selectedAircraft.LandingGearConfig.Kind,
+            selectedAircraft.LandingGearConfig.Units.Count);
 
         try
         {
@@ -269,6 +354,8 @@ public partial class AircraftManagement : ComponentBase
         return new Aircraft
         {
             EngineCount = 1,
+            FuelTankCount = 2,
+            BrakeCount = 2,
             IsActive = true
         };
     }
@@ -426,6 +513,23 @@ public partial class AircraftManagement : ComponentBase
         instrument.GridColumn = 1;
     }
 
+// Required Instruements all Aircraft must have therefore cannot be disabled in the layout editor | Big 6 Display, Oil Gauges, Fuel Gauge, Eletrical Load, and Tachometer
+    private static bool IsRequiredInstrument(InstrumentType type)
+    {
+        return type is
+            InstrumentType.AirspeedIndicator or
+            InstrumentType.ArtificialHorizon or
+            InstrumentType.Altimeter or
+            InstrumentType.TurnCoordinator or
+            InstrumentType.HeadingIndicator or
+            InstrumentType.VerticalSpeedIndicator or
+            InstrumentType.Tachometer or
+            InstrumentType.OilPressureGauge or
+            InstrumentType.OilTemperatureGauge or
+            InstrumentType.FuelQuantityGauge or
+            InstrumentType.AmmeterOrVacuumGauge;
+    }
+
     private static IEnumerable<(int Row, int Column)> GetOccupiedCells(InstrumentPlacementEditor instrument)
     {
         for (var row = instrument.GridRow; row < instrument.GridRow + instrument.RowSpan; row++)
@@ -440,6 +544,15 @@ public partial class AircraftManagement : ComponentBase
     private bool ValidateLayoutEditor()
     {
         layoutEditorError = null;
+
+        var requiredInstruments =
+            new[]
+            {
+                InstrumentType.Rudder,
+                InstrumentType.Throttle,
+                InstrumentType.Brake,
+                InstrumentType.FireSuppression
+            };
 
         if (string.IsNullOrWhiteSpace(layoutEditor.Name))
         {
@@ -495,6 +608,17 @@ public partial class AircraftManagement : ComponentBase
                 }
 
                 occupiedCells[cell] = instrument.Type;
+            }
+        }
+
+        foreach (var required in requiredInstruments)
+        {
+            if (!layoutEditor.Instruments.Any(
+                    instrument =>
+                        instrument.Type == required))
+            {
+                layoutEditorError = $"The cockpit layout must contain {GetInstrumentDisplayName(required)}.";
+                return false;
             }
         }
 
@@ -795,7 +919,6 @@ public partial class AircraftManagement : ComponentBase
             isDeletingLayout = false;
         }
     }
-
     private static CockpitLayoutDefinition CloneLayoutDefinition(CockpitLayoutDefinition layout)
     {
         return new CockpitLayoutDefinition
@@ -961,11 +1084,16 @@ public partial class AircraftManagement : ComponentBase
             Name = string.Empty,
             Rows = 2,
             Columns = 3,
-            Instruments = Enum.GetValues<InstrumentType>()
+
+            Instruments = Enum
+                .GetValues<InstrumentType>()
                 .Select(type => new InstrumentPlacementEditor
                 {
                     Type = type,
-                    IsSelected = false,
+
+                    IsSelected =
+                        IsRequiredInstrument(type),
+
                     GridRow = 1,
                     GridColumn = 1,
                     RowSpan = 1,

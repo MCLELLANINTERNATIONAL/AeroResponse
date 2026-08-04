@@ -3,6 +3,7 @@ using System;
 using AeroResponse.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AeroResponse.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260804005852_AddAircraftLandingGear")]
+    partial class AddAircraftLandingGear
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -130,6 +133,9 @@ namespace AeroResponse.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kind")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Manufacturer")
@@ -519,8 +525,6 @@ namespace AeroResponse.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EmergencyScenarioId", "AircraftType", "StepOrder");
-
                     b.ToTable("ScenarioProcedureSteps");
                 });
 
@@ -815,74 +819,6 @@ namespace AeroResponse.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("AeroResponse.Models.ScenarioProcedureStep", b =>
-                {
-                    b.HasOne("AeroResponse.Models.EmergencyScenario", "EmergencyScenario")
-                        .WithMany("ProcedureSteps")
-                        .HasForeignKey("EmergencyScenarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("EmergencyScenario");
-                });
-
-            modelBuilder.Entity("AeroResponse.Models.Aircraft", b =>
-                {
-                    b.OwnsOne("AeroResponse.Models.AircraftLandingGearConfig", "LandingGearConfig", b1 =>
-                        {
-                            b1.Property<int>("AircraftId")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Kind")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("LandingGearKind");
-
-                            b1.HasKey("AircraftId");
-
-                            b1.ToTable("Aircraft");
-
-                            b1.WithOwner()
-                                .HasForeignKey("AircraftId");
-
-                            b1.OwnsMany("AeroResponse.Models.LandingGearUnit", "Units", b2 =>
-                                {
-                                    b2.Property<int>("Id")
-                                        .ValueGeneratedOnAdd()
-                                        .HasColumnType("INTEGER");
-
-                                    b2.Property<int>("AircraftId")
-                                        .HasColumnType("INTEGER");
-
-                                    b2.Property<string>("Label")
-                                        .IsRequired()
-                                        .HasColumnType("TEXT");
-
-                                    b2.Property<int>("Order")
-                                        .HasColumnType("INTEGER");
-
-                                    b2.Property<int>("Position")
-                                        .HasColumnType("INTEGER");
-
-                                    b2.Property<int>("Status")
-                                        .HasColumnType("INTEGER");
-
-                                    b2.HasKey("Id");
-
-                                    b2.HasIndex("AircraftId");
-
-                                    b2.ToTable("LandingGearUnit");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("AircraftId");
-                                });
-
-                            b1.Navigation("Units");
-                        });
-
-                    b.Navigation("LandingGearConfig")
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -983,11 +919,6 @@ namespace AeroResponse.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("AeroResponse.Models.EmergencyScenario", b =>
-                {
-                    b.Navigation("ProcedureSteps");
                 });
 #pragma warning restore 612, 618
         }

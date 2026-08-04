@@ -1,0 +1,45 @@
+<svg viewBox="0 0 240 240" class="tachometer">
+    <circle cx="120" cy="120" r="102" class="tachometer-case" />
+    <circle cx="120" cy="120" r="86" class="tachometer-face" />
+
+    @for (var i = 0; i < 11; i++)
+    {
+        var angle = -130 + (i * 26);
+        <line x1="120" y1="40"
+              x2="120" y2="56"
+              class="tachometer-tick"
+              transform="rotate(@angle 120 120)" />
+    }
+
+    <line x1="120" y1="120"
+          x2="120" y2="54"
+          class="tachometer-needle"
+          transform="@NeedleTransform" />
+
+    <circle cx="120" cy="120" r="10" class="tachometer-hub" />
+
+    <text x="120" y="174" text-anchor="middle" class="tachometer-value">
+        @Value.ToString("N0")
+    </text>
+
+    <text x="120" y="192" text-anchor="middle" class="tachometer-unit">
+        RPM
+    </text>
+</svg>
+
+@code {
+    [Parameter] public double Value { get; set; }
+    [Parameter] public double Minimum { get; set; } = 0;
+    [Parameter] public double Maximum { get; set; } = 3000;
+
+    private string NeedleTransform
+    {
+        get
+        {
+            var clamped = Math.Clamp(Value, Minimum, Maximum);
+            var percent = (clamped - Minimum) / (Maximum - Minimum);
+            var angle = -130 + (percent * 260);
+            return $"rotate({angle} 120 120)";
+        }
+    }
+}

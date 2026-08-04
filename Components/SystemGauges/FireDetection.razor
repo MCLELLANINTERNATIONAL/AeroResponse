@@ -1,0 +1,36 @@
+<label for="fire-detection" class="form-label">
+    @this.Label
+</label>
+<svg viewBox="0 0 300 120" class="fire-detection-svg" role="img" aria-label="Fire detection status">
+    <g class="fire-hitarea">
+        <circle cx="150" cy="40" r="24" class="@GetCircleClass(this.Status)" />
+        <text x="150" y="82" text-anchor="middle" class="fire-subtext">
+            @GetStatusText(this.Status)
+        </text>
+    </g>
+</svg>
+
+@code {
+    [Parameter] public FireDetectionStatus Status { get; set; } = FireDetectionStatus.Normal;
+    [Parameter] public string Label { get; set; } = "Fire Detection";
+
+    private static string GetCircleClass(FireDetectionStatus status) => status switch
+    {
+        FireDetectionStatus.Normal => "fire-circle normal",
+        FireDetectionStatus.Caution => "fire-circle caution",
+        FireDetectionStatus.Warning => "fire-circle warning",
+        FireDetectionStatus.Suppressed => "fire-circle suppressed",
+        FireDetectionStatus.Extinguished => "fire-circle extinguished",
+        _ => "fire-circle warning"
+    };
+
+    private static string GetStatusText(FireDetectionStatus status) => status switch
+    {
+        FireDetectionStatus.Normal => "NORMAL",
+        FireDetectionStatus.Caution => "SMOKE",
+        FireDetectionStatus.Warning => "FIRE",
+        FireDetectionStatus.Suppressed => "SUPPRESSING",
+        FireDetectionStatus.Extinguished => "OUT",
+        _ => "UNKNOWN"
+    };
+}

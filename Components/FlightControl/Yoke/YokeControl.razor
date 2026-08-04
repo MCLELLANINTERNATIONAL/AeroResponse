@@ -1,0 +1,94 @@
+@using Microsoft.AspNetCore.Components.Web
+
+<svg viewBox="0 0 260 260"
+     class="yoke-control"
+     style="touch-action: none;"
+     @onpointerdown="OnPointerDown"
+     @onpointermove="OnPointerMove"
+     @onpointerup="OnPointerUp"
+     @onpointercancel="OnPointerUp">
+
+    <g transform="@WheelTransform">
+        <path d="M 70 75
+                 Q 130 25 190 75"
+              class="yoke-rim" />
+
+        <path d="M 70 75
+                 Q 70 120 92 145
+                 L 102 135
+                 Q 82 115 82 75"
+              class="yoke-arm" />
+
+        <path d="M 190 75
+                 Q 190 115 170 135
+                 L 178 145
+                 Q 200 120 200 75"
+              class="yoke-arm" />
+
+        <rect x="112" y="82" width="36" height="28" rx="8" class="yoke-hub" />
+
+        <line x1="130" y1="110" x2="130" y2="182" class="yoke-column" />
+
+        <circle cx="130" cy="145" r="10" class="yoke-button" />
+    </g>
+</svg>
+
+@code {
+    [Parameter] public double Pitch { get; set; }
+    [Parameter] public EventCallback<double> PitchChanged { get; set; }
+
+    [Parameter] public double Bank { get; set; }
+    [Parameter] public EventCallback<double> BankChanged { get; set; }
+
+    private bool _dragging;
+    private double _startX;
+    private double _startY;
+    private double _startPitch;
+    private double _startBank;
+
+    private string WheelTransform =>
+        $"rotate({Bank * 0.6} 120 120)";
+
+    private string HandleTransform =>
+        $"translate({Bank * 0.2} {-Pitch * 0.8})";
+
+    private void OnPointerDown(PointerEventArgs e)
+    {
+        _dragging = true;
+        _startX = e.ClientX;
+        _startY = e.ClientY;
+        _startPitch = Pitch;
+        _startBank = Bank;
+    }
+
+    private async Task OnPointerMove(PointerEventArgs e)
+    {
+        if (!_dragging)
+        {
+            return;
+        }
+
+        var dx = e.ClientX - _startX;
+        var dy = e.ClientY - _startY;
+
+        var nextBank = Math.Clamp(_startBank + dx * 0.5, -90, 90);
+        var nextPitch = Math.Clamp(_startPitch - dy * 0.25, -30, 30);
+
+        if (nextBank != Bank)
+        {
+            Bank = nextBank;
+            await BankChanged.InvokeAsync(Bank);
+        }
+
+        if (nextPitch != Pitch)
+        {
+            Pitch = nextPitch;
+            await PitchChanged.InvokeAsync(Pitch);
+        }
+    }
+
+    private void OnPointerUp(PointerEventArgs _)
+    {
+        _dragging = false;
+    }
+}

@@ -1,0 +1,56 @@
+.rudder-control {
+    width: 100%;
+    max-width: 420px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    cursor: ew-resize;
+    user-select: none;
+    touch-action: none;
+}
+
+.rudder-base {
+    fill: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+    fill: #111827;
+    stroke: #94a3b8;
+    stroke-width: 4;
+    filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.35));
+}
+
+.rudder-pedal {
+    stroke: #e5e7eb;
+    stroke-width: 3;
+}
+
+.rudder-pedal.left {
+    fill: #334155;
+}
+
+.rudder-pedal.right {
+    fill: #475569;
+}
+
+.toe-brake {
+    stroke: #cbd5e1;
+    stroke-width: 2;
+}
+
+.toe-brake.left {
+    fill: #7c2d12;
+}
+
+.toe-brake.right {
+    fill: #7f1d1d;
+}
+
+.rudder-link {
+    fill: #0f172a;
+    stroke: #cbd5e1;
+    stroke-width: 2;
+}
+
+.rudder-centerline {
+    stroke: rgba(255, 255, 255, 0.12);
+    stroke-width: 2;
+    stroke-dasharray: 6 6;
+}

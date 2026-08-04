@@ -23,10 +23,29 @@ public class CockpitState
     public string FlightPhase { get; set; } = "Cruise";
 
     public List<EngineState> Engines { get; set; } = [];
+    public List<BrakePressureState> Brakes { get; set; } = [];
+    public double BrakePressure
+    {
+        get
+        {
+            var totalPressure = 0.0;
+            foreach (var brake in Brakes)
+            {
+                totalPressure += brake.Pressure;
+            }
+            return totalPressure;
+        }
+    }
+    public List<FuelState> FuelTanks { get; set; } = [];
 
     public string AlertMessage { get; set; } = "Systems Normal";
 
     public double FuelPercentage { get; set; } = 100;
+    public double OilPressure { get; set; } = 45;
+    public double OilTemperature { get; set; } = 180;
+    public double RudderPosition { get; set; } = 0;
+    public bool FireSuppressionActivated { get; set; } = false;
+    public bool FireDetected { get; set; } = false;
 
     public Dictionary<string, object?> DynamicValues { get; set; } =
     new(StringComparer.OrdinalIgnoreCase);

@@ -1,0 +1,104 @@
+@using Microsoft.AspNetCore.Components.Web
+@using AeroResponse.Simulation
+
+<svg viewBox="0 0 420 240"
+     class="rudder-control"
+     style="touch-action: none;"
+     @onpointerdown="OnPointerDown"
+     @onpointermove="OnPointerMove"
+     @onpointerup="OnPointerUp"
+     @onpointercancel="OnPointerUp">
+
+    <rect x="18" y="38" width="384" height="144" rx="18" class="rudder-base" />
+
+    <g transform="@PedalTransform">
+        <g>
+            <path d="M 60 70
+                     H 140
+                     Q 150 70 150 80
+                     V 138
+                     Q 150 148 140 148
+                     H 60
+                     Q 50 148 50 138
+                     V 80
+                     Q 50 70 60 70 Z"
+                  class="rudder-pedal left" />
+            <rect x="60" y="50" width="80" height="22" rx="7" class="toe-brake left" />
+        </g>
+
+        <g>
+            <path d="M 270 70
+                     H 350
+                     Q 360 70 360 80
+                     V 138
+                     Q 360 148 350 148
+                     H 270
+                     Q 260 148 260 138
+                     V 80
+                     Q 260 70 270 70 Z"
+                  class="rudder-pedal right" />
+            <rect x="270" y="50" width="80" height="22" rx="7" class="toe-brake right" />
+        </g>
+
+        <rect x="175" y="88" width="70" height="40" rx="10" class="rudder-link" />
+    </g>
+
+    <line x1="210" y1="42" x2="210" y2="178" class="rudder-centerline" />
+
+    @if (Brakes.Count > 0)
+    {
+        <svg:text x="100" y="34" text-anchor="middle" class="brake-label">
+            @(Brakes.Count > 0 ? $"L Brake: {Brakes[0].Pressure:N0}%" : "")
+        </svg:text>
+    }
+
+    @if (Brakes.Count > 1)
+    {
+        <svg:text x="320" y="34" text-anchor="middle" class="brake-label">
+            @($"{Brakes[1].Pressure:N0}% R Brake")
+        </svg:text>
+    }
+</svg>
+
+@code {
+    [Parameter] public double RudderPosition { get; set; }
+    [Parameter] public EventCallback<double> RudderPositionChanged { get; set; }
+
+    [Parameter] public IReadOnlyList<BrakePressureState> Brakes { get; set; } = [];
+
+    private bool _dragging;
+    private double _startX;
+    private double _startRudder;
+
+    private string PedalTransform =>
+        $"translate({RudderPosition * 50} 0)";
+
+    private void OnPointerDown(PointerEventArgs e)
+    {
+        _dragging = true;
+        _startX = e.ClientX;
+        _startRudder = RudderPosition;
+    }
+
+    private async Task OnPointerMove(PointerEventArgs e)
+    {
+        if (!_dragging)
+        {
+            return;
+        }
+
+        var dx = e.ClientX - _startX;
+        var next = Math.Clamp(_startRudder + dx * 0.008, -1, 1);
+
+        if (next != RudderPosition)
+        {
+            RudderPosition = next;
+            await RudderPositionChanged.InvokeAsync(RudderPosition);
+        }
+    }
+
+    private void OnPointerUp(PointerEventArgs _)
+    {
+        _dragging = false;
+    }
+}

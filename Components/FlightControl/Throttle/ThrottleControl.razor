@@ -1,0 +1,70 @@
+@using Microsoft.AspNetCore.Components.Web
+
+<svg viewBox="0 0 180 360"
+     class="throttle-control"
+     style="touch-action: none;"
+     @onpointerdown="OnPointerDown"
+     @onpointermove="OnPointerMove"
+     @onpointerup="OnPointerUp"
+     @onpointercancel="OnPointerUp">
+
+    <rect x="42" y="24" width="96" height="312" rx="18" class="throttle-base" />
+
+    <rect x="72" y="48" width="36" height="220" rx="10" class="throttle-track" />
+
+    <g transform="@LeverTransform">
+        <rect x="60" y="0" width="60" height="26" rx="8" class="throttle-knob" />
+        <rect x="79" y="18" width="22" height="86" rx="10" class="throttle-stem" />
+        <circle cx="90" cy="110" r="11" class="throttle-drag-point" />
+    </g>
+
+    <text x="90" y="298" text-anchor="middle" class="throttle-label">IDLE</text>
+    <text x="90" y="44" text-anchor="middle" class="throttle-label">FULL</text>
+</svg>
+
+@code {
+    [Parameter] public double Power { get; set; } // 0..100
+    [Parameter] public EventCallback<double> PowerChanged { get; set; }
+
+    private bool _dragging;
+    private double _startY;
+    private double _startPower;
+
+    private string LeverTransform
+    {
+        get
+        {
+            var y = 252 - (Power / 100.0) * 204;
+            return $"translate(0 {y})";
+        }
+    }
+
+    private void OnPointerDown(PointerEventArgs e)
+    {
+        _dragging = true;
+        _startY = e.ClientY;
+        _startPower = Power;
+    }
+
+    private async Task OnPointerMove(PointerEventArgs e)
+    {
+        if (!_dragging)
+        {
+            return;
+        }
+
+        var dy = _startY - e.ClientY;
+        var next = Math.Clamp(_startPower + dy * 0.25, 0, 100);
+
+        if (next != Power)
+        {
+            Power = next;
+            await PowerChanged.InvokeAsync(Power);
+        }
+    }
+
+    private void OnPointerUp(PointerEventArgs _)
+    {
+        _dragging = false;
+    }
+}

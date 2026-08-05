@@ -61,9 +61,9 @@ public partial class AircraftManagement : ComponentBase
 
     private VsiAdvancedEditor? advancedVsi;
 
-/*=============================================================================
- |                            Helper Classes                                   |
- =============================================================================*/
+    /*=============================================================================
+     |                            Helper Classes                                   |
+     =============================================================================*/
 
     private sealed class VsiCalibrationPointEditor
     {
@@ -81,7 +81,8 @@ public partial class AircraftManagement : ComponentBase
         public double LagSeconds { get; set; }
 
         public List<VsiCalibrationPointEditor>
-            CalibrationPoints { get; set; } = [];
+            CalibrationPoints
+        { get; set; } = [];
     }
     private static CockpitLayoutDefinition ConvertToLayoutDefinition(
         CockpitLayoutModel layout)
@@ -105,15 +106,7 @@ public partial class AircraftManagement : ComponentBase
 
             Instruments =
                 layout.Details.Instruments
-                    .Select(instrument =>
-                        new InstrumentDefinition
-                        {
-                            Type = instrument.Type,
-                            GridRow = instrument.GridRow,
-                            GridColumn = instrument.GridColumn,
-                            RowSpan = instrument.RowSpan,
-                            ColumnSpan = instrument.ColumnSpan
-                        })
+                    .Select(CloneInstrument)
                     .ToList(),
 
             Airspeed =
@@ -204,11 +197,11 @@ public partial class AircraftManagement : ComponentBase
 
         return airspeed;
     }
-            
 
-/*=============================================================================
- |                        Initialization and CRUD                              |
- =============================================================================*/
+
+    /*=============================================================================
+     |                        Initialization and CRUD                              |
+     =============================================================================*/
 
     protected override async Task OnInitializedAsync()
     {
@@ -667,7 +660,17 @@ public partial class AircraftManagement : ComponentBase
                         GridRow = definition.GridRow,
                         GridColumn = definition.GridColumn,
                         RowSpan = definition.RowSpan,
-                        ColumnSpan = definition.ColumnSpan
+                        ColumnSpan = definition.ColumnSpan,
+                        ControlId = definition.ControlId,
+                        DisplayName = definition.DisplayName,
+                        IsVoiceControllable =
+                            definition.IsVoiceControllable,
+                        VoiceAliases =
+                            definition.VoiceAliases?.ToList() ?? [],
+                        VoiceCommands =
+                            definition.VoiceCommands?
+                                .Select(CloneCommand)
+                                .ToList() ?? []
                     };
                 }
 
@@ -874,14 +877,25 @@ public partial class AircraftManagement : ComponentBase
             Columns = layoutEditor.Columns,
             Instruments = layoutEditor.Instruments
                 .Where(instrument => instrument.IsSelected)
-                .Select(instrument => new InstrumentDefinition
-                {
-                    Type = instrument.Type,
-                    GridRow = instrument.GridRow,
-                    GridColumn = instrument.GridColumn,
-                    RowSpan = instrument.RowSpan,
-                    ColumnSpan = instrument.ColumnSpan
-                })
+                .Select(instrument =>
+                    new InstrumentDefinition
+                    {
+                        Type = instrument.Type,
+                        GridRow = instrument.GridRow,
+                        GridColumn = instrument.GridColumn,
+                        RowSpan = instrument.RowSpan,
+                        ColumnSpan = instrument.ColumnSpan,
+                        ControlId = instrument.ControlId,
+                        DisplayName = instrument.DisplayName,
+                        IsVoiceControllable =
+                            instrument.IsVoiceControllable,
+                        VoiceAliases =
+                            instrument.VoiceAliases?.ToList() ?? [],
+                        VoiceCommands =
+                            instrument.VoiceCommands?
+                                .Select(CloneCommand)
+                                .ToList() ?? []
+                    })
                 .ToList(),
             AircraftId = layoutBeingEdited?.AircraftId ?? 0,
             EngineCount = layoutBeingEdited?.EngineCount ?? 1,
@@ -1139,6 +1153,52 @@ public partial class AircraftManagement : ComponentBase
             isDeletingLayout = false;
         }
     }
+    private static InstrumentDefinition CloneInstrument(
+        InstrumentDefinition instrument)
+    {
+        return new InstrumentDefinition
+        {
+            Type = instrument.Type,
+            GridRow = instrument.GridRow,
+            GridColumn = instrument.GridColumn,
+            RowSpan = instrument.RowSpan,
+            ColumnSpan = instrument.ColumnSpan,
+
+            ControlId = instrument.ControlId,
+            DisplayName = instrument.DisplayName,
+
+            IsVoiceControllable =
+                instrument.IsVoiceControllable,
+
+            VoiceAliases =
+                instrument.VoiceAliases?.ToList() ?? [],
+
+            VoiceCommands =
+                instrument.VoiceCommands?
+                    .Select(CloneCommand)
+                    .ToList() ?? []
+        };
+    }
+
+    private static CockpitControlCommandDefinition CloneCommand(
+        CockpitControlCommandDefinition command)
+    {
+        return new CockpitControlCommandDefinition
+        {
+            Command = command.Command,
+
+            VoiceAliases =
+                command.VoiceAliases?.ToList() ?? [],
+
+            MinimumValue = command.MinimumValue,
+            MaximumValue = command.MaximumValue,
+            Unit = command.Unit,
+
+            RequiresNumericValue =
+                command.RequiresNumericValue
+        };
+    }
+
     private static CockpitLayoutDefinition CloneLayoutDefinition(
         CockpitLayoutDefinition layout)
     {
@@ -1161,16 +1221,7 @@ public partial class AircraftManagement : ComponentBase
 
             Instruments =
                 layout.Instruments
-                    .Select(instrument =>
-                        new InstrumentDefinition
-                        {
-                            Type = instrument.Type,
-                            GridRow = instrument.GridRow,
-                            GridColumn = instrument.GridColumn,
-                            RowSpan = instrument.RowSpan,
-                            ColumnSpan = instrument.ColumnSpan
-                        })
-                    .ToList(),
+                    .Select(CloneInstrument).ToList(),
 
             Airspeed =
                 NormalizeAirspeedLayout(
@@ -1200,14 +1251,7 @@ public partial class AircraftManagement : ComponentBase
                 Rows = definition.Rows,
                 Columns = definition.Columns,
                 Instruments = definition.Instruments
-                    .Select(instrument => new InstrumentDefinition
-                    {
-                        Type = instrument.Type,
-                        GridRow = instrument.GridRow,
-                        GridColumn = instrument.GridColumn,
-                        RowSpan = instrument.RowSpan,
-                        ColumnSpan = instrument.ColumnSpan
-                    })
+                    .Select(CloneInstrument)
                     .ToList(),
                 EngineCount = definition.EngineCount,
                 Airspeed = definition.Airspeed,
@@ -1317,11 +1361,30 @@ public partial class AircraftManagement : ComponentBase
     private sealed class InstrumentPlacementEditor
     {
         public InstrumentType Type { get; set; }
+
         public bool IsSelected { get; set; }
+
         public int GridRow { get; set; } = 1;
+
         public int GridColumn { get; set; } = 1;
+
         public int RowSpan { get; set; } = 1;
+
         public int ColumnSpan { get; set; } = 1;
+
+        public string ControlId { get; set; } =
+            string.Empty;
+
+        public string DisplayName { get; set; } =
+            string.Empty;
+
+        public bool IsVoiceControllable { get; set; }
+
+        public List<string> VoiceAliases { get; set; } = [];
+
+        public List<CockpitControlCommandDefinition>
+            VoiceCommands
+        { get; set; } = [];
     }
 
     private static CockpitLayoutEditor CreateEmptyLayoutEditor()

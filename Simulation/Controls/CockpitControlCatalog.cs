@@ -50,13 +50,28 @@ public sealed class CockpitControlCatalog
             return new CockpitControlDefinition
             {
                 ControlId = instrument.ControlId,
-                DisplayName = string.IsNullOrWhiteSpace(instrument.DisplayName)
-                    ? instrument.Type.ToString()
-                    : instrument.DisplayName,
-                ControlType = instrument.Type.ToString(),
-                IsVoiceControllable = instrument.IsVoiceControllable,
-                VoiceAliases = instrument.VoiceAliases,
-                Commands = instrument.VoiceCommands
+
+                DisplayName =
+                    string.IsNullOrWhiteSpace(instrument.DisplayName)
+                        ? instrument.Type.ToString()
+                        : instrument.DisplayName,
+
+                // Numeric metadata can be handled automatically by
+                // StandardCockpitControlHandler and DynamicValues.
+                ControlType =
+                    instrument.VoiceCommands.Any(command =>
+                        command.RequiresNumericValue)
+                        ? "Numeric"
+                        : instrument.Type.ToString(),
+
+                IsVoiceControllable =
+                    instrument.IsVoiceControllable,
+
+                VoiceAliases =
+                    instrument.VoiceAliases,
+
+                Commands =
+                    instrument.VoiceCommands
             };
         }
 

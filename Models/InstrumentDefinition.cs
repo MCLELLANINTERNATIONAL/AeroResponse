@@ -12,7 +12,7 @@ public class InstrumentDefinition
 
     public int ColumnSpan { get; set; } = 1;
 
-    // Dynamic Level-4 control metadata.
+    // Dynamic control metadata.
     public string ControlId { get; set; } = string.Empty;
 
     public string DisplayName { get; set; } = string.Empty;

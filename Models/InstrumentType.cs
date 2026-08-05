@@ -26,4 +26,9 @@ public enum InstrumentType
     OilTemperatureGauge,
     FuelQuantityGauge,
     AmmeterOrVacuumGauge,
+    AutopilotPanel,
+    BarometricSelector,
+    NavigationCourseSelector,
+    Transponder,
+    RadioFrequencySelector,
 }

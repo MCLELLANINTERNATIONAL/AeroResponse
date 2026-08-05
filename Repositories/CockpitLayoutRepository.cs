@@ -156,14 +156,47 @@ public class CockpitLayoutRepository(
                 {
                     Type = instrument.Type,
                     GridRow = instrument.GridRow,
-                    GridColumn =
-                        instrument.GridColumn,
+                    GridColumn = instrument.GridColumn,
                     RowSpan = instrument.RowSpan,
-                    ColumnSpan =
-                        instrument.ColumnSpan
+                    ColumnSpan = instrument.ColumnSpan,
+
+                    ControlId = instrument.ControlId,
+                    DisplayName = instrument.DisplayName,
+
+                    IsVoiceControllable =
+                        instrument.IsVoiceControllable,
+
+                    VoiceAliases =
+                        instrument.VoiceAliases.ToList(),
+
+                    VoiceCommands =
+                        instrument.VoiceCommands
+                            .ConvertAll(command =>
+    new CockpitControlCommandDefinition
+                                {
+                                    Command =
+                                        command.Command,
+
+                                    VoiceAliases =
+                                        command.VoiceAliases.ToList(),
+
+                                    MinimumValue =
+                                        command.MinimumValue,
+
+                                    MaximumValue =
+                                        command.MaximumValue,
+
+                                    Unit =
+                                        command.Unit,
+
+                                    RequiresNumericValue =
+                                        command.RequiresNumericValue
+                                })
+                            .ToList()
                 })
             .ToList();
     }
+
     public async Task DeleteWithResolutionsAsync(
         int layoutId,
         string layoutKey,

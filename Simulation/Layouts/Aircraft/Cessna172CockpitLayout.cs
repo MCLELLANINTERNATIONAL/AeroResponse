@@ -10,7 +10,7 @@ public static class Cessna172CockpitLayout
         return new CockpitLayoutDefinition
         {
             AircraftId = 1,
-            
+
             Key = "cessna-172-standard",
 
             Name = "Cessna 172",
@@ -24,42 +24,216 @@ public static class Cessna172CockpitLayout
                 {
                     Type = InstrumentType.AirspeedIndicator,
                     GridRow = 1,
-                    GridColumn = 1
+                    GridColumn = 1,
+
+                    ControlId = "flight.airspeed",
+                    DisplayName = "Airspeed",
+                    IsVoiceControllable = true,
+
+                    VoiceAliases =
+                    [
+                        "airspeed",
+                        "speed",
+                        "indicated airspeed"
+                    ],
+
+                    VoiceCommands =
+                    [
+                        new CockpitControlCommandDefinition
+                        {
+                            Command = "set",
+
+                            VoiceAliases =
+                            [
+                                "set airspeed",
+                                "set speed",
+                                "set indicated airspeed"
+                            ],
+
+                            RequiresNumericValue = true,
+                            MinimumValue = 0,
+                            MaximumValue = 200,
+                            Unit = "knots"
+                        }
+                    ]
                 },
 
                 new()
                 {
                     Type = InstrumentType.Altimeter,
                     GridRow = 1,
-                    GridColumn = 3
+                    GridColumn = 3,
+
+                    ControlId = "flight.altitude",
+                    DisplayName = "Altitude",
+                    IsVoiceControllable = true,
+
+                    VoiceAliases =
+                    [
+                        "altitude",
+                        "altimeter"
+                    ],
+
+                    VoiceCommands =
+                    [
+                        new CockpitControlCommandDefinition
+                        {
+                            Command = "set",
+
+                            VoiceAliases =
+                            [
+                                "set altitude",
+                                "set altimeter",
+                                "select altitude"
+                            ],
+
+                            RequiresNumericValue = true,
+                            MinimumValue = 0,
+                            MaximumValue = 14_000,
+                            Unit = "feet"
+                        }
+                    ]
                 },
 
                 new()
                 {
                     Type = InstrumentType.ArtificialHorizon,
                     GridRow = 1,
-                    GridColumn = 2
+                    GridColumn = 2,
+
+                    ControlId = "flight.attitude",
+                    DisplayName = "Aircraft Attitude",
+                    IsVoiceControllable = true,
+
+                    VoiceAliases =
+                    [
+                        "attitude",
+                        "artificial horizon",
+                        "pitch and bank"
+                    ],
+
+                    VoiceCommands =
+                    [
+                        new CockpitControlCommandDefinition
+                        {
+                            Command = "set-pitch",
+
+                            VoiceAliases =
+                            [
+                                "set pitch",
+                                "pitch up",
+                                "pitch down"
+                            ],
+
+                            RequiresNumericValue = true,
+                            MinimumValue = -30,
+                            MaximumValue = 30,
+                            Unit = "degrees"
+                        },
+
+                        new CockpitControlCommandDefinition
+                        {
+                            Command = "set-bank",
+
+                            VoiceAliases =
+                            [
+                                "set bank",
+                                "bank left",
+                                "bank right"
+                            ],
+
+                            RequiresNumericValue = true,
+                            MinimumValue = -100,
+                            MaximumValue = 100,
+                            Unit = "degrees"
+                        }
+                    ]
                 },
 
                 new()
                 {
                     Type = InstrumentType.TurnCoordinator,
                     GridRow = 2,
-                    GridColumn = 1
+                    GridColumn = 1,
+
+                    IsVoiceControllable = false
                 },
 
                 new()
                 {
                     Type = InstrumentType.HeadingIndicator,
                     GridRow = 2,
-                    GridColumn = 2
+                    GridColumn = 2,
+
+                    ControlId = "flight.heading",
+                    DisplayName = "Heading",
+                    IsVoiceControllable = true,
+
+                    VoiceAliases =
+                    [
+                        "heading",
+                        "heading indicator",
+                        "direction"
+                    ],
+
+                    VoiceCommands =
+                    [
+                        new CockpitControlCommandDefinition
+                        {
+                            Command = "set",
+
+                            VoiceAliases =
+                            [
+                                "set heading",
+                                "select heading",
+                                "turn to heading"
+                            ],
+
+                            RequiresNumericValue = true,
+                            MinimumValue = 0,
+                            MaximumValue = 359,
+                            Unit = "degrees"
+                        }
+                    ]
                 },
 
                 new()
                 {
                     Type = InstrumentType.VerticalSpeedIndicator,
                     GridRow = 2,
-                    GridColumn = 3
+                    GridColumn = 3,
+
+                    ControlId = "flight.vertical-speed",
+                    DisplayName = "Vertical Speed",
+                    IsVoiceControllable = true,
+
+                    VoiceAliases =
+                    [
+                        "vertical speed",
+                        "v s i",
+                        "rate of climb",
+                        "rate of descent"
+                    ],
+
+                    VoiceCommands =
+                    [
+                        new CockpitControlCommandDefinition
+                        {
+                            Command = "set",
+
+                            VoiceAliases =
+                            [
+                                "set vertical speed",
+                                "set rate of climb",
+                                "set rate of descent"
+                            ],
+
+                            RequiresNumericValue = true,
+                            MinimumValue = -2_000,
+                            MaximumValue = 2_000,
+                            Unit = "feet per minute"
+                        }
+                    ]
                 }
             ],
 
@@ -85,7 +259,7 @@ public static class Cessna172CockpitLayout
 
             ArtificialHorizon = new()
             {
-                MinimumPitch = -30, 
+                MinimumPitch = -30,
                 MaximumPitch = 30,
 
                 MinimumBank = -100,

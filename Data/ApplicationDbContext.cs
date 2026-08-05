@@ -120,13 +120,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.OwnsOne(a => a.LandingGearConfig, cfg =>
             {
                 cfg.Property(p => p.Kind)
-                .HasColumnName("LandingGearKind");
+                    .HasColumnName("LandingGearKind");
 
                 cfg.OwnsMany(p => p.Units, units =>
                 {
                     units.WithOwner().HasForeignKey("AircraftId");
-                    units.Property(u => u.Id);
-                    units.HasKey(u => u.Id);
+                    units.Property(u => u.Number);
+                    units.HasKey("AircraftId", "Number");
                 });
             });
         });

@@ -1,0 +1,88 @@
+.gauge-face {
+    fill: #080808;
+    stroke: #d8d8d8;
+    stroke-width: 4;
+}
+
+.section-label,
+.status-label,
+.unit-label,
+.battery-voltage,
+.indicator-text,
+.fault-warning,
+.reading {
+    font-family: Arial, sans-serif;
+}
+
+.section-label {
+    fill: #f4f4f4;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.reading {
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.unit-label {
+    fill: #aaa;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.divider-line {
+    stroke: #555;
+    stroke-width: 2;
+}
+
+.status-label {
+    fill: #ddd;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.status-indicator {
+    stroke: #ddd;
+    stroke-width: 2;
+}
+
+.status-indicator.online {
+    fill: #2e7d32;
+}
+
+.status-indicator.offline {
+    fill: #b71c1c;
+}
+
+.indicator-text {
+    fill: white;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.battery-voltage {
+    fill: #ddd;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.reading.normal {
+    fill: #f4f4f4;
+}
+
+.reading.warning {
+    fill: #f9a825;
+}
+
+.reading.critical {
+    fill: #d32f2f;
+}
+
+.fault-warning {
+    fill: #d32f2f;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}

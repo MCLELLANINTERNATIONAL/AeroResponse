@@ -3,6 +3,7 @@ using System;
 using AeroResponse.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AeroResponse.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260805042128_LandingGearChanges")]
+    partial class LandingGearChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -835,11 +838,11 @@ namespace AeroResponse.Migrations
 
                             b1.OwnsMany("AeroResponse.Models.LandingGearUnit", "Units", b2 =>
                                 {
-                                    b2.Property<int>("AircraftId")
-                                        .HasColumnType("INTEGER");
-
                                     b2.Property<int>("Number")
                                         .ValueGeneratedOnAdd()
+                                        .HasColumnType("INTEGER");
+
+                                    b2.Property<int>("AircraftId")
                                         .HasColumnType("INTEGER");
 
                                     b2.Property<string>("Label")
@@ -855,7 +858,9 @@ namespace AeroResponse.Migrations
                                     b2.Property<int>("Status")
                                         .HasColumnType("INTEGER");
 
-                                    b2.HasKey("AircraftId", "Number");
+                                    b2.HasKey("Number");
+
+                                    b2.HasIndex("AircraftId");
 
                                     b2.ToTable("LandingGearUnit");
 

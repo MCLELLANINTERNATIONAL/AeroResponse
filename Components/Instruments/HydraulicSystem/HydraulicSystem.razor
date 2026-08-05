@@ -1,0 +1,121 @@
+@using AeroResponse.Simulation.Instruments
+@using AeroResponse.Simulation.Instruments.HydraulicSystem
+
+<InstrumentBase Label="Hydraulic Pressure"
+                AriaLabel="Hydraulic pressure gauge">
+
+    <svg viewBox="0 0 300 300"
+         role="img"
+         aria-label="Hydraulic pressure">
+
+        <circle cx="150"
+                cy="150"
+                r="138"
+                class="gauge-face" />
+
+        @for (var i = 0; i <= 10; i++)
+        {
+            var pressure = i * 300;
+            var angle =
+                HydraulicSystemMath.MinimumAngle +
+                (i / 10.0) *
+                (HydraulicSystemMath.MaximumAngle -
+                 HydraulicSystemMath.MinimumAngle);
+
+            var outer =
+                HydraulicSystemMath.GetDialPoint(
+                    125,
+                    angle);
+
+            var inner =
+                HydraulicSystemMath.GetDialPoint(
+                    108,
+                    angle);
+
+            var label =
+                HydraulicSystemMath.GetDialPoint(
+                    88,
+                    angle);
+
+            <line x1="@InstrumentGeometry.Format(inner.X)"
+                  y1="@InstrumentGeometry.Format(inner.Y)"
+                  x2="@InstrumentGeometry.Format(outer.X)"
+                  y2="@InstrumentGeometry.Format(outer.Y)"
+                  class="major-tick" />
+            <g>
+                <text x="@InstrumentGeometry.Format(label.X)"
+                    y="@InstrumentGeometry.Format(label.Y)"
+                    text-anchor="middle"
+                    dominant-baseline="middle"
+                    class="gauge-number">
+                    @(pressure / 100)
+                </text>
+            </g>
+        }
+
+        <line x1="150"
+              y1="150"
+              x2="150"
+              y2="58"
+              class="needle"
+              transform="rotate(@InstrumentGeometry.Format(
+                  HydraulicSystemMath.GetNeedleAngle(Pressure))
+                  150 150)" />
+
+        <circle cx="150"
+                cy="150"
+                r="8"
+                class="needle-hub" />
+
+        <text x="150"
+              y="210"
+              text-anchor="middle"
+              class="unit-label">
+            x100 PSI
+        </text>
+
+        <text x="150"
+              y="235"
+              text-anchor="middle"
+              class="@GetStatusClass()">
+            @GetStatusText()
+        </text>
+
+    </svg>
+
+</InstrumentBase>
+
+@code {
+    [Parameter]
+    public double Pressure { get; set; }
+
+    [Parameter]
+    public bool PumpOnline { get; set; }
+
+    [Parameter]
+    public bool Fault { get; set; }
+
+    private string GetStatusText()
+    {
+        if (Fault)
+            return "FAULT";
+
+        if (!PumpOnline)
+            return "PUMP OFF";
+
+        if (Pressure < 500)
+            return "CRITICAL";
+
+        if (Pressure < 2000)
+            return "LOW";
+
+        return "NORMAL";
+    }
+
+    private string GetStatusClass()
+    {
+        return GetStatusText() == "NORMAL"
+            ? "status-normal"
+            : "status-warning";
+    }
+}

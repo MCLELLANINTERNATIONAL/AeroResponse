@@ -1,0 +1,80 @@
+.fuel-control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    width: 160px;
+    min-width: 160px;
+    min-height: 120px;
+
+    padding: 1rem;
+    box-sizing: border-box;
+
+    background: #111;
+    border: 2px solid #555;
+    border-radius: 0.5rem;
+
+    color: white;
+}
+
+.fuel-control-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    max-height: 200px;
+}
+
+.fuel-control-title {
+    margin-bottom: 0.75rem;
+
+    color: #eee;
+
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-align: center;
+}
+
+.fuel-control-switch {
+    position: relative;
+
+    width: 90px;
+    height: 55px;
+
+    border: 2px solid #666;
+    border-radius: 0.4rem;
+
+    background: #222;
+    color: white;
+
+    cursor: pointer;
+}
+
+.fuel-control-switch.run {
+    border-color: #2e7d32;
+}
+
+.fuel-control-switch.cutoff {
+    border-color: #b71c1c;
+}
+
+.switch-position {
+    display: block;
+
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.switch-handle {
+    display: block;
+
+    width: 40px;
+    height: 8px;
+
+    margin: 8px auto 0;
+
+    border-radius: 4px;
+    background: #ddd;
+}

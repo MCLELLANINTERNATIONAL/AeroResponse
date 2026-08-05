@@ -25,5 +25,5 @@ public enum InstrumentType
     OilPressureGauge,
     OilTemperatureGauge,
     FuelQuantityGauge,
-    AmmeterOrVacuumGauge
+    AmmeterOrVacuumGauge,
 }

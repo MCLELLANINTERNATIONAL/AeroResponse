@@ -1,0 +1,194 @@
+@using AeroResponse.Simulation.Instruments
+
+<InstrumentBase Label="Electrical"
+                AriaLabel="Electrical system diagnostic gauge">
+
+    <svg viewBox="0 0 300 300"
+         role="img"
+         aria-label="Electrical system diagnostic gauge">
+
+        <circle cx="150"
+                cy="150"
+                r="138"
+                class="gauge-face" />
+
+        @* =========================
+           BUS VOLTAGE
+           ========================= *@
+
+        <text x="85"
+              y="72"
+              text-anchor="middle"
+              class="section-label">
+            BUS
+        </text>
+
+        <text x="85"
+              y="108"
+              text-anchor="middle"
+              class="@GetVoltageClass()">
+            @BusVoltage.ToString("0.0")
+        </text>
+
+        <text x="85"
+              y="128"
+              text-anchor="middle"
+              class="unit-label">
+            VOLTS
+        </text>
+
+        @* =========================
+           LOAD AMPS
+           ========================= *@
+
+        <text x="215"
+              y="72"
+              text-anchor="middle"
+              class="section-label">
+            LOAD
+        </text>
+
+        <text x="215"
+              y="108"
+              text-anchor="middle"
+              class="@GetLoadClass()">
+            @LoadAmps.ToString("0")
+        </text>
+
+        <text x="215"
+              y="128"
+              text-anchor="middle"
+              class="unit-label">
+            AMPS
+        </text>
+
+        @* Divider *@
+
+        <line x1="150"
+              y1="55"
+              x2="150"
+              y2="145"
+              class="divider-line" />
+
+        @* =========================
+           BATTERY
+           ========================= *@
+
+        <text x="80"
+              y="180"
+              text-anchor="middle"
+              class="status-label">
+            BATTERY
+        </text>
+
+        <circle cx="80"
+                cy="205"
+                r="16"
+                class="@GetIndicatorClass(BatteryOnline)" />
+
+        <text x="80"
+              y="210"
+              text-anchor="middle"
+              class="indicator-text">
+            @GetStatus(BatteryOnline)
+        </text>
+
+        @* =========================
+           ALTERNATOR
+           ========================= *@
+
+        <text x="220"
+              y="180"
+              text-anchor="middle"
+              class="status-label">
+            ALT
+        </text>
+
+        <circle cx="220"
+                cy="205"
+                r="16"
+                class="@GetIndicatorClass(AlternatorOnline)" />
+
+        <text x="220"
+              y="210"
+              text-anchor="middle"
+              class="indicator-text">
+            @GetStatus(AlternatorOnline)
+        </text>
+
+        @* =========================
+           BATTERY VOLTAGE
+           ========================= *@
+
+        <text x="150"
+              y="246"
+              text-anchor="middle"
+              class="battery-voltage">
+            BAT @BatteryVoltage.ToString("0.0") V
+        </text>
+
+        @if (Fault)
+        {
+            <g>
+                <text x="150"
+                    y="272"
+                    text-anchor="middle"
+                    class="fault-warning">
+                    ELECTRICAL FAULT
+                </text>
+            </g>
+        }
+
+    </svg>
+
+</InstrumentBase>
+
+@code {
+    [Parameter]
+    public double BusVoltage { get; set; }
+
+    [Parameter]
+    public double BatteryVoltage { get; set; }
+
+    [Parameter]
+    public double LoadAmps { get; set; }
+
+    [Parameter]
+    public bool BatteryOnline { get; set; }
+
+    [Parameter]
+    public bool AlternatorOnline { get; set; }
+
+    [Parameter]
+    public bool Fault { get; set; }
+
+    private static string GetStatus(bool online) =>
+        online ? "ON" : "OFF";
+
+    private static string GetIndicatorClass(bool online) =>
+        online
+            ? "status-indicator online"
+            : "status-indicator offline";
+
+    private string GetVoltageClass()
+    {
+        if (BusVoltage < 22)
+            return "reading critical";
+
+        if (BusVoltage < 24)
+            return "reading warning";
+
+        return "reading normal";
+    }
+
+    private string GetLoadClass()
+    {
+        if (LoadAmps > 90)
+            return "reading critical";
+
+        if (LoadAmps > 75)
+            return "reading warning";
+
+        return "reading normal";
+    }
+}

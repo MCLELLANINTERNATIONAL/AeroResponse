@@ -1,0 +1,75 @@
+.fuel-gauges {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(180px, 1fr)
+    );
+
+    gap: 1rem;
+
+    width: 100%;
+    align-items: start;
+    justify-items: center;
+}
+
+.fuel-gauge-case {
+    fill: #080808;
+    stroke: #d8d8d8;
+    stroke-width: 4;
+}
+
+.fuel-gauge-face {
+    fill: #111827;
+    stroke: #4b5563;
+    stroke-width: 2;
+}
+
+.fuel-track {
+    fill: #0f172a;
+    stroke: #94a3b8;
+    stroke-width: 2;
+}
+
+.fuel-fill {
+    transition:
+        y 0.2s ease,
+        height 0.2s ease,
+        fill 0.2s ease;
+}
+
+.fuel-fill.normal {
+    fill: #f59e0b;
+}
+
+.fuel-fill.low {
+    fill: #d97706;
+}
+
+.fuel-fill.critical {
+    fill: #dc2626;
+}
+
+.fuel-tick {
+    stroke: #e5e7eb;
+    stroke-width: 2;
+}
+
+.fuel-value {
+    fill: #f8fafc;
+    font-size: 20px;
+    font-weight: 800;
+    font-family: Arial, sans-serif;
+}
+
+.fuel-unit {
+    fill: #cbd5e1;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: Arial, sans-serif;
+    letter-spacing: 1px;
+}
+
+.fuel-empty {
+    color: #94a3b8;
+    font-style: italic;
+}

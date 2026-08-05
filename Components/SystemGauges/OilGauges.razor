@@ -1,47 +1,136 @@
-<svg viewBox="0 0 420 240" class="oil-dual-gauge">
-    <rect x="14" y="14" width="392" height="212" rx="18" class="oil-gauge-case" />
-    <rect x="26" y="26" width="368" height="188" rx="14" class="oil-gauge-face" />
+<InstrumentBase Label="Oil Pressure"
+                AriaLabel="Engine oil pressure gauge">
 
-    <g transform="translate(120 120)">
-        <circle cx="0" cy="0" r="78" class="oil-dial" />
-        <path d="M -58 42 A 70 70 0 0 1 58 42" class="oil-green-arc" />
-        <line x1="0" y1="0" x2="0" y2="-58" class="oil-needle pressure" transform="@PressureNeedleTransform" />
-        <circle cx="0" cy="0" r="8" class="oil-hub" />
-        <text x="0" y="94" text-anchor="middle" class="oil-value">@OilPressure.ToString("N0") PSI</text>
-        <text x="0" y="-92" text-anchor="middle" class="oil-label">OIL PRESS</text>
-    </g>
+    <svg viewBox="0 0 240 240"
+         role="img"
+         aria-label="Oil pressure">
 
-    <g transform="translate(300 120)">
-        <circle cx="0" cy="0" r="78" class="oil-dial" />
-        <path d="M -58 42 A 70 70 0 0 1 58 42" class="oil-green-arc" />
-        <line x1="0" y1="0" x2="0" y2="-58" class="oil-needle temperature" transform="@TemperatureNeedleTransform" />
-        <circle cx="0" cy="0" r="8" class="oil-hub" />
-        <text x="0" y="94" text-anchor="middle" class="oil-value">@OilTemperature.ToString("N0") °F</text>
-        <text x="0" y="-92" text-anchor="middle" class="oil-label">OIL TEMP</text>
-    </g>
-</svg>
+        <circle cx="120"
+                cy="120"
+                r="102"
+                class="oil-gauge-case" />
+
+        <circle cx="120"
+                cy="120"
+                r="86"
+                class="oil-gauge-face" />
+
+        <path d="M 62 162 A 70 70 0 0 1 178 162"
+              class="oil-green-arc" />
+
+        <line x1="120"
+              y1="120"
+              x2="120"
+              y2="62"
+              class="oil-needle"
+              transform="@NeedleTransformPress" />
+
+        <circle cx="120"
+                cy="120"
+                r="8"
+                class="oil-hub" />
+
+        <text x="120"
+              y="174"
+              text-anchor="middle"
+              class="oil-value">
+            @OilPressure.ToString("N0")
+        </text>
+
+        <text x="120"
+              y="192"
+              text-anchor="middle"
+              class="oil-unit">
+            PSI
+        </text>
+
+    </svg>
+
+</InstrumentBase>
+<InstrumentBase Label="Oil Temperature"
+                AriaLabel="Engine oil temperature gauge">
+
+    <svg viewBox="0 0 240 240"
+         role="img"
+         aria-label="Oil temperature">
+
+        <circle cx="120"
+                cy="120"
+                r="102"
+                class="oil-gauge-case" />
+
+        <circle cx="120"
+                cy="120"
+                r="86"
+                class="oil-gauge-face" />
+
+        <path d="M 62 162 A 70 70 0 0 1 178 162"
+              class="oil-green-arc" />
+
+        <line x1="120"
+              y1="120"
+              x2="120"
+              y2="62"
+              class="oil-needle"
+              transform="@NeedleTransformTemp" />
+
+        <circle cx="120"
+                cy="120"
+                r="8"
+                class="oil-hub" />
+
+        <text x="120"
+              y="174"
+              text-anchor="middle"
+              class="oil-value">
+            @OilTemperature.ToString("N0")
+        </text>
+
+        <text x="120"
+              y="192"
+              text-anchor="middle"
+              class="oil-unit">
+            °F
+        </text>
+
+    </svg>
+
+</InstrumentBase>
 
 @code {
-    [Parameter] public double OilPressure { get; set; }
-    [Parameter] public double OilTemperature { get; set; }
+    [Parameter]
+    public double OilTemperature { get; set; }
 
-    private string PressureNeedleTransform
+    [Parameter]
+    public double OilPressure { get; set; }
+
+    private string NeedleTransformPress
     {
         get
         {
-            var clamped = Math.Clamp(OilPressure, 0, 100);
-            var angle = -120 + (clamped / 100.0) * 240;
-            return $"rotate({angle})";
+            var clamped =
+                Math.Clamp(OilPressure, 0, 100);
+
+            var angle =
+                -120 +
+                (clamped / 100.0) * 240;
+
+            return $"rotate({angle} 120 120)";
         }
     }
 
-    private string TemperatureNeedleTransform
+    private string NeedleTransformTemp
     {
         get
         {
-            var clamped = Math.Clamp(OilTemperature, 0, 250);
-            var angle = -120 + (clamped / 250.0) * 240;
-            return $"rotate({angle})";
+            var clamped =
+                Math.Clamp(OilTemperature, 0, 250);
+
+            var angle =
+                -120 +
+                (clamped / 250.0) * 240;
+
+            return $"rotate({angle} 120 120)";
         }
     }
 }

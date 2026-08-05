@@ -1,0 +1,417 @@
+<div class="communications-panel"
+     role="group"
+     aria-label="Emergency communications panel">
+
+    <svg viewBox="0 0 520 300"
+         class="communications-svg"
+         role="img"
+         aria-label="Radio and satellite communications panel">
+
+        @* ===========================================
+           PANEL BODY
+           =========================================== *@
+
+        <rect x="8"
+              y="8"
+              width="504"
+              height="284"
+              rx="14"
+              class="panel-case" />
+
+        <rect x="20"
+              y="20"
+              width="480"
+              height="260"
+              rx="10"
+              class="panel-face" />
+
+        <text x="260"
+              y="47"
+              text-anchor="middle"
+              class="panel-title">
+            EMERGENCY COMMUNICATIONS
+        </text>
+
+        <line x1="260"
+              y1="58"
+              x2="260"
+              y2="263"
+              class="panel-divider" />
+
+
+        @* ===========================================
+           RADIO SIDE
+           =========================================== *@
+
+        <text x="140"
+              y="78"
+              text-anchor="middle"
+              class="section-title">
+            RADIO
+        </text>
+
+        @* Frequency screen *@
+
+        <rect x="62"
+              y="92"
+              width="156"
+              height="54"
+              rx="5"
+              class="display-bezel" />
+
+        <rect x="69"
+              y="99"
+              width="142"
+              height="40"
+              rx="3"
+              class="@GetRadioDisplayClass()" />
+
+        <text x="140"
+              y="126"
+              text-anchor="middle"
+              class="frequency-text">
+            @RadioFrequency.ToString("000.000")
+        </text>
+
+        <text x="140"
+              y="159"
+              text-anchor="middle"
+              class="display-label">
+            MHz
+        </text>
+
+
+        @* Radio power indicator *@
+
+        <circle cx="82"
+                cy="190"
+                r="11"
+                class="@GetPowerIndicatorClass(RadioPowered)" />
+
+        <text x="103"
+              y="195"
+              class="control-label">
+            POWER
+        </text>
+
+
+        @* Transmit indicator *@
+
+        <circle cx="82"
+                cy="226"
+                r="11"
+                class="@GetTransmitIndicatorClass()" />
+
+        <text x="103"
+              y="231"
+              class="control-label">
+            TX
+        </text>
+
+
+        @* Emergency frequency label *@
+
+        <text x="140"
+              y="260"
+              text-anchor="middle"
+              class="emergency-frequency">
+            GUARD 121.500
+        </text>
+
+
+        @* ===========================================
+           SATELLITE PHONE SIDE
+           =========================================== *@
+
+        <text x="380"
+              y="78"
+              text-anchor="middle"
+              class="section-title">
+            SATELLITE
+        </text>
+
+        <rect x="302"
+              y="92"
+              width="156"
+              height="54"
+              rx="5"
+              class="display-bezel" />
+
+        <rect x="309"
+              y="99"
+              width="142"
+              height="40"
+              rx="3"
+              class="@GetSatelliteDisplayClass()" />
+
+        <text x="380"
+              y="124"
+              text-anchor="middle"
+              class="satellite-status-text">
+            @GetSatelliteStatus()
+        </text>
+
+        @* Satellite signal bars *@
+
+        <rect x="324"
+              y="176"
+              width="12"
+              height="14"
+              class="@GetSignalClass(1)" />
+
+        <rect x="343"
+              y="168"
+              width="12"
+              height="22"
+              class="@GetSignalClass(2)" />
+
+        <rect x="362"
+              y="160"
+              width="12"
+              height="30"
+              class="@GetSignalClass(3)" />
+
+        <rect x="381"
+              y="152"
+              width="12"
+              height="38"
+              class="@GetSignalClass(4)" />
+
+        <text x="418"
+              y="181"
+              class="signal-label">
+            SAT
+        </text>
+
+        @* Phone power *@
+
+        <circle cx="324"
+                cy="220"
+                r="11"
+                class="@GetPowerIndicatorClass(SatellitePowered)" />
+
+        <text x="345"
+              y="225"
+              class="control-label">
+            POWER
+        </text>
+
+        @* Connection indicator *@
+
+        <circle cx="407"
+                cy="220"
+                r="11"
+                class="@GetConnectionIndicatorClass()" />
+
+        <text x="428"
+              y="225"
+              class="control-label">
+            LINK
+        </text>
+
+        <text x="380"
+              y="260"
+              text-anchor="middle"
+              class="satellite-footer">
+            EMERGENCY SATCOM
+        </text>
+
+    </svg>
+
+
+    @* ===============================================
+       INTERACTIVE CONTROLS
+       =============================================== *@
+
+    <div class="communications-controls">
+
+        <section class="radio-controls">
+
+            <button type="button"
+                    class="communication-button"
+                    @onclick="ToggleRadioPower">
+                @(RadioPowered
+                    ? "Radio Off"
+                    : "Radio On")
+            </button>
+
+            <button type="button"
+                    class="communication-button"
+                    disabled="@(!RadioPowered)"
+                    @onclick="SelectGuardFrequency">
+                Guard 121.5
+            </button>
+
+            <button type="button"
+                    class="communication-button transmit-button"
+                    disabled="@(!RadioPowered)"
+                    @onclick="TransmitRadio">
+                Transmit
+            </button>
+
+        </section>
+
+
+        <section class="satellite-controls">
+
+            <button type="button"
+                    class="communication-button"
+                    @onclick="ToggleSatellitePower">
+                @(SatellitePowered
+                    ? "Sat Phone Off"
+                    : "Sat Phone On")
+            </button>
+
+            <button type="button"
+                    class="communication-button connect-button"
+                    disabled="@(!SatellitePowered)"
+                    @onclick="ToggleSatelliteConnection">
+                @(SatelliteConnected
+                    ? "Disconnect"
+                    : "Connect")
+            </button>
+
+            <button type="button"
+                    class="communication-button transmit-button"
+                    disabled="@(!SatelliteConnected)"
+                    @onclick="SendSatelliteMessage">
+                Send Emergency
+            </button>
+
+        </section>
+
+    </div>
+
+</div>
+
+
+@code {
+
+    [Parameter]
+    public bool RadioPowered { get; set; }
+
+    [Parameter]
+    public double RadioFrequency { get; set; } = 121.5;
+
+    [Parameter]
+    public bool RadioTransmitting { get; set; }
+
+
+    [Parameter]
+    public bool SatellitePowered { get; set; }
+
+    [Parameter]
+    public bool SatelliteConnected { get; set; }
+
+    [Parameter]
+    public int SatelliteSignalStrength { get; set; } = 4;
+
+
+    [Parameter]
+    public EventCallback RadioPowerChanged { get; set; }
+
+    [Parameter]
+    public EventCallback GuardFrequencySelected { get; set; }
+
+    [Parameter]
+    public EventCallback RadioTransmitRequested { get; set; }
+
+    [Parameter]
+    public EventCallback SatellitePowerChanged { get; set; }
+
+    [Parameter]
+    public EventCallback SatelliteConnectionChanged { get; set; }
+
+    [Parameter]
+    public EventCallback SatelliteEmergencyRequested { get; set; }
+
+
+    private Task ToggleRadioPower() =>
+        RadioPowerChanged.InvokeAsync();
+
+
+    private Task SelectGuardFrequency() =>
+        GuardFrequencySelected.InvokeAsync();
+
+
+    private Task TransmitRadio() =>
+        RadioTransmitRequested.InvokeAsync();
+
+
+    private Task ToggleSatellitePower() =>
+        SatellitePowerChanged.InvokeAsync();
+
+
+    private Task ToggleSatelliteConnection() =>
+        SatelliteConnectionChanged.InvokeAsync();
+
+
+    private Task SendSatelliteMessage() =>
+        SatelliteEmergencyRequested.InvokeAsync();
+
+
+    private string GetRadioDisplayClass()
+    {
+        return RadioPowered
+            ? "digital-display active"
+            : "digital-display inactive";
+    }
+
+
+    private string GetSatelliteDisplayClass()
+    {
+        return SatellitePowered
+            ? "digital-display active"
+            : "digital-display inactive";
+    }
+
+
+    private static string GetPowerIndicatorClass(
+        bool powered)
+    {
+        return powered
+            ? "status-light powered"
+            : "status-light off";
+    }
+
+
+    private string GetTransmitIndicatorClass()
+    {
+        return RadioTransmitting
+            ? "status-light transmitting"
+            : "status-light off";
+    }
+
+
+    private string GetConnectionIndicatorClass()
+    {
+        return SatelliteConnected
+            ? "status-light connected"
+            : "status-light off";
+    }
+
+
+    private string GetSignalClass(int level)
+    {
+        return SatellitePowered &&
+               SatelliteSignalStrength >= level
+            ? "signal-bar active"
+            : "signal-bar";
+    }
+
+
+    private string GetSatelliteStatus()
+    {
+        if (!SatellitePowered)
+        {
+            return "OFF";
+        }
+
+        if (SatelliteConnected)
+        {
+            return "CONNECTED";
+        }
+
+        return "SEARCHING";
+    }
+}

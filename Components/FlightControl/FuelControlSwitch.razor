@@ -1,0 +1,29 @@
+<div class="fuel-control">
+    <div class="fuel-control-title">
+        ENGINE @Engine.Number FUEL SWITCH
+    </div>
+
+    <button type="button"
+            class="fuel-control-switch @(Engine.FuelCutoff ? "cutoff" : "run")"
+            @onclick="ToggleFuel">
+
+        <span class="switch-position">
+            @(Engine.FuelCutoff ? "CUTOFF" : "RUN")
+        </span>
+
+        <span class="switch-handle"></span>
+    </button>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public EngineState Engine { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<EngineState> OnChanged { get; set; }
+
+    private Task ToggleFuel()
+    {
+        return OnChanged.InvokeAsync(Engine);
+    }
+}

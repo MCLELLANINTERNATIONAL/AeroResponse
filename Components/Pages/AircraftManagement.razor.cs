@@ -59,6 +59,157 @@ public partial class AircraftManagement : ComponentBase
 
     private int? layoutPendingDeletionDatabaseId;
 
+    private VsiAdvancedEditor? advancedVsi;
+
+/*=============================================================================
+ |                            Helper Classes                                   |
+ =============================================================================*/
+
+    private sealed class VsiCalibrationPointEditor
+    {
+        public double VerticalSpeed { get; set; }
+
+        public double Angle { get; set; }
+    }
+
+    private sealed class VsiAdvancedEditor
+    {
+        public double MinimumVerticalSpeed { get; set; }
+
+        public double MaximumVerticalSpeed { get; set; }
+
+        public double LagSeconds { get; set; }
+
+        public List<VsiCalibrationPointEditor>
+            CalibrationPoints { get; set; } = [];
+    }
+    private static CockpitLayoutDefinition ConvertToLayoutDefinition(
+        CockpitLayoutModel layout)
+    {
+        return new CockpitLayoutDefinition
+        {
+            Key = layout.Key,
+            Name = layout.Name,
+
+            AircraftId =
+                layout.Details.AircraftId,
+
+            Rows =
+                layout.Details.Rows,
+
+            Columns =
+                layout.Details.Columns,
+
+            EngineCount =
+                layout.Details.EngineCount,
+
+            Instruments =
+                layout.Details.Instruments
+                    .Select(instrument =>
+                        new InstrumentDefinition
+                        {
+                            Type = instrument.Type,
+                            GridRow = instrument.GridRow,
+                            GridColumn = instrument.GridColumn,
+                            RowSpan = instrument.RowSpan,
+                            ColumnSpan = instrument.ColumnSpan
+                        })
+                    .ToList(),
+
+            Airspeed =
+                NormalizeAirspeedLayout(
+                    layout.Details.Airspeed),
+
+            ArtificialHorizon =
+                layout.Details.ArtificialHorizon
+                ?? CreateDefaultArtificialHorizonLayout(),
+
+            VSI =
+                layout.Details.VSI
+                ?? CreateDefaultVsiLayout(),
+
+            DefaultState =
+                layout.Details.DefaultState
+                ?? CreateDefaultAircraftState()
+        };
+    }
+    private static string GetLandingGearKindName(
+        LandingGearKind kind)
+    {
+        return kind switch
+        {
+            LandingGearKind.FixedTricycle =>
+                "Fixed Tricycle",
+
+            LandingGearKind.RetractableTricycle =>
+                "Retractable Tricycle",
+
+            LandingGearKind.Tailwheel =>
+                "Tailwheel",
+
+            LandingGearKind.MultiBogey =>
+                "Multi-Bogey",
+
+            LandingGearKind.Tandem =>
+                "Tandem",
+
+            LandingGearKind.Floats =>
+                "Floats",
+
+            LandingGearKind.Skis =>
+                "Skis",
+
+            _ => kind.ToString()
+        };
+    }
+    private void RemoveLandingGearUnit(
+        LandingGearUnit unit)
+    {
+        selectedAircraft
+            .LandingGearConfig
+            .Units
+            .Remove(unit);
+
+        var units =
+            selectedAircraft
+                .LandingGearConfig
+                .Units
+                .OrderBy(item => item.Order)
+                .ToList();
+
+        for (var index = 0;
+            index < units.Count;
+            index++)
+        {
+            units[index].Number = index + 1;
+            units[index].Order = index;
+        }
+    }
+    private void OnLandingGearKindChanged()
+    {
+        var selectedKind =
+            selectedAircraft.LandingGearConfig.Kind;
+
+        selectedAircraft.LandingGearConfig =
+            CreateLandingGearConfig(selectedKind);
+    }
+    private static AirspeedIndicatorLayout NormalizeAirspeedLayout(
+        AirspeedIndicatorLayout? airspeed)
+    {
+        if (airspeed is null ||
+            airspeed.MaximumSpeed <= airspeed.MinimumSpeed)
+        {
+            return CreateDefaultAirspeedLayout();
+        }
+
+        return airspeed;
+    }
+            
+
+/*=============================================================================
+ |                        Initialization and CRUD                              |
+ =============================================================================*/
+
     protected override async Task OnInitializedAsync()
     {
         await LoadLayoutsAsync();
@@ -70,6 +221,51 @@ public partial class AircraftManagement : ComponentBase
     private async Task LoadAircraftAsync()
     {
         aircraftList = await AircraftService.GetAllAsync();
+        LoadAdvancedVsi();
+    }
+    private void LoadAdvancedVsi()
+    {
+        var layout =
+            availableLayouts
+                .FirstOrDefault(item =>
+                    string.Equals(
+                        item.Definition.Key,
+                        selectedAircraft.CockpitLayoutKey,
+                        StringComparison.OrdinalIgnoreCase));
+
+        if (layout is null)
+        {
+            advancedVsi = null;
+            return;
+        }
+
+        var vsi =
+            layout.Definition.VSI;
+
+        advancedVsi = new VsiAdvancedEditor
+        {
+            MinimumVerticalSpeed =
+                vsi.MinimumVerticalSpeed,
+
+            MaximumVerticalSpeed =
+                vsi.MaximumVerticalSpeed,
+
+            LagSeconds =
+                vsi.LagSeconds,
+
+            CalibrationPoints =
+                vsi.CalibrationPoints
+                    .Select(point =>
+                        new VsiCalibrationPointEditor
+                        {
+                            VerticalSpeed =
+                                point.VerticalSpeed,
+
+                            Angle =
+                                point.Angle
+                        })
+                    .ToList()
+        };
     }
 
     private async Task LoadLayoutsAsync()
@@ -104,27 +300,6 @@ public partial class AircraftManagement : ComponentBase
             .ToList();
     }
 
-    private static CockpitLayoutDefinition ConvertToLayoutDefinition(CockpitLayoutModel layout)
-    {
-        return new CockpitLayoutDefinition
-        {
-            Key = layout.Key,
-            Name = layout.Name,
-            Rows = layout.Details.Rows,
-            Columns = layout.Details.Columns,
-            Instruments = layout.Details.Instruments
-                .Select(instrument => new InstrumentDefinition
-                {
-                    Type = instrument.Type,
-                    GridRow = instrument.GridRow,
-                    GridColumn = instrument.GridColumn,
-                    RowSpan = instrument.RowSpan,
-                    ColumnSpan = instrument.ColumnSpan
-                })
-                .ToList()
-        };
-    }
-
     private async Task SelectAircraftAsync(ChangeEventArgs args)
     {
         if (!int.TryParse(args.Value?.ToString(), out var aircraftId))
@@ -151,6 +326,7 @@ public partial class AircraftManagement : ComponentBase
         }
 
         selectedAircraft = aircraft;
+        LoadAdvancedVsi();
     }
 
     private void StartNewAircraft()
@@ -162,18 +338,28 @@ public partial class AircraftManagement : ComponentBase
 
     private void AddLandingGearUnit()
     {
+        var nextNumber = selectedAircraft.LandingGearConfig.Units.Count + 1;
+
         selectedAircraft.LandingGearConfig.Units.Add(new LandingGearUnit
         {
-            Id = selectedAircraft.LandingGearConfig.Units.Count + 1,
-            Label = $"Gear {selectedAircraft.LandingGearConfig.Units.Count + 1}",
+            Number = nextNumber,
+            Label = $"Gear {nextNumber}",
             Position = LandingGearPosition.Custom,
             Order = selectedAircraft.LandingGearConfig.Units.Count
         });
     }
-    private void OnLandingGearKindChanged()
+    private static AircraftLandingGearConfig CreateDefaultLandingGear()
     {
-        var config = selectedAircraft.LandingGearConfig;
-        config.Units.Clear();
+        return CreateLandingGearConfig(
+            LandingGearKind.FixedTricycle);
+    }
+    private static AircraftLandingGearConfig CreateLandingGearConfig(
+        LandingGearKind kind)
+    {
+        var config = new AircraftLandingGearConfig
+        {
+            Kind = kind
+        };
 
         switch (config.Kind)
         {
@@ -181,58 +367,60 @@ public partial class AircraftManagement : ComponentBase
             case LandingGearKind.RetractableTricycle:
                 config.Units.AddRange(new[]
                 {
-                    new LandingGearUnit { Id = 1, Label = "N", Position = LandingGearPosition.Nose, Order = 0 },
-                    new LandingGearUnit { Id = 2, Label = "L", Position = LandingGearPosition.LeftMain, Order = 1 },
-                    new LandingGearUnit { Id = 3, Label = "R", Position = LandingGearPosition.RightMain, Order = 2 }
+                    new LandingGearUnit { Number = 1, Label = "N", Position = LandingGearPosition.Nose, Status = LandingGearStatusValue.DownAndLocked, Order = 0 },
+                    new LandingGearUnit { Number = 2, Label = "L", Position = LandingGearPosition.LeftMain, Status = LandingGearStatusValue.DownAndLocked, Order = 1 },
+                    new LandingGearUnit { Number = 3, Label = "R", Position = LandingGearPosition.RightMain, Status = LandingGearStatusValue.DownAndLocked, Order = 2 }
                 });
                 break;
 
             case LandingGearKind.Tailwheel:
                 config.Units.AddRange(new[]
                 {
-                    new LandingGearUnit { Id = 1, Label = "L", Position = LandingGearPosition.LeftMain, Order = 0 },
-                    new LandingGearUnit { Id = 2, Label = "R", Position = LandingGearPosition.RightMain, Order = 1 },
-                    new LandingGearUnit { Id = 3, Label = "T", Position = LandingGearPosition.Tail, Order = 2 }
+                    new LandingGearUnit { Number = 1, Label = "L", Position = LandingGearPosition.LeftMain, Status = LandingGearStatusValue.DownAndLocked, Order = 0 },
+                    new LandingGearUnit { Number = 2, Label = "R", Position = LandingGearPosition.RightMain, Status = LandingGearStatusValue.DownAndLocked, Order = 1 },
+                    new LandingGearUnit { Number = 3, Label = "T", Position = LandingGearPosition.Tail, Status = LandingGearStatusValue.DownAndLocked, Order = 2 }
                 });
                 break;
 
             case LandingGearKind.Tandem:
                 config.Units.AddRange(new[]
                 {
-                    new LandingGearUnit { Id = 1, Label = "F", Position = LandingGearPosition.Nose, Order = 0 },
-                    new LandingGearUnit { Id = 2, Label = "A", Position = LandingGearPosition.Tail, Order = 1 }
+                    new LandingGearUnit { Number = 1, Label = "F", Position = LandingGearPosition.Nose, Status = LandingGearStatusValue.DownAndLocked, Order = 0 },
+                    new LandingGearUnit { Number = 2, Label = "A", Position = LandingGearPosition.Tail, Status = LandingGearStatusValue.DownAndLocked, Order = 1 }
                 });
                 break;
 
             case LandingGearKind.MultiBogey:
                 config.Units.AddRange(new[]
                 {
-                    new LandingGearUnit { Id = 1, Label = "L1", Position = LandingGearPosition.LeftMain, Order = 0 },
-                    new LandingGearUnit { Id = 2, Label = "L2", Position = LandingGearPosition.LeftMain, Order = 1 },
-                    new LandingGearUnit { Id = 3, Label = "R1", Position = LandingGearPosition.RightMain, Order = 2 },
-                    new LandingGearUnit { Id = 4, Label = "R2", Position = LandingGearPosition.RightMain, Order = 3 }
+                    new LandingGearUnit { Number = 1, Label = "L1", Position = LandingGearPosition.LeftMain, Status = LandingGearStatusValue.DownAndLocked, Order = 0 },
+                    new LandingGearUnit { Number = 2, Label = "L2", Position = LandingGearPosition.LeftMain, Status = LandingGearStatusValue.DownAndLocked, Order = 1 },
+                    new LandingGearUnit { Number = 3, Label = "R1", Position = LandingGearPosition.RightMain, Status = LandingGearStatusValue.DownAndLocked, Order = 2 },
+                    new LandingGearUnit { Number = 4, Label = "R2", Position = LandingGearPosition.RightMain, Status = LandingGearStatusValue.DownAndLocked, Order = 3 }
                 });
                 break;
 
             case LandingGearKind.Floats:
                 config.Units.AddRange(new[]
                 {
-                    new LandingGearUnit { Id = 1, Label = "L Float", Position = LandingGearPosition.LeftMain, Order = 0 },
-                    new LandingGearUnit { Id = 2, Label = "R Float", Position = LandingGearPosition.RightMain, Order = 1 }
+                    new LandingGearUnit { Number = 1, Label = "L Float", Position = LandingGearPosition.LeftMain, Status = LandingGearStatusValue.DownAndLocked, Order = 0 },
+                    new LandingGearUnit { Number = 2, Label = "R Float", Position = LandingGearPosition.RightMain, Status = LandingGearStatusValue.DownAndLocked, Order = 1 }
                 });
                 break;
 
             case LandingGearKind.Skis:
                 config.Units.AddRange(new[]
                 {
-                    new LandingGearUnit { Id = 1, Label = "L Ski", Position = LandingGearPosition.LeftMain, Order = 0 },
-                    new LandingGearUnit { Id = 2, Label = "R Ski", Position = LandingGearPosition.RightMain, Order = 1 }
+                    new LandingGearUnit { Number = 1, Label = "L Ski", Position = LandingGearPosition.LeftMain, Status = LandingGearStatusValue.DownAndLocked, Order = 0 },
+                    new LandingGearUnit { Number = 2, Label = "R Ski", Position = LandingGearPosition.RightMain, Status = LandingGearStatusValue.DownAndLocked, Order = 1 }
                 });
                 break;
 
             default:
                 break;
         }
+
+        return config;
     }
 
     private async Task SaveAircraftAsync(EditContext editContext)
@@ -251,13 +439,6 @@ public partial class AircraftManagement : ComponentBase
 
         isSaving = true;
         statusMessage = null;
-
-        Logger.LogInformation(
-            "Saving aircraft {AircraftId} {Name} with gear kind {Kind} and {UnitCount} units",
-            selectedAircraft.Id,
-            selectedAircraft.Name,
-            selectedAircraft.LandingGearConfig.Kind,
-            selectedAircraft.LandingGearConfig.Units.Count);
 
         try
         {
@@ -356,13 +537,66 @@ public partial class AircraftManagement : ComponentBase
             EngineCount = 1,
             FuelTankCount = 2,
             BrakeCount = 2,
+
+            LandingGearConfig = CreateDefaultLandingGear(),
+
             IsActive = true
         };
     }
-
-    private void HandleLayoutSelection(ChangeEventArgs args)
+    private void AddVsiCalibrationPoint()
     {
-        var selectedValue = args.Value?.ToString();
+        advancedVsi?
+            .CalibrationPoints
+            .Add(
+                new VsiCalibrationPointEditor
+                {
+                    VerticalSpeed = 0,
+                    Angle = -90
+                });
+    }
+    private void RemoveVsiCalibrationPoint(
+        VsiCalibrationPointEditor point)
+    {
+        advancedVsi?
+            .CalibrationPoints
+            .Remove(point);
+    }
+    private void ResetVsiCalibration()
+    {
+        var defaults =
+            CreateDefaultVsiLayout();
+
+        advancedVsi =
+            new VsiAdvancedEditor
+            {
+                MinimumVerticalSpeed =
+                    defaults.MinimumVerticalSpeed,
+
+                MaximumVerticalSpeed =
+                    defaults.MaximumVerticalSpeed,
+
+                LagSeconds =
+                    defaults.LagSeconds,
+
+                CalibrationPoints =
+                    defaults.CalibrationPoints
+                        .Select(point =>
+                            new VsiCalibrationPointEditor
+                            {
+                                VerticalSpeed =
+                                    point.VerticalSpeed,
+
+                                Angle =
+                                    point.Angle
+                            })
+                        .ToList()
+            };
+    }
+    private void HandleLayoutSelection(
+    ChangeEventArgs args)
+    {
+        var selectedValue =
+            args.Value?.ToString();
 
         if (selectedValue == "__create_new__")
         {
@@ -370,7 +604,10 @@ public partial class AircraftManagement : ComponentBase
             return;
         }
 
-        selectedAircraft.CockpitLayoutKey = selectedValue ?? string.Empty;
+        selectedAircraft.CockpitLayoutKey =
+            selectedValue ?? string.Empty;
+
+        LoadAdvancedVsi();
     }
 
     private bool LayoutExists(string layoutKey)
@@ -511,23 +748,6 @@ public partial class AircraftManagement : ComponentBase
 
         instrument.GridRow = 1;
         instrument.GridColumn = 1;
-    }
-
-// Required Instruements all Aircraft must have therefore cannot be disabled in the layout editor | Big 6 Display, Oil Gauges, Fuel Gauge, Eletrical Load, and Tachometer
-    private static bool IsRequiredInstrument(InstrumentType type)
-    {
-        return type is
-            InstrumentType.AirspeedIndicator or
-            InstrumentType.ArtificialHorizon or
-            InstrumentType.Altimeter or
-            InstrumentType.TurnCoordinator or
-            InstrumentType.HeadingIndicator or
-            InstrumentType.VerticalSpeedIndicator or
-            InstrumentType.Tachometer or
-            InstrumentType.OilPressureGauge or
-            InstrumentType.OilTemperatureGauge or
-            InstrumentType.FuelQuantityGauge or
-            InstrumentType.AmmeterOrVacuumGauge;
     }
 
     private static IEnumerable<(int Row, int Column)> GetOccupiedCells(InstrumentPlacementEditor instrument)
@@ -919,24 +1139,51 @@ public partial class AircraftManagement : ComponentBase
             isDeletingLayout = false;
         }
     }
-    private static CockpitLayoutDefinition CloneLayoutDefinition(CockpitLayoutDefinition layout)
+    private static CockpitLayoutDefinition CloneLayoutDefinition(
+        CockpitLayoutDefinition layout)
     {
         return new CockpitLayoutDefinition
         {
             Key = layout.Key,
             Name = layout.Name,
-            Rows = layout.Rows,
-            Columns = layout.Columns,
-            Instruments = layout.Instruments
-                .Select(instrument => new InstrumentDefinition
-                {
-                    Type = instrument.Type,
-                    GridRow = instrument.GridRow,
-                    GridColumn = instrument.GridColumn,
-                    RowSpan = instrument.RowSpan,
-                    ColumnSpan = instrument.ColumnSpan
-                })
-                .ToList()
+
+            AircraftId =
+                layout.AircraftId,
+
+            Rows =
+                layout.Rows,
+
+            Columns =
+                layout.Columns,
+
+            EngineCount =
+                layout.EngineCount,
+
+            Instruments =
+                layout.Instruments
+                    .Select(instrument =>
+                        new InstrumentDefinition
+                        {
+                            Type = instrument.Type,
+                            GridRow = instrument.GridRow,
+                            GridColumn = instrument.GridColumn,
+                            RowSpan = instrument.RowSpan,
+                            ColumnSpan = instrument.ColumnSpan
+                        })
+                    .ToList(),
+
+            Airspeed =
+                NormalizeAirspeedLayout(
+                    layout.Airspeed),
+
+            ArtificialHorizon =
+                layout.ArtificialHorizon,
+
+            VSI =
+                layout.VSI,
+
+            DefaultState =
+                layout.DefaultState
         };
     }
 
@@ -1090,9 +1337,6 @@ public partial class AircraftManagement : ComponentBase
                 .Select(type => new InstrumentPlacementEditor
                 {
                     Type = type,
-
-                    IsSelected =
-                        IsRequiredInstrument(type),
 
                     GridRow = 1,
                     GridColumn = 1,

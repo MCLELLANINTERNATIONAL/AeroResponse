@@ -254,7 +254,7 @@ public partial class Simulation : IAsyncDisposable
             cockpitLayout =
                 await LayoutProvider.GetLayout(
                     selectedAircraft.CockpitLayoutKey);
-                    
+
             // Airspeed Layout Catch for Bad Data
             if (cockpitLayout.Airspeed.MaximumSpeed <=
                 cockpitLayout.Airspeed.MinimumSpeed)
@@ -309,9 +309,8 @@ public partial class Simulation : IAsyncDisposable
             if (saveSelection)
             {
                 await SaveCurrentSelectionAsync();
+                UpdateSimulationUrl();
             }
-
-            UpdateSimulationUrl();
         }
         catch (Exception ex)
         {

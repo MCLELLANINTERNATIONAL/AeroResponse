@@ -535,6 +535,24 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.control-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+#emergency-feedback {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 50%;
+}
+
+.switch-grid {
+    display:grid; 
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+    grid-column: 1 / -1;
+}
+
 /* ======================================================
     Testing controls
 ====================================================== */

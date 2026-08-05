@@ -1,0 +1,312 @@
+@using AeroResponse.Simulation
+@using AeroResponse.Simulation.Instruments
+
+<InstrumentBase Label="Fuel Quantity"
+                AriaLabel="Cessna 172 Skyhawk left and right fuel quantity gauge">
+
+    <svg viewBox="0 0 300 300"
+         class="cessna-fuel-gauge"
+         role="img"
+         aria-label="Cessna 172 left and right fuel quantity">
+
+        <!-- Instrument face -->
+        <circle cx="150"
+                cy="150"
+                r="138"
+                class="fuel-case" />
+
+        <circle cx="150"
+                cy="150"
+                r="126"
+                class="fuel-face" />
+
+        <!-- Header -->
+        <text x="150"
+              y="48"
+              text-anchor="middle"
+              class="fuel-title">
+            FUEL
+        </text>
+
+        <!-- LEFT / RIGHT vertical lettering -->
+        <text x="47"
+              y="92"
+              text-anchor="middle"
+              class="side-letter">L</text>
+        <text x="47"
+              y="114"
+              text-anchor="middle"
+              class="side-letter">E</text>
+        <text x="47"
+              y="136"
+              text-anchor="middle"
+              class="side-letter">F</text>
+        <text x="47"
+              y="158"
+              text-anchor="middle"
+              class="side-letter">T</text>
+
+        <text x="253"
+              y="92"
+              text-anchor="middle"
+              class="side-letter">R</text>
+        <text x="253"
+              y="114"
+              text-anchor="middle"
+              class="side-letter">I</text>
+        <text x="253"
+              y="136"
+              text-anchor="middle"
+              class="side-letter">G</text>
+        <text x="253"
+              y="158"
+              text-anchor="middle"
+              class="side-letter">H</text>
+        <text x="253"
+              y="180"
+              text-anchor="middle"
+              class="side-letter">T</text>
+
+        <!-- =========================
+             LEFT SCALE
+             ========================= -->
+
+        <path d="M 72 205
+                 C 69 165,
+                   71 115,
+                   96 67"
+              class="fuel-scale" />
+
+        <!-- Left major ticks -->
+
+        <line x1="70" y1="205"
+              x2="88" y2="197"
+              class="major-tick" />
+
+        <line x1="72" y1="171"
+              x2="92" y2="169"
+              class="major-tick" />
+
+        <line x1="76" y1="137"
+              x2="96" y2="140"
+              class="major-tick" />
+
+        <line x1="84" y1="104"
+              x2="103" y2="111"
+              class="major-tick" />
+
+        <line x1="96" y1="67"
+              x2="113" y2="78"
+              class="major-tick" />
+
+        <!-- Left labels -->
+
+        <text x="59" y="216"
+              text-anchor="middle"
+              class="fuel-number">
+            0
+        </text>
+
+        <text x="55" y="178"
+              text-anchor="middle"
+              class="fuel-number">
+            5
+        </text>
+
+        <text x="58" y="143"
+              text-anchor="middle"
+              class="fuel-number">
+            10
+        </text>
+
+        <text x="66" y="108"
+              text-anchor="middle"
+              class="fuel-number">
+            15
+        </text>
+
+        <text x="77" y="78"
+              text-anchor="middle"
+              class="fuel-number">
+            20
+        </text>
+
+        <text x="93" y="55"
+              text-anchor="middle"
+              class="fuel-number">
+            26
+        </text>
+
+        <!-- =========================
+             RIGHT SCALE
+             ========================= -->
+
+        <path d="M 228 205
+                 C 231 165,
+                   229 115,
+                   204 67"
+              class="fuel-scale" />
+
+        <line x1="230" y1="205"
+              x2="212" y2="197"
+              class="major-tick" />
+
+        <line x1="228" y1="171"
+              x2="208" y2="169"
+              class="major-tick" />
+
+        <line x1="224" y1="137"
+              x2="204" y2="140"
+              class="major-tick" />
+
+        <line x1="216" y1="104"
+              x2="197" y2="111"
+              class="major-tick" />
+
+        <line x1="204" y1="67"
+              x2="187" y2="78"
+              class="major-tick" />
+
+        <!-- Right labels -->
+
+        <text x="241" y="216"
+              text-anchor="middle"
+              class="fuel-number">
+            0
+        </text>
+
+        <text x="245" y="178"
+              text-anchor="middle"
+              class="fuel-number">
+            5
+        </text>
+
+        <text x="242" y="143"
+              text-anchor="middle"
+              class="fuel-number">
+            10
+        </text>
+
+        <text x="234" y="108"
+              text-anchor="middle"
+              class="fuel-number">
+            15
+        </text>
+
+        <text x="223" y="78"
+              text-anchor="middle"
+              class="fuel-number">
+            20
+        </text>
+
+        <text x="207" y="55"
+              text-anchor="middle"
+              class="fuel-number">
+            26
+        </text>
+
+        <!-- Low-fuel red zones -->
+
+        <line x1="72"
+              y1="204"
+              x2="86"
+              y2="195"
+              class="red-zone" />
+
+        <line x1="228"
+              y1="204"
+              x2="214"
+              y2="195"
+              class="red-zone" />
+
+        <!-- =========================
+             NEEDLES
+             ========================= -->
+
+        <line x1="118"
+              y1="202"
+              x2="118"
+              y2="118"
+              class="fuel-needle"
+              transform="@LeftNeedleTransform" />
+
+        <circle cx="118"
+                cy="202"
+                r="7"
+                class="needle-hub" />
+
+        <line x1="182"
+              y1="202"
+              x2="182"
+              y2="118"
+              class="fuel-needle"
+              transform="@RightNeedleTransform" />
+
+        <circle cx="182"
+                cy="202"
+                r="7"
+                class="needle-hub" />
+
+        <!-- Bottom labeling -->
+
+        <text x="150"
+              y="226"
+              text-anchor="middle"
+              class="gallons-label">
+            GALLONS
+        </text>
+
+        <text x="150"
+              y="250"
+              text-anchor="middle"
+              class="qty-label">
+            QTY
+        </text>
+
+    </svg>
+
+</InstrumentBase>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<FuelState> FuelTanks { get; set; } = [];
+
+    private const double Capacity = 26.0;
+
+    private double LeftQuantity =>
+        FuelTanks.ElementAtOrDefault(0)?.Quantity ?? 0;
+
+    private double RightQuantity =>
+        FuelTanks.ElementAtOrDefault(1)?.Quantity ?? 0;
+
+    private string LeftNeedleTransform =>
+        GetLeftNeedleTransform(LeftQuantity);
+
+    private string RightNeedleTransform =>
+        GetRightNeedleTransform(RightQuantity);
+
+    private static string GetLeftNeedleTransform(double quantity)
+    {
+        var percent =
+            Math.Clamp(quantity / Capacity, 0, 1);
+
+        // Empty points down/outboard.
+        // Full points upward/inboard.
+        var angle =
+            -32 + (percent * 64);
+
+        return $"rotate({InstrumentGeometry.Format(angle)} 118 202)";
+    }
+
+    private static string GetRightNeedleTransform(double quantity)
+    {
+        var percent =
+            Math.Clamp(quantity / Capacity, 0, 1);
+
+        // Mirrored movement.
+        var angle =
+            32 - (percent * 64);
+
+        return $"rotate({InstrumentGeometry.Format(angle)} 182 202)";
+    }
+}

@@ -1,0 +1,58 @@
+<InstrumentBase Label="Communications"
+                AriaLabel="Emergency communications panel">
+
+    <div class="communications-panel">
+
+        <div class="radio-display">
+            @RadioFrequency.ToString("000.000")
+        </div>
+
+        <button type="button"
+                @onclick="OnRadioPowerClicked">
+            RADIO
+            @(RadioPowered ? "ON" : "OFF")
+        </button>
+
+        @if (HasSatellitePhone)
+        {
+            <button type="button"
+                    @onclick="OnSatelliteClicked">
+                SAT PHONE
+            </button>
+
+            <div class="connection-status">
+                @(SatelliteConnected
+                    ? "CONNECTED"
+                    : "NO LINK")
+            </div>
+        }
+
+    </div>
+
+</InstrumentBase>
+
+@code {
+    [Parameter]
+    public bool RadioPowered { get; set; }
+
+    [Parameter]
+    public double RadioFrequency { get; set; }
+
+    [Parameter]
+    public bool HasSatellitePhone { get; set; }
+
+    [Parameter]
+    public bool SatelliteConnected { get; set; }
+
+    [Parameter]
+    public EventCallback RadioPowerClicked { get; set; }
+
+    [Parameter]
+    public EventCallback SatelliteClicked { get; set; }
+
+    private Task OnRadioPowerClicked() =>
+        RadioPowerClicked.InvokeAsync();
+
+    private Task OnSatelliteClicked() =>
+        SatelliteClicked.InvokeAsync();
+}

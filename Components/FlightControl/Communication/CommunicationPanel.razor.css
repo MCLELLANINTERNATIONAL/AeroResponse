@@ -1,0 +1,280 @@
+.communications-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    width: 100%;
+    max-width: 760px;
+
+    box-sizing: border-box;
+}
+
+.communications-svg {
+    display: block;
+
+    width: 100%;
+    height: auto;
+
+    background: transparent;
+}
+
+
+/* ==================================================
+   PANEL
+   ================================================== */
+
+.panel-case {
+    fill: #090909;
+
+    stroke: #555;
+    stroke-width: 5;
+}
+
+.panel-face {
+    fill: #171717;
+
+    stroke: #292929;
+    stroke-width: 3;
+}
+
+.panel-divider {
+    stroke: #555;
+    stroke-width: 2;
+}
+
+.panel-title {
+    fill: #f3f4f6;
+
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+
+    letter-spacing: 2px;
+}
+
+.section-title {
+    fill: #d1d5db;
+
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+
+    letter-spacing: 2px;
+}
+
+
+/* ==================================================
+   DIGITAL DISPLAYS
+   ================================================== */
+
+.display-bezel {
+    fill: #050505;
+
+    stroke: #555;
+    stroke-width: 3;
+}
+
+.digital-display {
+    transition:
+        fill 0.2s ease;
+}
+
+.digital-display.active {
+    fill: #16251b;
+}
+
+.digital-display.inactive {
+    fill: #090909;
+}
+
+.frequency-text {
+    fill: #7dff87;
+
+    font-family:
+        "Courier New",
+        monospace;
+
+    font-size: 23px;
+    font-weight: 700;
+
+    letter-spacing: 2px;
+}
+
+.satellite-status-text {
+    fill: #7dff87;
+
+    font-family:
+        "Courier New",
+        monospace;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    letter-spacing: 1px;
+}
+
+.display-label {
+    fill: #aaa;
+
+    font-family: Arial, sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+
+/* ==================================================
+   STATUS LIGHTS
+   ================================================== */
+
+.status-light {
+    stroke: #111;
+    stroke-width: 2;
+
+    transition: fill 0.2s ease;
+}
+
+.status-light.off {
+    fill: #343434;
+}
+
+.status-light.powered {
+    fill: #2e7d32;
+}
+
+.status-light.connected {
+    fill: #2e7d32;
+}
+
+.status-light.transmitting {
+    fill: #d32f2f;
+}
+
+.control-label {
+    fill: #d1d5db;
+
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: 1px;
+}
+
+
+/* ==================================================
+   RADIO
+   ================================================== */
+
+.emergency-frequency {
+    fill: #e5e7eb;
+
+    font-family:
+        "Courier New",
+        monospace;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    letter-spacing: 1px;
+}
+
+
+/* ==================================================
+   SATELLITE SIGNAL
+   ================================================== */
+
+.signal-bar {
+    fill: #333;
+
+    stroke: #111;
+    stroke-width: 1;
+}
+
+.signal-bar.active {
+    fill: #7dff87;
+}
+
+.signal-label {
+    fill: #d1d5db;
+
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.satellite-footer {
+    fill: #e5e7eb;
+
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: 1px;
+}
+
+
+/* ==================================================
+   PHYSICAL CONTROLS
+   ================================================== */
+
+.communications-controls {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 1rem;
+}
+
+.radio-controls,
+.satellite-controls {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 0.5rem;
+}
+
+.communication-button {
+    min-height: 44px;
+
+    padding: 0.5rem 0.7rem;
+
+    border: 1px solid #666;
+    border-radius: 0.35rem;
+
+    background: #202020;
+    color: #f3f4f6;
+
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.communication-button:hover:not(:disabled) {
+    background: #303030;
+}
+
+.communication-button:disabled {
+    opacity: 0.4;
+
+    cursor: not-allowed;
+}
+
+.transmit-button {
+    border-color: #8b2727;
+}
+
+.connect-button {
+    border-color: #345d38;
+}
+
+
+@media (max-width: 700px) {
+
+    .communications-controls {
+        grid-template-columns: 1fr;
+    }
+
+}

@@ -31,12 +31,6 @@ public class AircraftRepository : EfGenericRepository<Aircraft>
     {
         ArgumentNullException.ThrowIfNull(aircraft);
 
-        logger.LogInformation(
-            "Saving aircraft {AircraftId} {Name} with gear kind {Kind} and {UnitCount} units",
-            aircraft.Id,
-            aircraft.Name,
-            aircraft.LandingGearConfig.Kind,
-            aircraft.LandingGearConfig.Units.Count);
 
         var existing = await context.Aircraft
             .Include(a => a.LandingGearConfig)
@@ -67,6 +61,7 @@ public class AircraftRepository : EfGenericRepository<Aircraft>
                 .OrderBy(u => u.Order)
                 .Select(u => new LandingGearUnit
                 {
+                    Number = u.Number,
                     Label = u.Label,
                     Position = u.Position,
                     Status = u.Status,
@@ -74,14 +69,6 @@ public class AircraftRepository : EfGenericRepository<Aircraft>
                 })
                 .ToList()
         };
-
-        logger.LogInformation(
-            "After Reconstruction: {Kind} {UnitCount} units for aircraft {AircraftId} {Name}",
-            existing.LandingGearConfig.Kind,
-            existing.LandingGearConfig.Units.Count,
-            existing.Id,
-            existing.Name);
-
         await context.SaveChangesAsync();
     }
     public async Task<Aircraft?> GetByIdWithLandingGearAsync(int id)

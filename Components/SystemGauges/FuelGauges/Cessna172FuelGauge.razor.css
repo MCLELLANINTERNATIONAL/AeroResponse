@@ -1,0 +1,96 @@
+.cessna-fuel-gauge {
+    width: 100%;
+    height: 100%;
+}
+
+.fuel-case {
+    fill: #080808;
+    stroke: #404040;
+    stroke-width: 5;
+}
+
+.fuel-face {
+    fill: #191919;
+    stroke: #050505;
+    stroke-width: 3;
+}
+
+.fuel-title {
+    fill: #e8e8e8;
+
+    font-family: Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+
+    letter-spacing: 1px;
+}
+
+.side-letter {
+    fill: #e8e8e8;
+
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.fuel-scale {
+    fill: none;
+
+    stroke: #e5e5e5;
+    stroke-width: 5;
+
+    stroke-linecap: round;
+}
+
+.major-tick {
+    stroke: #e5e5e5;
+    stroke-width: 4;
+
+    stroke-linecap: square;
+}
+
+.fuel-number {
+    fill: #e8e8e8;
+
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.red-zone {
+    stroke: #c62828;
+    stroke-width: 7;
+
+    stroke-linecap: square;
+}
+
+.fuel-needle {
+    stroke: #eeeeee;
+    stroke-width: 4;
+
+    stroke-linecap: round;
+
+    transition: transform 0.25s ease;
+}
+
+.needle-hub {
+    fill: #c8c8c8;
+    stroke: #555;
+    stroke-width: 2;
+}
+
+.gallons-label {
+    fill: #e0e0e0;
+
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.qty-label {
+    fill: #e8e8e8;
+
+    font-family: Arial, sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+}

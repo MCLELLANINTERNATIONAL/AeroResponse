@@ -95,91 +95,46 @@
 
                     <div class="aircraft-form-grid">
                         <div class="form-field">
-                            <label for="aircraft-name">Name</label>
-                            <InputText id="aircraft-name" class="form-control" @bind-Value="selectedAircraft.Name" />
+                            <label for="aircraft-name">Aircraft name</label>
+                            <InputText id="aircraft-name"
+                                       class="form-control"
+                                       @bind-Value="selectedAircraft.Name" />
                         </div>
-
                         <div class="form-field">
                             <label for="manufacturer">Manufacturer</label>
-                            <InputText id="manufacturer" class="form-control" @bind-Value="selectedAircraft.Manufacturer" />
+                            <InputText id="manufacturer"
+                                       class="form-control"
+                                       @bind-Value="selectedAircraft.Manufacturer" />
                         </div>
 
                         <div class="form-field">
                             <label for="aircraft-type">Aircraft type</label>
-                            <InputText id="aircraft-type" class="form-control" @bind-Value="selectedAircraft.AircraftType" />
+                            <InputText id="aircraft-type"
+                                       class="form-control"
+                                       @bind-Value="selectedAircraft.AircraftType" />
                         </div>
-                    </div>
-
-                    <div class="form-field">
-                        <label for="description">Description</label>
-                        <InputTextArea id="description" class="form-control" @bind-Value="selectedAircraft.Description" />
-                    </div>
-
-                    <div class="aircraft-form-grid">
                         <div class="form-field">
                             <label for="max-altitude">Maximum altitude</label>
-                            <InputNumber id="max-altitude" class="form-control" @bind-Value="selectedAircraft.MaxAltitude" />
+                            <InputNumber id="max-altitude"
+                                        class="form-control"
+                                        @bind-Value="selectedAircraft.MaxAltitude" />
                         </div>
 
                         <div class="form-field">
                             <label for="cruise-speed">Cruise speed</label>
-                            <InputNumber id="cruise-speed" class="form-control" @bind-Value="selectedAircraft.CruiseSpeed" />
+                            <InputNumber id="cruise-speed"
+                                        class="form-control"
+                                        @bind-Value="selectedAircraft.CruiseSpeed" />
                         </div>
-                        
+
                         <div class="form-field">
                             <label for="engine-count">Engine count</label>
-                            <InputNumber id="engine-count" class="form-control" @bind-Value="selectedAircraft.EngineCount" />
-                            <label for="brake-count">Brake count</label>
-                            <InputNumber id="brake-count" class="form-control" @bind-Value="selectedAircraft.BrakeCount" />
-                            <label for="FuelTanks">Fuel tanks</label>
-                            <InputNumber id="FuelTanks" class="form-control" @bind-Value="selectedAircraft.FuelTankCount" />
-                        </div>
-
-                        <div class="form-field">
-                            <div class="form-field">
-                                <label for="landing-gear-kind">Landing Gear Configuration</label>
-                                <InputSelect id="landing-gear-kind"
-                                            class="form-select"
-                                            @bind-Value="selectedAircraft.LandingGearConfig.Kind"
-                                            @bind-Value:after="OnLandingGearKindChanged">
-                                    <option value="">Select a landing gear configuration</option>
-                                    @foreach (var kind in Enum.GetValues<LandingGearKind>())
-                                    {
-                                        <option value="@kind">@kind</option>
-                                    }
-                                </InputSelect>
-                                <p>Units: @(selectedAircraft.LandingGearConfig.Units?.Count ?? 0)</p>
-                                <button type="button" class="btn btn-outline-secondary" @onclick="AddLandingGearUnit">
-                                    Add landing gear unit
-                                </button>
-                            </div>
-
-                            @if (selectedAircraft.LandingGearConfig.Kind != default)
-                            {
-                                <div class="form-field">
-                                    <label>Landing Gear Units</label>
-
-                                    @foreach (var unit in selectedAircraft.LandingGearConfig.Units.OrderBy(u => u.Order))
-                                    {
-                                        <div class="d-flex gap-2 mb-2 align-items-center">
-                                            <InputText class="form-control" @bind-Value="unit.Label" placeholder="Label" />
-                                            <InputSelect class="form-select" @bind-Value="unit.Position">
-                                                @foreach (var pos in Enum.GetValues<LandingGearPosition>())
-                                                {
-                                                    <option value="@pos">@pos</option>
-                                                }
-                                            </InputSelect>
-                                        </div>
-                                    }
-
-                                    <button type="button" class="btn btn-outline-secondary" @onclick="AddLandingGearUnit">
-                                        Add landing gear unit
-                                    </button>
-                                </div>
-                            }
+                            <InputNumber id="engine-count"
+                                        class="form-control"
+                                        min="1"
+                                        @bind-Value="selectedAircraft.EngineCount" />
                         </div>
                     </div>
-
                     <div class="form-field">
                         <label for="cockpit-layout">Cockpit layout</label>
                         <select id="cockpit-layout" class="form-select" value="@selectedAircraft.CockpitLayoutKey" @onchange="HandleLayoutSelection">
@@ -197,6 +152,304 @@
                             <option value="__create_new__">+ Create new cockpit layout</option>
                         </select>
                     </div>
+
+                    <details class="advanced-aircraft-section">
+
+                        <summary class="advanced-aircraft-summary">
+                            <div>
+                                <span class="section-eyebrow">
+                                    Advanced
+                                </span>
+
+                                <strong>
+                                    Aircraft systems & calibration
+                                </strong>
+                            </div>
+
+                            <span class="advanced-chevron">
+                                ▾
+                            </span>
+                        </summary>
+
+                        <div class="advanced-aircraft-content">
+
+                            @* ==========================================
+                            AIRCRAFT HARDWARE
+                            ========================================== *@
+
+                            <section class="advanced-group">
+                                <div class="advanced-group-heading">
+                                    <h3>Aircraft Hardware</h3>
+
+                                    <p>
+                                        Configure physical systems that vary
+                                        between aircraft.
+                                    </p>
+                                </div>
+
+                                <div class="aircraft-form-grid">
+
+                                    <div class="form-field">
+                                        <label for="fuel-tank-count">
+                                            Fuel tank count
+                                        </label>
+
+                                        <InputNumber id="fuel-tank-count"
+                                                    class="form-control"
+                                                    min="1"
+                                                    max="20"
+                                                    @bind-Value="selectedAircraft.FuelTankCount" />
+
+                                        <small>
+                                            Default: 2
+                                        </small>
+                                    </div>
+
+                                    <div class="form-field">
+                                        <label for="brake-count">
+                                            Brake count
+                                        </label>
+
+                                        <InputNumber id="brake-count"
+                                                    class="form-control"
+                                                    min="0"
+                                                    max="20"
+                                                    @bind-Value="selectedAircraft.BrakeCount" />
+
+                                        <small>
+                                            Default: 2
+                                        </small>
+                                    </div>
+
+                                </div>
+                            </section>
+
+
+                            @* ==========================================
+                            LANDING GEAR
+                            ========================================== *@
+
+                            <section class="advanced-group">
+
+                                <div class="advanced-group-heading">
+                                    <h3>Landing Gear</h3>
+
+                                    <p>
+                                        Configure landing gear type and
+                                        individual gear units.
+                                    </p>
+                                </div>
+
+                                <div class="form-field">
+
+                                    <label for="landing-gear-kind">
+                                        Landing gear configuration
+                                    </label>
+
+                                    <InputSelect id="landing-gear-kind"
+                                                class="form-select"
+                                                @bind-Value="selectedAircraft.LandingGearConfig.Kind"
+                                                @bind-Value:after="OnLandingGearKindChanged">
+
+                                        @foreach (var kind in
+                                            Enum.GetValues<LandingGearKind>())
+                                        {
+                                            <option value="@kind">
+                                                @GetLandingGearKindName(kind)
+                                            </option>
+                                        }
+
+                                    </InputSelect>
+
+                                </div>
+
+                                <div class="landing-gear-unit-list">
+
+                                    @foreach (var unit in
+                                        selectedAircraft.LandingGearConfig.Units
+                                            .OrderBy(unit => unit.Order))
+                                    {
+                                        <div class="landing-gear-unit"
+                                            @key="unit.Number">
+
+                                            <div class="form-field">
+                                                <label>
+                                                    Label
+                                                </label>
+
+                                                <InputText class="form-control"
+                                                        @bind-Value="unit.Label" />
+                                            </div>
+
+                                            <div class="form-field">
+                                                <label>
+                                                    Position
+                                                </label>
+
+                                                <InputSelect class="form-select"
+                                                            @bind-Value="unit.Position">
+
+                                                    @foreach (var position in
+                                                        Enum.GetValues<LandingGearPosition>())
+                                                    {
+                                                        <option value="@position">
+                                                            @position
+                                                        </option>
+                                                    }
+
+                                                </InputSelect>
+                                            </div>
+
+                                            <button type="button"
+                                                    class="btn btn-outline-danger"
+                                                    @onclick="() => RemoveLandingGearUnit(unit)">
+                                                Remove
+                                            </button>
+
+                                        </div>
+                                    }
+
+                                </div>
+
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        @onclick="AddLandingGearUnit">
+                                    + Add landing gear unit
+                                </button>
+
+                            </section>
+
+
+                            @* ==========================================
+                            VSI
+                            ========================================== *@
+
+                            <section class="advanced-group">
+
+                                <div class="advanced-group-heading">
+                                    <h3>Vertical Speed Indicator</h3>
+
+                                    <p>
+                                        Configure VSI range, response lag,
+                                        and dial calibration.
+                                    </p>
+                                </div>
+
+                                @if (advancedVsi is null)
+                                {
+                                    <div class="advanced-notice">
+                                        Select a cockpit layout before
+                                        editing VSI calibration.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="aircraft-form-grid">
+
+                                        <div class="form-field">
+                                            <label for="vsi-min">
+                                                Minimum vertical speed
+                                            </label>
+
+                                            <InputNumber id="vsi-min"
+                                                        class="form-control"
+                                                        @bind-Value="advancedVsi.MinimumVerticalSpeed" />
+
+                                            <small>feet/minute</small>
+                                        </div>
+
+                                        <div class="form-field">
+                                            <label for="vsi-max">
+                                                Maximum vertical speed
+                                            </label>
+
+                                            <InputNumber id="vsi-max"
+                                                        class="form-control"
+                                                        @bind-Value="advancedVsi.MaximumVerticalSpeed" />
+
+                                            <small>feet/minute</small>
+                                        </div>
+
+                                        <div class="form-field">
+                                            <label for="vsi-lag">
+                                                Instrument lag
+                                            </label>
+
+                                            <InputNumber id="vsi-lag"
+                                                        class="form-control"
+                                                        min="0"
+                                                        step="0.1"
+                                                        @bind-Value="advancedVsi.LagSeconds" />
+
+                                            <small>seconds</small>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="vsi-calibration-editor">
+
+                                        <div class="advanced-group-heading">
+                                            <h4>Calibration Points</h4>
+
+                                            <p>
+                                                Map vertical speed values
+                                                to positions on the VSI dial.
+                                            </p>
+                                        </div>
+
+                                        @foreach (var point in
+                                            advancedVsi.CalibrationPoints)
+                                        {
+                                            <div class="vsi-calibration-row">
+
+                                                <div class="form-field">
+                                                    <label>
+                                                        Vertical Speed
+                                                    </label>
+
+                                                    <InputNumber class="form-control"
+                                                                @bind-Value="point.VerticalSpeed" />
+                                                </div>
+
+                                                <div class="form-field">
+                                                    <label>
+                                                        Dial Angle
+                                                    </label>
+
+                                                    <InputNumber class="form-control"
+                                                                @bind-Value="point.Angle" />
+                                                </div>
+
+                                                <button type="button"
+                                                        class="btn btn-outline-danger"
+                                                        @onclick="() =>
+                                                            RemoveVsiCalibrationPoint(point)">
+                                                    Remove
+                                                </button>
+
+                                            </div>
+                                        }
+
+                                        <button type="button"
+                                                class="btn btn-outline-secondary"
+                                                @onclick="AddVsiCalibrationPoint">
+                                            + Add calibration point
+                                        </button>
+
+                                        <button type="button"
+                                                class="btn btn-outline-secondary"
+                                                @onclick="ResetVsiCalibration">
+                                            Restore defaults
+                                        </button>
+
+                                    </div>
+                                }
+
+                            </section>
+
+                        </div>
+
+                    </details>
 
                     <div class="form-field checkbox-field">
                         <label for="is-active">Active</label>
@@ -280,15 +533,10 @@
                                                     <div class="instrument-selection-row">
                                                         <label class="instrument-checkbox">
                                                             <input type="checkbox"
-                                                                disabled="@IsRequiredInstrument(instrument.Type)"
                                                                 checked="@instrument.IsSelected"
                                                                 @onchange="e => instrument.IsSelected = (bool)e.Value!" />
                                                             <span>
                                                                 @GetInstrumentDisplayName(instrument.Type)
-                                                                @if (IsRequiredInstrument(instrument.Type))
-                                                                {
-                                                                    <small>(required)</small>
-                                                                }
                                                             </span>
                                                         </label>
                                                     </div>

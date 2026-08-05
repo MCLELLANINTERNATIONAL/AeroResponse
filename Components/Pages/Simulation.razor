@@ -8,6 +8,10 @@
 @using AeroResponse.Components.FlightControl.Yoke
 @using AeroResponse.Components.FlightControl.Rudder
 @using AeroResponse.Components.FlightControl.Throttle
+@using AeroResponse.Components.Instruments.HydraulicSystem
+@using AeroResponse.Components.FlightControl
+@using AeroResponse.Components.FlightControl.Communication
+@using AeroResponse.Components.SystemGauges.FuelGauges
 @using AeroResponse.Services
 @using AeroResponse.Simulation
 @using AeroResponse.Simulation.Layouts
@@ -315,10 +319,32 @@ Main cockpit
                 <div class="system-gauges-grid">
                     @foreach (var engine in cockpitState.Engines)
                     {
-                        <Tachometer Value="@engine.Power" Minimum="0" Maximum="100" />
+                        <Tachometer Value="@engine.Power" Minimum="0" Maximum="100" Label="Engine Power" />
                     }
                     <OilGauges OilPressure="@cockpitState.OilPressure" OilTemperature="@cockpitState.OilTemperature" />
-                    <FuelGauges FuelTanks="@cockpitState.FuelTanks" />
+                    <FuelGaugeRenderer
+                        Aircraft="@selectedAircraft"
+                        FuelTanks="@cockpitState.FuelTanks" />
+                    <HydraulicSystem
+                        Pressure="@cockpitState.HydraulicPressure"
+                        PumpOnline="@cockpitState.HydraulicPumpOnline"
+                        Fault="@cockpitState.HydraulicFault" />
+                    <ElectricalSystem
+                        BusVoltage="@cockpitState.BusVoltage"
+                        BatteryVoltage="@cockpitState.BatteryVoltage"
+                        LoadAmps="@cockpitState.ElectricalLoadAmps"
+                        BatteryOnline="@cockpitState.BatteryOnline"
+                        AlternatorOnline="@cockpitState.AlternatorOnline"
+                        Fault="@cockpitState.ElectricalFault" />
+                    <!-- Landing Gear -->
+                    <div class="switch-grid">
+                        @foreach (var unit in selectedAircraft.LandingGearConfig.Units.OrderBy(u => u.Order))
+                        {
+                            <div class="switch-slot" @key="unit.Order">
+                                <LandingGearStatus Unit="unit" OnClick="HandleUnitClick" @key="unit.Number" />
+                            </div>
+                        }
+                    </div>
                 </div>
             </section>
         </div>
@@ -327,6 +353,8 @@ Main cockpit
             <h2>Flight Controls</h2>
 
             <div class="flight-controls-grid">
+
+                <!-- THROTTLE -->
                 <div class="control-card">
                     <div id="throttle-controls">
                         @foreach (var engine in cockpitState.Engines)
@@ -336,42 +364,66 @@ Main cockpit
                                 <h3>Engine @engine.Number</h3>
                             }
 
-                            <ThrottleControl Power="@engine.Power"
-                                            PowerChanged="value => engine.Power = value" />
+                            <ThrottleControl
+                                Power="@engine.Power"
+                                PowerChanged="value => engine.Power = value" />
                         }
                     </div>
                 </div>
-                
-                <div class="control-card">
-                    <YokeControl Pitch="@cockpitState.Pitch"
-                                PitchChanged="value => cockpitState.Pitch = value"
-                                Bank="@cockpitState.Bank"
-                                BankChanged="value => cockpitState.Bank = value" />
-                </div>
 
+                <!-- YOKE -->
                 <div class="control-card">
-                    <h3>Emergency</h3>
-                    <FireDetection Status="@GetFireStatus()" Label="@GetFireLabel()" />
-                    <button type="button"
-                            class="btn btn-outline-danger"
-                            @onclick="ActivateFireSuppression">
-                        Activate Fire Suppression
-                    </button>
-                    <div class="switch-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); height: 4rem; grid-column: span 3;">
-                        @foreach (var unit in selectedAircraft.LandingGearConfig.Units.OrderBy(u => u.Order))
+                    <YokeControl
+                        Pitch="@cockpitState.Pitch"
+                        PitchChanged="value => cockpitState.Pitch = value"
+                        Bank="@cockpitState.Bank"
+                        BankChanged="value => cockpitState.Bank = value" />
+                </div>
+                <div class="communications-grid">
+                    <CommunicationPanel
+                        RadioPowered="@cockpitState.RadioPowered"
+                        RadioFrequency="@cockpitState.RadioFrequency"
+                        RadioTransmitting="@cockpitState.RadioTransmitting"
+
+                        SatellitePowered="@cockpitState.SatellitePhonePowered"
+                        SatelliteConnected="@cockpitState.SatellitePhoneConnected"
+                        SatelliteSignalStrength="@cockpitState.SatelliteSignalStrength"
+
+                        RadioPowerChanged="HandleRadioPower"
+                        GuardFrequencySelected="HandleGuardFrequency"
+                        RadioTransmitRequested="HandleRadioTransmitAsync"
+
+                        SatellitePowerChanged="HandleSatellitePower"
+                        SatelliteConnectionChanged="HandleSatelliteConnection"
+                        SatelliteEmergencyRequested="HandleSatelliteEmergency" />
+                </div>
+                <!-- EMERGENCY -->
+                <div class="control-card" id="emergency-feedback">
+
+                    <FireDetection
+                        Status="@GetFireStatus()"
+                        Label="@GetFireLabel()" />
+
+                    <!-- FUEL CONTROL -->
+                    
+                    <div class="fuel-control-grid">
+                        @foreach (var engine in cockpitState.Engines)
                         {
-                            <div class="switch-slot" @key="unit.Order">
-                                <LandingGearStatus Unit="unit" OnClick="HandleUnitClick" @key="unit.Id" />
-                            </div>
+                            <FuelControlSwitch
+                                Engine="@engine"
+                                OnChanged="HandleFuelControlChanged" />
                         }
                     </div>
+                    
                 </div>
-
+                <!-- RUDDER -->
                 <div class="rudder-card">
-                    <RudderControl RudderPosition="@cockpitState.RudderPosition"
+                    <RudderControl
+                        RudderPosition="@cockpitState.RudderPosition"
                         RudderPositionChanged="value => cockpitState.RudderPosition = value"
                         Brakes="@cockpitState.Brakes" />
                 </div>
+
             </div>
         </section>
     </div>

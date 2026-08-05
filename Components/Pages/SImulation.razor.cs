@@ -255,6 +255,40 @@ public partial class Simulation : IAsyncDisposable
                 await LayoutProvider.GetLayout(
                     selectedAircraft.CockpitLayoutKey);
 
+            // Airspeed Layout Catch for Bad Data
+            if (cockpitLayout.Airspeed.MaximumSpeed <=
+                cockpitLayout.Airspeed.MinimumSpeed)
+            {
+                cockpitLayout.Airspeed =
+                    new AirspeedIndicatorLayout
+                    {
+                        MinimumSpeed = 0,
+                        MaximumSpeed = 200,
+                        MinAirspeedAngle = -120,
+                        MaxAirspeedAngle = 120,
+
+                        WhiteArcStart = 40,
+                        WhiteArcEnd = 85,
+
+                        GreenArcStart = 48,
+                        GreenArcEnd = 129,
+
+                        YellowArcStart = 129,
+                        YellowArcEnd = 163,
+
+                        NeverExceedSpeed = 163
+                    };
+            }
+            
+            Console.WriteLine(
+                $"Airspeed Layout: " +
+                $"Min={cockpitLayout.Airspeed.MinimumSpeed}, " +
+                $"Max={cockpitLayout.Airspeed.MaximumSpeed}, " +
+                $"White={cockpitLayout.Airspeed.WhiteArcStart}-{cockpitLayout.Airspeed.WhiteArcEnd}, " +
+                $"Green={cockpitLayout.Airspeed.GreenArcStart}-{cockpitLayout.Airspeed.GreenArcEnd}, " +
+                $"Yellow={cockpitLayout.Airspeed.YellowArcStart}-{cockpitLayout.Airspeed.YellowArcEnd}, " +
+                $"Vne={cockpitLayout.Airspeed.NeverExceedSpeed}");
+
             cockpitLayout.EngineCount = selectedAircraft.EngineCount;
 
             selectedScenarioRecord =
@@ -275,9 +309,8 @@ public partial class Simulation : IAsyncDisposable
             if (saveSelection)
             {
                 await SaveCurrentSelectionAsync();
+                UpdateSimulationUrl();
             }
-
-            UpdateSimulationUrl();
         }
         catch (Exception ex)
         {
@@ -1223,5 +1256,106 @@ public partial class Simulation : IAsyncDisposable
         }
 
         return heading;
+    }
+    private void ToggleFuelControl(
+        EngineState engine)
+    {
+        engine.FuelCutoff =
+            !engine.FuelCutoff;
+
+        if (engine.FuelCutoff)
+        {
+            engine.Running = false;
+        }
+        else
+        {
+            engine.Running = true;
+        }
+    }
+    private void HandleFuelControlChanged(
+    EngineState engine)
+    {
+        engine.FuelCutoff =
+            !engine.FuelCutoff;
+
+        if (engine.FuelCutoff)
+        {
+            engine.Running = false;
+        }
+        else
+        {
+            engine.Running = true;
+        }
+    }
+    private void HandleRadioPower()
+    {
+        cockpitState.RadioPowered =
+            !cockpitState.RadioPowered;
+
+        if (!cockpitState.RadioPowered)
+        {
+            cockpitState.RadioTransmitting = false;
+        }
+    }
+    private void HandleGuardFrequency()
+    {
+        if (!cockpitState.RadioPowered)
+        {
+            return;
+        }
+
+        cockpitState.RadioFrequency = 121.5;
+    }
+
+
+    private async Task HandleRadioTransmitAsync()
+    {
+        if (!cockpitState.RadioPowered)
+        {
+            return;
+        }
+
+        cockpitState.RadioTransmitting = true;
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(750);
+
+        cockpitState.RadioTransmitting = false;
+    }
+
+
+    private void HandleSatellitePower()
+    {
+        cockpitState.SatellitePhonePowered =
+            !cockpitState.SatellitePhonePowered;
+
+        if (!cockpitState.SatellitePhonePowered)
+        {
+            cockpitState.SatellitePhoneConnected = false;
+        }
+    }
+
+
+    private void HandleSatelliteConnection()
+    {
+        if (!cockpitState.SatellitePhonePowered)
+        {
+            return;
+        }
+
+        cockpitState.SatellitePhoneConnected =
+            !cockpitState.SatellitePhoneConnected;
+    }
+
+
+    private void HandleSatelliteEmergency()
+    {
+        if (!cockpitState.SatellitePhoneConnected)
+        {
+            return;
+        }
+
+        // Eventually record this as a pilot action.
     }
 }

@@ -1,0 +1,105 @@
+@using AeroResponse.Components.Instruments.Shared
+
+<div class="fuel-gauges">
+    @if (FuelTanks is not null && FuelTanks.Count > 0)
+    {
+        @foreach (var tank in FuelTanks)
+        {
+            var fill = MaxFuel > 0
+                ? Math.Clamp(tank.Quantity / MaxFuel, 0, 1)
+                : 0;
+
+                <svg viewBox="0 0 240 240"
+                    role="img"
+                    aria-label="@($"Fuel tank {tank.Number}")">
+
+                    @* Fuel quantity track *@
+                    <rect x="95"
+                          y="48"
+                          width="50"
+                          height="120"
+                          rx="8"
+                          class="fuel-track" />
+
+                    @* Actual fuel level *@
+                    <rect x="99"
+                          y="@GetFuelY(fill)"
+                          width="42"
+                          height="@GetFuelHeight(fill)"
+                          rx="5"
+                          class="@GetFuelClass(fill)" />
+
+                    @* Scale marks *@
+                    <line x1="150" y1="48"
+                          x2="160" y2="48"
+                          class="fuel-tick" />
+
+                    <line x1="150" y1="78"
+                          x2="157" y2="78"
+                          class="fuel-tick" />
+
+                    <line x1="150" y1="108"
+                          x2="160" y2="108"
+                          class="fuel-tick" />
+
+                    <line x1="150" y1="138"
+                          x2="157" y2="138"
+                          class="fuel-tick" />
+
+                    <line x1="150" y1="168"
+                          x2="160" y2="168"
+                          class="fuel-tick" />
+
+                    <text x="120"
+                          y="195"
+                          text-anchor="middle"
+                          class="fuel-value">
+                        @tank.Quantity.ToString("N1")
+                    </text>
+
+                    <text x="120"
+                          y="212"
+                          text-anchor="middle"
+                          class="fuel-unit">
+                        GAL
+                    </text>
+
+                </svg>
+        }
+    }
+    else
+    {
+        <div class="fuel-empty">
+            No fuel tanks configured
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<FuelState> FuelTanks { get; set; } = [];
+
+    [Parameter]
+    public double MaxFuel { get; set; } = 26.5;
+
+    private static double GetFuelHeight(double fill)
+    {
+        return 112 * fill;
+    }
+
+    private static double GetFuelY(double fill)
+    {
+        return 164 - GetFuelHeight(fill);
+    }
+
+    private static string GetFuelClass(double fill)
+    {
+        if (fill <= 0.15)
+            return "fuel-fill critical";
+
+        if (fill <= 0.30)
+            return "fuel-fill low";
+
+        return "fuel-fill normal";
+    }
+}

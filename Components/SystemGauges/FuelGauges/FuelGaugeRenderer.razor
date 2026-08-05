@@ -1,0 +1,20 @@
+@using AeroResponse.Models
+
+@switch (Aircraft.CockpitLayoutKey)
+{
+    case "cessna-172-standard":
+        <Cessna172FuelGauge FuelTanks="@FuelTanks" />
+        break;
+
+    default:
+        <GenericFuelGauge FuelTanks="@FuelTanks" />
+        break;
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public Aircraft Aircraft { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<FuelState> FuelTanks { get; set; } = [];
+}

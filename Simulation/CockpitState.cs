@@ -46,6 +46,29 @@ public class CockpitState
     public double RudderPosition { get; set; } = 0;
     public bool FireSuppressionActivated { get; set; } = false;
     public bool FireDetected { get; set; } = false;
+    public double BusVoltage { get; set; } = 28;
+    public double BatteryVoltage { get; set; } = 24;
+    public double ElectricalLoadAmps { get; set; }
+
+    public bool BatteryOnline { get; set; } = true;
+    public bool AlternatorOnline { get; set; } = true;
+    public bool ElectricalFault { get; set; }
+
+    public double HydraulicPressure { get; set; } = 3000;
+    public bool HydraulicPumpOnline { get; set; } = true;
+    public bool HydraulicFault { get; set; }
+
+    public bool RadioPowered { get; set; } = true;
+    public double RadioFrequency { get; set; } = 121.5;
+
+    public bool SatellitePhonePowered { get; set; }
+    public bool SatellitePhoneConnected { get; set; }
+
+    public string? CommunicationStatus { get; set; }
+
+    public bool RadioTransmitting { get; set; }
+
+    public int SatelliteSignalStrength { get; set; } = 4;
 
     public Dictionary<string, object?> DynamicValues { get; set; } =
     new(StringComparer.OrdinalIgnoreCase);

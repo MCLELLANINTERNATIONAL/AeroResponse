@@ -148,6 +148,11 @@
     {
         var config = Config.Airspeed;
 
+        if (config.MaximumSpeed <= config.MinimumSpeed)
+        {
+            return -120;
+        }
+
         var clampedSpeed = Math.Clamp(
             speed,
             config.MinimumSpeed,
@@ -158,8 +163,9 @@
             (config.MaximumSpeed - config.MinimumSpeed);
 
         return config.MinAirspeedAngle +
-               percentage *
-               (config.MaxAirspeedAngle - config.MinAirspeedAngle);
+            percentage *
+            (config.MaxAirspeedAngle -
+                config.MinAirspeedAngle);
     }
 
     private string GetArcPath(

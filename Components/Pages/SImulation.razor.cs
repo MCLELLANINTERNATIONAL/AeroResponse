@@ -13,7 +13,7 @@ public partial class Simulation : IAsyncDisposable
 {
 
 /* ====================================================================================================
- |                                      Variable Decleration                                           |
+                                    Variable Decleration                                           |
  ====================================================================================================== */
 
     [Inject]
@@ -119,7 +119,7 @@ public partial class Simulation : IAsyncDisposable
     }*/
 
 /* ====================================================================================================
- |                                      State Based Actions                                            |
+                                    State Based Actions                                            |
  ====================================================================================================== */
 
     protected override async Task OnParametersSetAsync()
@@ -306,7 +306,7 @@ public partial class Simulation : IAsyncDisposable
     }
 
 /* ====================================================================================================
- |                                     Aircraft/Scenario Menu                                          |
+                                    Aircraft/Scenario Menu                                          |
  ====================================================================================================== */
 
     private void ToggleAircraftMenu()
@@ -404,7 +404,7 @@ public partial class Simulation : IAsyncDisposable
     }
 
 /* ====================================================================================================
- |                                      Simulation Specific                                            |
+                                Simulation Specific                                            |
  ====================================================================================================== */
 
     private void UpdateSimulationUrl()
@@ -485,7 +485,7 @@ public partial class Simulation : IAsyncDisposable
 
 
 /* ====================================================================================================
- |                                Procedure Checklist Management                                       |
+                                Procedure Checklist Management                                       |
  ===================================================================================================== */
 
     private bool IsProcedureStepCompleted(
@@ -573,7 +573,7 @@ public partial class Simulation : IAsyncDisposable
     }
 
 /* ====================================================================================================
- |                                  Cockpit State Management                                          |
+                                Cockpit State Management                                          |
  ===================================================================================================== */
 
     private CockpitState CreateNormalCockpitState()
@@ -765,7 +765,7 @@ public partial class Simulation : IAsyncDisposable
     }
 
 /* ====================================================================================================
- |                                       Emergency Trigger                                             |
+                                    Emergency Trigger                                             |
  ===================================================================================================== */
 
     private void EvaluateEmergencyTrigger()
@@ -869,7 +869,7 @@ public partial class Simulation : IAsyncDisposable
     }
 
 /* ====================================================================================================
- |                               Simulation Loop and Completion                                        |
+                            Simulation Loop and Completion                                        |
  ===================================================================================================== */
 
     private void StartSimulationLoop()
@@ -894,9 +894,9 @@ public partial class Simulation : IAsyncDisposable
         try
         {
             while (_simulationTimer is not null &&
-                   await _simulationTimer
-                       .WaitForNextTickAsync(
-                           cancellationToken))
+                await _simulationTimer
+                    .WaitForNextTickAsync(
+                        cancellationToken))
             {
                 cockpitState.DisplayedVerticalSpeed =
                     VSIMath.ApplyLag(
@@ -1153,7 +1153,7 @@ public partial class Simulation : IAsyncDisposable
     }
 
 /* ====================================================================================================
- |                                     Instrument Management                                           |
+                                    Instrument Management                                           |
  ===================================================================================================== */
 
     private async Task HandleUnitClick(LandingGearUnit unit)

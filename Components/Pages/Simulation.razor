@@ -56,6 +56,82 @@ else if (!_isReady)
 else
 {
     <div class="simulation-page-shell">
+        @* ==================================================
+        Emergency Modal
+        ================================================== *@
+        @if (_showEmergencyModal)
+        {
+            <div class="emergency-modal-layer"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="emergency-modal-title">
+
+                <div class="emergency-modal-backdrop">
+                </div>
+
+                <section class="emergency-modal">
+
+                    <div class="emergency-modal-icon">
+                        ⚠
+                    </div>
+
+                    <span class="scenario-eyebrow">
+                        Emergency Activated
+                    </span>
+
+                    <h2 id="emergency-modal-title">
+                        @selectedScenarioRecord.Title
+                    </h2>
+
+                    <strong class="emergency-modal-system">
+                        @selectedScenarioRecord.EmergencyType
+                    </strong>
+
+                    <p>
+                        @selectedScenarioRecord.Description
+                    </p>
+
+                    @if (!string.IsNullOrWhiteSpace(
+                        selectedScenarioRecord.TriggerCondition))
+                    {
+                        <div class="emergency-modal-trigger">
+                            <strong>Condition</strong>
+
+                            <span>
+                                @selectedScenarioRecord.TriggerCondition
+                            </span>
+                        </div>
+                    }
+
+                    <div class="emergency-modal-objective">
+                        <strong>Immediate objective</strong>
+
+                        <span>
+                            @GetObjectiveText()
+                        </span>
+                    </div>
+
+                    <div class="emergency-modal-time">
+                        <span>Time available</span>
+
+                        <strong>
+                            @FormatAssessmentTime(
+                                selectedScenarioRecord.TimeLimitSeconds)
+                        </strong>
+                    </div>
+
+                    <button type="button"
+                            class="btn btn-danger"
+                            @onclick="DismissEmergencyModal">
+
+                        Begin Emergency Procedure
+
+                    </button>
+
+                </section>
+
+            </div>
+        }
 
         @* ==================================================
         Left sidebar
@@ -555,12 +631,8 @@ selectedScenarioRecord.TriggerCondition))
 
                 <label>
                     <input type="checkbox"
-                    checked="@isCompleted"
-                    disabled="@(!emergencyTriggered || _completedReport is not null)"
-                    @onchange="eventArgs =>
-                    ToggleProcedureStep(
-                    step,
-                    eventArgs)" />
+                        checked="@isCompleted"
+                        disabled />
 
                     <span class="custom-check-box"
                     aria-hidden="true">

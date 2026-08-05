@@ -20,6 +20,7 @@ public partial class Simulation : IAsyncDisposable
     private ILogger<Simulation> Logger { get; set; } = default!;
     private CockpitState cockpitState = new();
     private bool isOnGround = false;
+    private bool _showEmergencyModal;
 
     private EmergencyScenario
         selectedScenarioRecord = default!;
@@ -829,15 +830,30 @@ public partial class Simulation : IAsyncDisposable
     private void ActivateEmergencyScenario()
     {
         if (emergencyTriggered)
+        {
             return;
+        }
 
         emergencyTriggered = true;
+
         SimulationSession.MarkEmergencyTriggered();
 
-        cockpitState = selectedRuntimeScenario.Start(cockpitLayout);
-        cockpitState.DisplayedVerticalSpeed = cockpitState.VerticalSpeed;
-    }
+        cockpitState =
+            selectedRuntimeScenario.Start(
+                cockpitLayout);
 
+        cockpitState.DisplayedVerticalSpeed =
+            cockpitState.VerticalSpeed;
+
+        _remainingSeconds =
+            selectedScenarioRecord.TimeLimitSeconds;
+
+        _showEmergencyModal = true;
+    }
+    private void DismissEmergencyModal()
+    {
+        _showEmergencyModal = false;
+    }
     private void ActivateEmergencyManually()
     {
         if (emergencyTriggered ||

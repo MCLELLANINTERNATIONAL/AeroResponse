@@ -1,10 +1,10 @@
 using AeroResponse.Models;
+using AeroResponse.Services;
 using AeroResponse.Simulation;
 using AeroResponse.Simulation.Layouts;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
-using AeroResponse.Services;
 using SimulationSelectionModel = AeroResponse.Models.SimulationSelection;
 using VSIMath = AeroResponse.Simulation.Instruments.VerticalSpeedIndicator.VSIMath;
 namespace AeroResponse.Components.Pages;
@@ -12,9 +12,9 @@ namespace AeroResponse.Components.Pages;
 public partial class Simulation : IAsyncDisposable
 {
 
-/* ====================================================================================================
-                                    Variable Decleration                                           |
- ====================================================================================================== */
+    /* ====================================================================================================
+                                        Variable Decleration                                           |
+     ====================================================================================================== */
 
     [Inject]
     private ILogger<Simulation> Logger { get; set; } = default!;
@@ -118,9 +118,9 @@ public partial class Simulation : IAsyncDisposable
             saveSelection: false);
     }*/
 
-/* ====================================================================================================
-                                    State Based Actions                                            |
- ====================================================================================================== */
+    /* ====================================================================================================
+                                        State Based Actions                                            |
+     ====================================================================================================== */
 
     protected override async Task OnParametersSetAsync()
     {
@@ -279,7 +279,7 @@ public partial class Simulation : IAsyncDisposable
                         NeverExceedSpeed = 163
                     };
             }
-            
+
             Console.WriteLine(
                 $"Airspeed Layout: " +
                 $"Min={cockpitLayout.Airspeed.MinimumSpeed}, " +
@@ -338,9 +338,9 @@ public partial class Simulation : IAsyncDisposable
                     StringComparison.OrdinalIgnoreCase));
     }
 
-/* ====================================================================================================
-                                    Aircraft/Scenario Menu                                          |
- ====================================================================================================== */
+    /* ====================================================================================================
+                                        Aircraft/Scenario Menu                                          |
+     ====================================================================================================== */
 
     private void ToggleAircraftMenu()
     {
@@ -436,9 +436,9 @@ public partial class Simulation : IAsyncDisposable
             });
     }
 
-/* ====================================================================================================
-                                Simulation Specific                                            |
- ====================================================================================================== */
+    /* ====================================================================================================
+                                    Simulation Specific                                            |
+     ====================================================================================================== */
 
     private void UpdateSimulationUrl()
     {
@@ -517,9 +517,9 @@ public partial class Simulation : IAsyncDisposable
     }
 
 
-/* ====================================================================================================
-                                Procedure Checklist Management                                       |
- ===================================================================================================== */
+    /* ====================================================================================================
+                                    Procedure Checklist Management                                       |
+     ===================================================================================================== */
 
     private bool IsProcedureStepCompleted(
         ScenarioProcedureStep step)
@@ -605,9 +605,9 @@ public partial class Simulation : IAsyncDisposable
             .ToString("000");
     }
 
-/* ====================================================================================================
-                                Cockpit State Management                                          |
- ===================================================================================================== */
+    /* ====================================================================================================
+                                    Cockpit State Management                                          |
+     ===================================================================================================== */
 
     private CockpitState CreateNormalCockpitState()
     {
@@ -797,9 +797,9 @@ public partial class Simulation : IAsyncDisposable
             cockpitState.Altitude + cockpitState.VerticalSpeed / 60.0 * elapsedSeconds);
     }
 
-/* ====================================================================================================
-                                    Emergency Trigger                                             |
- ===================================================================================================== */
+    /* ====================================================================================================
+                                        Emergency Trigger                                             |
+     ===================================================================================================== */
 
     private void EvaluateEmergencyTrigger()
     {
@@ -901,9 +901,9 @@ public partial class Simulation : IAsyncDisposable
         return FireDetectionStatus.Normal;
     }
 
-/* ====================================================================================================
-                            Simulation Loop and Completion                                        |
- ===================================================================================================== */
+    /* ====================================================================================================
+                                Simulation Loop and Completion                                        |
+     ===================================================================================================== */
 
     private void StartSimulationLoop()
     {
@@ -1185,9 +1185,9 @@ public partial class Simulation : IAsyncDisposable
         _simulationCancellation?.Dispose();
     }
 
-/* ====================================================================================================
-                                    Instrument Management                                           |
- ===================================================================================================== */
+    /* ====================================================================================================
+                                        Instrument Management                                           |
+     ===================================================================================================== */
 
     private async Task HandleUnitClick(LandingGearUnit unit)
     {

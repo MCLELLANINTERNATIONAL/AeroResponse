@@ -1,24 +1,69 @@
 using AeroResponse.Models;
 using AeroResponse.Services;
 using AeroResponse.Simulation;
+using AeroResponse.Simulation.Controls;
 using AeroResponse.Simulation.Layouts;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
-using SimulationSelectionModel = AeroResponse.Models.SimulationSelection;
-using VSIMath = AeroResponse.Simulation.Instruments.VerticalSpeedIndicator.VSIMath;
+
+using SimulationSelectionModel =
+    AeroResponse.Models.SimulationSelection;
+
+using VSIMath =
+    AeroResponse.Simulation.Instruments
+        .VerticalSpeedIndicator.VSIMath;
+
 namespace AeroResponse.Components.Pages;
 
 public partial class Simulation : IAsyncDisposable
 {
-
     /* ====================================================================================================
-                                        Variable Decleration                                           |
-     ====================================================================================================== */
+                                            Dependency Injection
+       ==================================================================================================== */
 
     [Inject]
     private ILogger<Simulation> Logger { get; set; } = default!;
+
+    [Inject]
+    private ICockpitLayoutProvider LayoutProvider { get; set; } = default!;
+
+    [Inject]
+    private SimulationEngine SimulationEngine { get; set; } = default!;
+
+    [Inject]
+    private SimulationSelectionStorage SelectionStorage { get; set; } = default!;
+
+    [Inject]
+    private SimulationScenarioDataService ScenarioDataService { get; set; } = default!;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    [Inject]
+    private AircraftService AircraftService { get; set; } = default!;
+
+    [Inject]
+    private ScenarioTriggerEvaluator TriggerEvaluator { get; set; } = default!;
+
+    [Inject]
+    private SimulationService SimulationSession { get; set; } = default!;
+
+    [Inject]
+    private CockpitCommandService CockpitCommands { get; set; } = default!;
+
+    [Inject]
+    private AiInstructorService AiInstructor { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; } = default!;
+
+    /* ====================================================================================================
+                                            Variable Declaration
+       ==================================================================================================== */
+
     private CockpitState cockpitState = new();
+
     private bool isOnGround = false;
 
     private EmergencyScenario
@@ -41,10 +86,16 @@ public partial class Simulation : IAsyncDisposable
 
     // Voice control / AI instructor state
     private DotNetObjectReference<Simulation>? _voiceReference;
+
     private bool _voiceSupported;
+
     private bool _voiceListening;
-    private string _voiceStatus = "Select Start Voice Control.";
+
+    private string _voiceStatus =
+        "Select Start Voice Control.";
+
     private string? _lastVoiceTranscript;
+
     private AiInstructorFeedback? _latestInstructorFeedback;
 
     private IReadOnlyList<EmergencyScenario>
@@ -64,10 +115,15 @@ public partial class Simulation : IAsyncDisposable
     private bool manualTriggerRequested;
 
     private bool _isReady;
+
     private bool _loadFailed;
+
     private bool _needsStorageCheck;
+
     private bool _isAircraftMenuOpen;
+
     private bool _isScenarioMenuOpen;
+
     private IReadOnlyList<Aircraft>
         _aircraftOptions = [];
 
@@ -316,7 +372,12 @@ public partial class Simulation : IAsyncDisposable
         {
             _loadFailed = true;
             _isReady = false;
-            Console.WriteLine($"LoadSelectionAsync failed: {ex}");
+
+            Logger.LogError(
+                ex,
+                "Failed to load aircraft {AircraftKey} and scenario {ScenarioType}.",
+                aircraftKey,
+                scenarioType);
         }
     }
 

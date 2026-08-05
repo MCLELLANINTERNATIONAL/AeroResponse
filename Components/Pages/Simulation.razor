@@ -1,7 +1,6 @@
 ﻿@page "/simulation"
 @page "/simulation/{AircraftKey}/{ScenarioType}"
 @rendermode InteractiveServer
-@implements IAsyncDisposable
 
 @using AeroResponse.Components.Cockpit
 @using AeroResponse.Components.SystemGauges
@@ -15,22 +14,6 @@
 @using AeroResponse.Services
 @using AeroResponse.Simulation
 @using AeroResponse.Simulation.Layouts
-
-@using SimulationSelectionModel = AeroResponse.Models.SimulationSelection
-@using AeroResponse.Simulation.Controls
-@using Microsoft.JSInterop
-
-@inject ICockpitLayoutProvider LayoutProvider
-@inject SimulationEngine SimulationEngine
-@inject SimulationSelectionStorage SelectionStorage
-@inject SimulationScenarioDataService ScenarioDataService
-@inject NavigationManager Navigation
-@inject AircraftService AircraftService
-@inject ScenarioTriggerEvaluator TriggerEvaluator
-@inject SimulationService SimulationSession
-@inject CockpitCommandService CockpitCommands
-@inject AiInstructorService AiInstructor
-@inject IJSRuntime JSRuntime
 
 <PageTitle>Simulation | AeroResponse</PageTitle>
 

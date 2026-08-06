@@ -69,6 +69,9 @@ public class CockpitState
     public bool RadioTransmitting { get; set; }
 
     public int SatelliteSignalStrength { get; set; } = 4;
+    public bool FuelLeakActive { get; set; }
+
+    public int? LeakingFuelTankNumber { get; set; }
 
     public Dictionary<string, object?> DynamicValues { get; set; } =
     new(StringComparer.OrdinalIgnoreCase);

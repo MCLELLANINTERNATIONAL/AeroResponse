@@ -9,68 +9,153 @@ public class CabinDepressurizationScenario : ISimulationScenario
 
     public string ScenarioType => "Cabin Depressurization";
 
-    public CockpitState Start(CockpitLayoutDefinition aircraft)
-    {
-        var defaults = aircraft.DefaultState;
-        var engines = Enumerable.Range(1, aircraft.EngineCount)
-            .Select(number => new EngineState
-            {
-                Number = number,
-                Power = defaults.NormalEnginePower,
-                Running = true,
-                FuelPercentage = defaults.FuelPercentage
-            })
-            .ToList();
-
-        return new CockpitState
+    public ScenarioStartCondition StartCondition =>
+        new()
         {
-            Airspeed = defaults.CruiseAirspeed,
-            Altitude = defaults.CruiseAltitude,
-            Heading = defaults.DefaultHeading,
-            VerticalSpeed = defaults.DefaultVerticalSpeed,
-            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
-
-            Pitch = defaults.DefaultPitch,
-            Bank = defaults.DefaultBank,
-
-            FuelPercentage = defaults.FuelPercentage,
-            Engines = engines,
-            AlertMessage = $"{aircraft.Name}: CABIN PRESSURE WARNING"
+            MinimumAltitude = 10_000,
+            MinimumAirspeed = 80,
+            RequiresAircraftAirborne = true
         };
+
+    public CockpitState Start(
+        CockpitLayoutDefinition aircraft,
+        CockpitState currentState)
+    {
+        ArgumentNullException.ThrowIfNull(aircraft);
+        ArgumentNullException.ThrowIfNull(currentState);
+
+        currentState.AlertMessage =
+            $"{aircraft.Name}: CABIN PRESSURE WARNING";
+
+        return currentState;
     }
 
-    public List<ScenarioProcedureStep> GetProcedureSteps(CockpitLayoutDefinition aircraft, int scenarioId)
+    public List<ScenarioProcedureStep> GetProcedureSteps(
+        CockpitLayoutDefinition aircraft,
+        int scenarioId)
     {
         return
         [
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 1, Instruction = "Don oxygen masks", CorrectAction = "Oxygen Masks", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 2, Instruction = "Begin emergency descent", CorrectAction = "Emergency Descent", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 3, Instruction = "Set transponder emergency code", CorrectAction = "Set Emergency Code", IsSafetyCritical = false },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 4, Instruction = "Declare emergency", CorrectAction = "Declare Emergency", IsSafetyCritical = false },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 5, Instruction = "Level at safe altitude", CorrectAction = "Level Off", IsSafetyCritical = true }
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 1,
+                Instruction = "Don oxygen masks",
+                CorrectAction = "Oxygen Masks",
+                ValidationType = ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 2,
+                Instruction = "Begin emergency descent",
+                CorrectAction = "Emergency Descent",
+                ValidationType = ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 3,
+                Instruction = "Transmit emergency status",
+                CorrectAction = "Transmit Emergency",
+                ValidationType = ProcedureValidationType.PilotAction,
+                IsSafetyCritical = false
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 4,
+                Instruction = "Declare emergency",
+                CorrectAction = "Declare Emergency",
+                ValidationType = ProcedureValidationType.PilotAction,
+                IsSafetyCritical = false
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 5,
+                Instruction = "Level at safe altitude",
+                CorrectAction = "Level Off",
+                ValidationType = ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            }
         ];
     }
 
-    public CockpitState ApplyPilotAction(CockpitState state, string actionName)
+    public CockpitState ApplyPilotAction(
+        CockpitState state,
+        string actionName)
     {
-        if (actionName == "Emergency Descent")
-        {
-            state.VerticalSpeed = -5000;
-            state.Altitude -= 5000;
-        }
+        ArgumentNullException.ThrowIfNull(state);
 
-        if (actionName == "Level Off")
+        switch (actionName)
         {
-            state.VerticalSpeed = 0;
-            state.AlertMessage = "AIRCRAFT LEVELLED AT SAFE ALTITUDE";
+            case "Oxygen Masks":
+                state.AlertMessage =
+                    "OXYGEN MASKS ON - BEGIN EMERGENCY DESCENT";
+                break;
+
+            case "Set Emergency Code":
+                state.AlertMessage =
+                    "EMERGENCY TRANSPONDER CODE SET";
+                break;
+
+            case "Declare Emergency":
+                state.AlertMessage =
+                    "EMERGENCY DECLARED - CABIN DEPRESSURIZATION";
+                break;
         }
 
         return state;
     }
 
-    public bool IsActionCorrect(CockpitLayoutDefinition aircraft, string actionName, int expectedStep)
+    public bool IsActionCorrect(
+        CockpitLayoutDefinition aircraft,
+        string actionName,
+        int expectedStep)
     {
-        var steps = GetProcedureSteps(aircraft, 0);
-        return steps.Any(s => s.StepOrder == expectedStep && s.CorrectAction == actionName);
+        return GetProcedureSteps(
+                aircraft,
+                scenarioId: 0)
+            .Any(step =>
+                step.StepOrder == expectedStep &&
+                step.ValidationType ==
+                    ProcedureValidationType.PilotAction &&
+                string.Equals(
+                    step.CorrectAction,
+                    actionName,
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool IsStepSatisfied(
+        CockpitState state,
+        int stepOrder)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return stepOrder switch
+        {
+            // Emergency descent has actually been established.
+            2 =>
+                state.VerticalSpeed <= -900,
+
+            // Aircraft has reached a safer altitude and is substantially level.
+            5 =>
+                state.Altitude <= 10_000 &&
+                Math.Abs(state.VerticalSpeed) <= 300,
+
+            _ => false
+        };
     }
 }

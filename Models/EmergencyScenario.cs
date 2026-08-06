@@ -44,6 +44,7 @@ public class EmergencyScenario
     // Ordered procedure text. Detailed executable steps can also be stored
     // in ScenarioProcedureSteps for aircraft-specific behaviour.
     public string ExpectedProcedure { get; set; } = string.Empty;
+    public string? TriggerAction { get; set; }
 
     public bool IsActive { get; set; } = true;
 

@@ -9,71 +9,196 @@ public class ElectricalFailureScenario : ISimulationScenario
 
     public string ScenarioType => "Electrical Failure";
 
-    public CockpitState Start(CockpitLayoutDefinition aircraft)
-    {
-        var defaults = aircraft.DefaultState;
-        var engines = Enumerable.Range(1, aircraft.EngineCount)
-            .Select(number => new EngineState
-            {
-                Number = number,
-                Power = defaults.NormalEnginePower,
-                Running = true,
-                FuelPercentage = defaults.FuelPercentage
-            })
-            .ToList();
-
-        return new CockpitState
+    public ScenarioStartCondition StartCondition =>
+        new()
         {
-            Airspeed = defaults.CruiseAirspeed * 0.80,
-            Altitude = defaults.CruiseAltitude,
-            Heading = defaults.DefaultHeading,
-            VerticalSpeed = defaults.DefaultVerticalSpeed,
-            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
-
-            Pitch = defaults.DefaultPitch,
-            Bank = defaults.DefaultBank,
-
-            FuelPercentage = defaults.FuelPercentage,
-            Engines = engines,
-            AlertMessage = $"{aircraft.Name}: ELECTRICAL SYSTEM FAILURE - BACKUP POWER REQUIRED"
+            MinimumAltitude = 1_000,
+            MinimumAirspeed = 60,
+            RequiresAircraftAirborne = true,
+            RequiresEnginesRunning = true,
+            RequiresElectricalSystemOnline = true
         };
+
+    public CockpitState Start(
+        CockpitLayoutDefinition aircraft,
+        CockpitState currentState)
+    {
+        ArgumentNullException.ThrowIfNull(aircraft);
+        ArgumentNullException.ThrowIfNull(currentState);
+
+        // Primary generation system has failed.
+        currentState.AlternatorOnline = false;
+        currentState.ElectricalFault = true;
+
+        // Battery temporarily carries the bus.
+        currentState.BatteryOnline = true;
+        currentState.BusVoltage = 24.0;
+        currentState.BatteryVoltage = 23.5;
+
+        // High electrical demand remains until load shedding.
+        currentState.ElectricalLoadAmps =
+            Math.Max(
+                currentState.ElectricalLoadAmps,
+                70);
+
+        currentState.AlertMessage =
+            $"{aircraft.Name}: ELECTRICAL SYSTEM FAILURE - " +
+            "PRIMARY GENERATION OFFLINE";
+
+        return currentState;
     }
 
-    public List<ScenarioProcedureStep> GetProcedureSteps(CockpitLayoutDefinition aircraft, int scenarioId)
+    public List<ScenarioProcedureStep> GetProcedureSteps(
+        CockpitLayoutDefinition aircraft,
+        int scenarioId)
     {
         return
         [
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 1, Instruction = "Maintain aircraft control", CorrectAction = "Stabilize Aircraft", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 2, Instruction = "Activate backup electrical power", CorrectAction = "Activate Backup Power", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 3, Instruction = "Reduce non-essential electrical load", CorrectAction = "Reduce Electrical Load", IsSafetyCritical = false },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 4, Instruction = "Declare emergency", CorrectAction = "Declare Emergency", IsSafetyCritical = false },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 5, Instruction = "Prepare diversion using available systems", CorrectAction = "Prepare Diversion", IsSafetyCritical = false }
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 1,
+                Instruction = "Maintain aircraft control",
+                CorrectAction = "Stabilize Aircraft",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 2,
+                Instruction = "Activate backup electrical power",
+                CorrectAction = "Activate Backup Power",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 3,
+                Instruction =
+                    "Reduce non-essential electrical load",
+                CorrectAction = "Reduce Electrical Load",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = false
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 4,
+                Instruction = "Declare emergency",
+                CorrectAction = "Declare Emergency",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = false
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 5,
+                Instruction =
+                    "Prepare diversion using available systems",
+                CorrectAction = "Prepare Diversion",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+                IsSafetyCritical = false
+            }
         ];
     }
 
-    public CockpitState ApplyPilotAction(CockpitState state, string actionName)
+    public CockpitState ApplyPilotAction(
+        CockpitState state,
+        string actionName)
     {
-        if (actionName == "Activate Backup Power")
-        {
-            state.AlertMessage = "BACKUP POWER ONLINE - ESSENTIAL SYSTEMS RESTORED";
-        }
+        ArgumentNullException.ThrowIfNull(state);
 
-        if (actionName == "Reduce Electrical Load")
+        switch (actionName)
         {
-            state.AlertMessage = "NON-ESSENTIAL ELECTRICAL LOAD REDUCED";
-        }
+            case "Activate Backup Power":
+                state.BatteryOnline = true;
 
-        if (actionName == "Declare Emergency")
-        {
-            state.AlertMessage = "EMERGENCY DECLARED - DIVERSION REQUIRED";
+                state.BusVoltage =
+                    Math.Max(
+                        state.BusVoltage,
+                        24.0);
+
+                state.BatteryVoltage =
+                    Math.Max(
+                        state.BatteryVoltage,
+                        23.5);
+
+                state.AlertMessage =
+                    "BACKUP POWER ONLINE - " +
+                    "ESSENTIAL SYSTEMS AVAILABLE";
+                break;
+
+            case "Declare Emergency":
+                state.AlertMessage =
+                    "EMERGENCY DECLARED - DIVERSION REQUIRED";
+                break;
+
+            case "Prepare Diversion":
+                state.AlertMessage =
+                    "DIVERSION PREPARATION IN PROGRESS";
+                break;
         }
 
         return state;
     }
 
-    public bool IsActionCorrect(CockpitLayoutDefinition aircraft, string actionName, int expectedStep)
+    public bool IsActionCorrect(
+        CockpitLayoutDefinition aircraft,
+        string actionName,
+        int expectedStep)
     {
-        var steps = GetProcedureSteps(aircraft, 0);
-        return steps.Any(s => s.StepOrder == expectedStep && s.CorrectAction == actionName);
+        return GetProcedureSteps(
+                aircraft,
+                scenarioId: 0)
+            .Any(step =>
+                step.StepOrder == expectedStep &&
+                step.ValidationType ==
+                    ProcedureValidationType.PilotAction &&
+                string.Equals(
+                    step.CorrectAction,
+                    actionName,
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool IsStepSatisfied(
+        CockpitState state,
+        int stepOrder)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return stepOrder switch
+        {
+            1 =>
+                Math.Abs(state.Bank) <= 5 &&
+                Math.Abs(state.VerticalSpeed) <= 300 &&
+                Math.Abs(state.Pitch) <= 5,
+
+            3 =>
+                state.ElectricalLoadAmps <= 30,
+            5 =>
+                state.FlightPhase is
+                    "Descent" or
+                    "Approach" or
+                    "Landing" ||
+                (state.Altitude <= 1_500 &&
+                state.Airspeed < 90),
+            _ => false
+        };
     }
 }

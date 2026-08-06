@@ -9,73 +9,166 @@ public class SmokeOrFireScenario : ISimulationScenario
 
     public string ScenarioType => "Smoke or Fire";
 
-    public CockpitState Start(CockpitLayoutDefinition aircraft)
-    {
-        var defaults = aircraft.DefaultState;
-        var engines = Enumerable.Range(1, aircraft.EngineCount)
-            .Select(number => new EngineState
-            {
-                Number = number,
-                Power = defaults.NormalEnginePower,
-                Running = true,
-                FuelPercentage = defaults.FuelPercentage
-            })
-            .ToList();
-
-        return new CockpitState
+    public ScenarioStartCondition StartCondition =>
+        new()
         {
-            Airspeed = defaults.CruiseAirspeed,
-            Altitude = defaults.CruiseAltitude,
-            Heading = defaults.DefaultHeading,
-            VerticalSpeed = defaults.DefaultVerticalSpeed,
-            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
-            Pitch = defaults.DefaultPitch,
-            Bank = defaults.DefaultBank,
-            FuelPercentage = defaults.FuelPercentage,
-            Engines = engines,
-            AlertMessage = $"{aircraft.Name}: SMOKE OR FIRE WARNING - CABIN/COCKPIT"
+            MinimumAltitude = 1_500,
+            MinimumAirspeed = 70,
+            RequiresAircraftAirborne = true,
+            RequiresEnginesRunning = true
         };
+
+    public CockpitState Start(
+        CockpitLayoutDefinition aircraft,
+        CockpitState currentState)
+    {
+        ArgumentNullException.ThrowIfNull(aircraft);
+        ArgumentNullException.ThrowIfNull(currentState);
+
+        currentState.AlertMessage =
+            $"{aircraft.Name}: SMOKE OR FIRE WARNING - " +
+            "CABIN/COCKPIT SOURCE UNKNOWN";
+
+        return currentState;
     }
 
-    public List<ScenarioProcedureStep> GetProcedureSteps(CockpitLayoutDefinition aircraft, int scenarioId)
+    public List<ScenarioProcedureStep> GetProcedureSteps(
+        CockpitLayoutDefinition aircraft,
+        int scenarioId)
     {
         return
         [
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 1, Instruction = "Don oxygen masks", CorrectAction = "Oxygen Masks", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 2, Instruction = "Identify smoke or fire source", CorrectAction = "Identify Smoke Source", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 3, Instruction = "Activate appropriate fire suppression or isolation", CorrectAction = "Activate Fire Suppression", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 4, Instruction = "Declare emergency", CorrectAction = "Declare Emergency", IsSafetyCritical = false },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 5, Instruction = "Prepare immediate landing", CorrectAction = "Prepare Landing", IsSafetyCritical = false }
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 1,
+                Instruction = "Don oxygen masks",
+                CorrectAction = "Oxygen Masks",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 2,
+                Instruction = "Identify the smoke or fire source",
+                CorrectAction = "Identify Smoke Source",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 3,
+                Instruction =
+                    "Isolate the affected system or activate appropriate suppression",
+                CorrectAction = "Activate Fire Suppression",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 4,
+                Instruction = "Declare emergency",
+                CorrectAction = "Declare Emergency",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = false
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 5,
+                Instruction = "Prepare for an immediate landing",
+                CorrectAction = "Prepare Landing",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            }
         ];
     }
 
-    public CockpitState ApplyPilotAction(CockpitState state, string actionName)
+    public CockpitState ApplyPilotAction(
+        CockpitState state,
+        string actionName)
     {
-        if (actionName == "Oxygen Masks")
-        {
-            state.AlertMessage = "CREW OXYGEN ACTIVE - CONTINUE SMOKE/FIRE CHECKLIST";
-        }
+        ArgumentNullException.ThrowIfNull(state);
 
-        if (actionName == "Identify Smoke Source")
+        switch (actionName)
         {
-            state.AlertMessage = "SMOKE SOURCE IDENTIFICATION IN PROGRESS";
-        }
+            case "Oxygen Masks":
+                state.AlertMessage =
+                    "CREW OXYGEN ACTIVE - CONTINUE SMOKE/FIRE CHECKLIST";
+                break;
 
-        if (actionName == "Activate Fire Suppression")
-        {
-            foreach (var engine in state.Engines)
-            {
-                engine.FireSuppressionActivated = true;
-            }
-            state.AlertMessage = "FIRE SUPPRESSION ACTIVE - LAND IMMEDIATELY";
+            case "Identify Smoke Source":
+                state.AlertMessage =
+                    "SMOKE SOURCE IDENTIFIED - " +
+                    "AFFECTED SYSTEM REQUIRES ISOLATION";
+                break;
+
+            case "Activate Fire Suppression":
+                state.AlertMessage =
+                    "FIRE SUPPRESSION OR SYSTEM ISOLATION ACTIVE - " +
+                    "LAND IMMEDIATELY";
+                break;
+
+            case "Declare Emergency":
+                state.AlertMessage =
+                    "EMERGENCY DECLARED - " +
+                    "SMOKE/FIRE IMMEDIATE LANDING REQUIRED";
+                break;
         }
 
         return state;
     }
 
-    public bool IsActionCorrect(CockpitLayoutDefinition aircraft, string actionName, int expectedStep)
+    public bool IsActionCorrect(
+        CockpitLayoutDefinition aircraft,
+        string actionName,
+        int expectedStep)
     {
-        var steps = GetProcedureSteps(aircraft, 0);
-        return steps.Any(s => s.StepOrder == expectedStep && s.CorrectAction == actionName);
+        return GetProcedureSteps(
+                aircraft,
+                scenarioId: 0)
+            .Any(step =>
+                step.StepOrder == expectedStep &&
+                step.ValidationType ==
+                    ProcedureValidationType.PilotAction &&
+                string.Equals(
+                    step.CorrectAction,
+                    actionName,
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool IsStepSatisfied(
+        CockpitState state,
+        int stepOrder)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return stepOrder switch
+        {
+            5 =>
+                state.FlightPhase is
+                    "Descent" or
+                    "Approach" or
+                    "Landing",
+
+            _ => false
+        };
     }
 }

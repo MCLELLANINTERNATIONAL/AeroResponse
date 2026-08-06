@@ -553,6 +553,237 @@
     grid-column: 1 / -1;
 }
 
+/*======================================================
+    Emergency Modal
+====================================================== */
+.emergency-modal-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 1.5rem;
+}
+
+.emergency-modal-backdrop {
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    padding: 0;
+    border: 0;
+
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(4px);
+
+    cursor: default;
+}
+
+.emergency-modal-card {
+    position: relative;
+    z-index: 1;
+
+    width: min(100%, 620px);
+    max-height: calc(100vh - 3rem);
+
+    overflow-y: auto;
+
+    border: 2px solid #dc2626;
+    border-radius: 1rem;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(39, 10, 10, 0.98),
+            rgba(12, 12, 12, 0.98));
+
+    color: #f8fafc;
+
+    box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.75),
+        0 0 36px rgba(220, 38, 38, 0.28);
+}
+
+.emergency-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    padding: 1.4rem 1.5rem;
+
+    border-bottom: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.emergency-modal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 58px;
+    width: 58px;
+    height: 58px;
+
+    border: 2px solid #ef4444;
+    border-radius: 50%;
+
+    background: rgba(127, 29, 29, 0.65);
+    color: #fecaca;
+
+    font-size: 1.8rem;
+
+    box-shadow:
+        0 0 22px rgba(239, 68, 68, 0.35);
+}
+
+.emergency-modal-eyebrow {
+    display: block;
+
+    margin-bottom: 0.3rem;
+
+    color: #fca5a5;
+
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+
+    text-transform: uppercase;
+}
+
+.emergency-modal-header h2 {
+    margin: 0;
+
+    color: #ffffff;
+
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    line-height: 1.1;
+}
+
+.emergency-modal-body {
+    display: grid;
+    gap: 1rem;
+
+    padding: 1.5rem;
+}
+
+.emergency-modal-system {
+    color: #f87171;
+
+    font-size: 0.9rem;
+    letter-spacing: 0.12em;
+
+    text-transform: uppercase;
+}
+
+.emergency-modal-body p {
+    margin: 0;
+
+    color: #e5e7eb;
+
+    line-height: 1.6;
+}
+
+.emergency-modal-detail {
+    display: grid;
+    gap: 0.35rem;
+
+    padding: 0.9rem 1rem;
+
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 0.6rem;
+
+    background: rgba(15, 23, 42, 0.48);
+}
+
+.emergency-modal-detail span {
+    color: #94a3b8;
+
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+
+    text-transform: uppercase;
+}
+
+.emergency-modal-detail strong {
+    color: #f8fafc;
+
+    line-height: 1.4;
+}
+
+.emergency-modal-alert {
+    display: grid;
+    gap: 0.35rem;
+
+    padding: 1rem;
+
+    border-left: 4px solid #ef4444;
+    border-radius: 0.35rem;
+
+    background: rgba(127, 29, 29, 0.42);
+}
+
+.emergency-modal-alert strong {
+    color: #fecaca;
+
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+
+    text-transform: uppercase;
+}
+
+.emergency-modal-alert span {
+    color: #ffffff;
+
+    font-family: "Courier New", monospace;
+    font-weight: 700;
+}
+
+.emergency-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+
+    padding: 1rem 1.5rem 1.5rem;
+}
+
+.emergency-modal-start-button {
+    min-width: 220px;
+    min-height: 48px;
+
+    font-weight: 800;
+}
+
+@media (max-width: 600px) {
+    .emergency-modal-layer {
+        align-items: flex-start;
+
+        padding: 1rem;
+    }
+
+    .emergency-modal-card {
+        margin-top: 1rem;
+        max-height: calc(100vh - 2rem);
+    }
+
+    .emergency-modal-header {
+        align-items: flex-start;
+    }
+
+    .emergency-modal-actions {
+        display: block;
+    }
+
+    .emergency-modal-start-button {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+
 /* ======================================================
     Testing controls
 ====================================================== */

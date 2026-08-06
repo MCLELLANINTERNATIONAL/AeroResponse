@@ -1235,8 +1235,8 @@ public partial class Simulation : IAsyncDisposable
             {
                 Severity = "Warning",
                 Message =
-                    $"I could not match '{transcript}' to an " +
-                    "available cockpit control.",
+                    $"Incorrect. '{transcript}' is not part of the current " +
+                    "gold-standard checklist. Please try another option.",
                 RecommendedAction =
                     "Use the instrument name, action and value."
             };

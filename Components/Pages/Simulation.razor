@@ -573,12 +573,12 @@ selectedScenarioRecord.TriggerCondition))
 </section>
 
 <VoiceInstructorPanel
-IsSupported="_voiceSupported"
-IsListening="_voiceListening"
-StatusMessage="_voiceStatus"
-LastTranscript="_lastVoiceTranscript"
-Feedback="_latestInstructorFeedback"
-ToggleListening="ToggleVoiceControlAsync" />
+    IsSupported="_voiceSupported"
+    IsListening="_voiceListening"
+    StatusMessage="@_voiceStatus"
+    LastTranscript="@_lastVoiceTranscript"
+    Feedback="_latestInstructorFeedback"
+    ToggleListening="ToggleVoiceControlAsync" />
 
 <section class="emergency-panel-card assessment-status-card">
     <span class="emergency-panel-eyebrow">

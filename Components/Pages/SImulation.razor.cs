@@ -21,7 +21,6 @@ public partial class Simulation : IAsyncDisposable
     /* ====================================================================================================
                                             Dependency Injection
        ==================================================================================================== */
-
     [Inject]
     private ILogger<Simulation> Logger { get; set; } = default!;
 
@@ -95,6 +94,8 @@ public partial class Simulation : IAsyncDisposable
         "Select Start Voice Control.";
 
     private string? _lastVoiceTranscript;
+
+    private string? _previousVoiceTranscript;
 
     private AiInstructorFeedback? _latestInstructorFeedback;
 
@@ -563,6 +564,9 @@ public partial class Simulation : IAsyncDisposable
         _isCompleting = false;
         _remainingSeconds = selectedScenarioRecord.TimeLimitSeconds;
         _completedProcedureStepOrders.Clear();
+
+        _previousVoiceTranscript = null;
+        _lastVoiceTranscript = null;
 
         cockpitState.DisplayedVerticalSpeed =
             cockpitState.VerticalSpeed;
@@ -1058,7 +1062,6 @@ public partial class Simulation : IAsyncDisposable
 
 
 
-
     private async Task ToggleVoiceControlAsync()
     {
         if (!_voiceSupported)
@@ -1093,7 +1096,73 @@ public partial class Simulation : IAsyncDisposable
         string transcript,
         double confidence)
     {
+        transcript = transcript.Trim();
+
+        if (string.Equals(
+                transcript,
+                _previousVoiceTranscript,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _previousVoiceTranscript = transcript;
         _lastVoiceTranscript = transcript;
+
+        Logger.LogInformation(
+            "Voice transcript received: {Transcript}",
+            transcript);
+
+        string? scenarioAction =
+            transcript.ToLowerInvariant() switch
+            {
+                "maintain aircraft control" =>
+                    "Stabilize Aircraft",
+
+                "maintain control" =>
+                    "Stabilize Aircraft",
+
+                "keep control" =>
+                    "Stabilize Aircraft",
+
+                "fly the aircraft" =>
+                    "Stabilize Aircraft",
+
+                "stabilize aircraft" =>
+                    "Stabilize Aircraft",
+
+                "stabilise aircraft" =>
+                    "Stabilize Aircraft",
+
+                "check engine status" =>
+                    "Check Engine Status",
+
+                "assess engine performance" =>
+                    "Check Engine Status",
+
+                "check engine" =>
+                    "Check Engine Status",
+
+                "reduce throttle" =>
+                    "Reduce Throttle",
+
+                "reduce engine power" =>
+                    "Reduce Throttle",
+
+                "throttle back" =>
+                    "Reduce Throttle",
+
+                "declare emergency" =>
+                    "Declare Emergency",
+
+                "prepare landing" =>
+                    "Prepare Landing",
+
+                "prepare for landing" =>
+                    "Prepare Landing",
+
+                _ => null
+            };
 
         if (!_isReady ||
             !emergencyTriggered ||
@@ -1111,6 +1180,50 @@ public partial class Simulation : IAsyncDisposable
             return;
         }
 
+        if (scenarioAction is not null)
+        {
+            var step = procedureSteps.FirstOrDefault(x =>
+                string.Equals(
+                    x.CorrectAction,
+                    scenarioAction,
+                    StringComparison.OrdinalIgnoreCase));
+
+            if (step is not null)
+            {
+                cockpitState =
+                    SimulationSession.SubmitPilotAction(
+                        scenarioAction,
+                        step.StepOrder);
+
+                _completedProcedureStepOrders.Add(
+                    step.StepOrder);
+
+                var scenarioResult =
+                    CockpitCommandResult.Success(
+                        scenarioAction,
+                        $"{step.Instruction} completed.",
+                        scenarioAction);
+
+                _latestInstructorFeedback =
+                    AiInstructor.EvaluateAction(
+                        scenarioResult,
+                        procedureSteps,
+                        SimulationSession.PilotActions,
+                        _remainingSeconds);
+
+                _voiceStatus =
+                    $"Completed: {step.Instruction}";
+
+                await JSRuntime.InvokeVoidAsync(
+                    "aeroVoice.speak",
+                    _latestInstructorFeedback.Message);
+
+                await InvokeAsync(StateHasChanged);
+
+                return;
+            }
+        }
+
         var request =
             CockpitCommands.Parse(
                 transcript,
@@ -1122,8 +1235,8 @@ public partial class Simulation : IAsyncDisposable
             {
                 Severity = "Warning",
                 Message =
-                    $"I could not match '{transcript}' to an " +
-                    "available cockpit control.",
+                    $"Incorrect. '{transcript}' is not part of the current " +
+                    "gold-standard checklist. Please try another option.",
                 RecommendedAction =
                     "Use the instrument name, action and value."
             };
@@ -1184,9 +1297,20 @@ public partial class Simulation : IAsyncDisposable
     }
 
     [JSInvokable]
-    public async Task VoiceRecognitionError(string error)
+    public async Task VoiceRecognitionError(
+        string error)
     {
+        if (error is "no-speech" or "aborted")
+        {
+            _voiceStatus =
+                "No command detected. Still listening.";
+
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
         _voiceListening = false;
+
         _voiceStatus =
             $"Voice recognition error: {error}";
 
@@ -1241,7 +1365,7 @@ public partial class Simulation : IAsyncDisposable
             _voiceReference.Dispose();
             _voiceReference = null;
         }
-        _voiceReference?.Dispose();
+
         _simulationTimer?.Dispose();
         _simulationCancellation?.Dispose();
     }
@@ -1272,12 +1396,14 @@ public partial class Simulation : IAsyncDisposable
 
         await InvokeAsync(StateHasChanged);
     }
+
     private EngineState? GetAffectedEngine()
     {
         return cockpitState.Engines.FirstOrDefault(e => e.EngineFire || e.OnFire)
             ?? cockpitState.Engines.FirstOrDefault(e => e.Number == 2)
             ?? cockpitState.Engines.FirstOrDefault();
     }
+
     private async Task ActivateFireSuppression()
     {
         var engine = GetAffectedEngine();
@@ -1318,6 +1444,7 @@ public partial class Simulation : IAsyncDisposable
 
         return heading;
     }
+
     private void ToggleFuelControl(
         EngineState engine)
     {
@@ -1333,6 +1460,7 @@ public partial class Simulation : IAsyncDisposable
             engine.Running = true;
         }
     }
+
     private void HandleFuelControlChanged(
     EngineState engine)
     {
@@ -1348,6 +1476,7 @@ public partial class Simulation : IAsyncDisposable
             engine.Running = true;
         }
     }
+
     private void HandleRadioPower()
     {
         cockpitState.RadioPowered =
@@ -1396,7 +1525,6 @@ public partial class Simulation : IAsyncDisposable
             cockpitState.SatellitePhoneConnected = false;
         }
     }
-
 
     private void HandleSatelliteConnection()
     {

@@ -89,16 +89,9 @@ public class CockpitLayoutService(
             Rows = layout.Details.Rows,
             Columns = layout.Details.Columns,
 
-            Instruments = layout.Details.Instruments
-                .Select(instrument => new InstrumentDefinition
-                {
-                    Type = instrument.Type,
-                    GridRow = instrument.GridRow,
-                    GridColumn = instrument.GridColumn,
-                    RowSpan = instrument.RowSpan,
-                    ColumnSpan = instrument.ColumnSpan
-                })
-                .ToList(),
+            Instruments =
+                CloneInstruments(
+                    layout.Details.Instruments),
 
             EngineCount = layout.Details.EngineCount,
             Airspeed = layout.Details.Airspeed,
@@ -293,6 +286,50 @@ public class CockpitLayoutService(
         }
     }
 
+    private static List<InstrumentDefinition>
+        CloneInstruments(
+            IEnumerable<InstrumentDefinition> instruments)
+    {
+        return instruments
+            .Select(instrument =>
+                new InstrumentDefinition
+                {
+                    Type = instrument.Type,
+                    GridRow = instrument.GridRow,
+                    GridColumn = instrument.GridColumn,
+                    RowSpan = instrument.RowSpan,
+                    ColumnSpan = instrument.ColumnSpan,
+
+                    ControlId = instrument.ControlId,
+                    DisplayName = instrument.DisplayName,
+
+                    IsVoiceControllable =
+                        instrument.IsVoiceControllable,
+
+                    VoiceAliases =
+                        instrument.VoiceAliases?.ToList() ?? [],
+
+                    VoiceCommands =
+                        instrument.VoiceCommands?
+                            .Select(command =>
+                                new CockpitControlCommandDefinition
+                                {
+                                    Command = command.Command,
+
+                                    VoiceAliases =
+                                        command.VoiceAliases?.ToList() ?? [],
+
+                                    MinimumValue = command.MinimumValue,
+                                    MaximumValue = command.MaximumValue,
+                                    Unit = command.Unit,
+                                    RequiresNumericValue = command.RequiresNumericValue
+                                })
+                            .ToList() ?? []
+                })
+            .ToList();
+    }
+
+
     private static bool IsValidKey(string key)
     {
         if (key.StartsWith('-') ||
@@ -328,8 +365,7 @@ public class CockpitLayoutService(
         NormalizeLayout(layout);
         ValidateLayout(layout);
 
-        if (existingLayoutId.HasValue &&
-            existingLayoutId.Value <= 0)
+        if (existingLayoutId.Value <= 0)
         {
             throw new ArgumentException(
                 "The existing layout ID is invalid.",

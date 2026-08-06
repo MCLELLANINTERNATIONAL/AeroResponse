@@ -3,11 +3,13 @@ using AeroResponse.Simulation.Layouts;
 
 namespace AeroResponse.Simulation.Scenarios;
 
-public class CabinDepressurizationScenario : ISimulationScenario
+public class CabinDepressurizationScenario
+    : ISimulationScenario
 {
     public int ScenarioId => 2;
 
-    public string ScenarioType => "Cabin Depressurization";
+    public string ScenarioType =>
+        "Cabin Depressurization";
 
     public ScenarioStartCondition StartCondition =>
         new()

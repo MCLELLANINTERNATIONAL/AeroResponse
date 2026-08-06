@@ -16,7 +16,7 @@ using VSIMath =
 
 namespace AeroResponse.Components.Pages;
 
-public partial class Simulation : IAsyncDisposable
+public partial class Simulation : ComponentBase, IAsyncDisposable
 {
     /* ====================================================================================================
                                             Dependency Injection
@@ -1544,7 +1544,5 @@ public partial class Simulation : IAsyncDisposable
         {
             return;
         }
-
-        // Eventually record this as a pilot action.
     }
 }

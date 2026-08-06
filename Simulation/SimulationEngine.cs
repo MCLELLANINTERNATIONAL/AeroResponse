@@ -49,10 +49,16 @@ public class SimulationEngine
 
     public CockpitState StartScenario(
         string scenarioType,
-        CockpitLayoutDefinition aircraft)
+        CockpitLayoutDefinition aircraft,
+        CockpitState currentState)
     {
+        ArgumentNullException.ThrowIfNull(aircraft);
+        ArgumentNullException.ThrowIfNull(currentState);
+
         return GetScenario(scenarioType)
-            .Start(aircraft);
+            .Start(
+                aircraft,
+                currentState);
     }
 
     public CockpitState ApplyAction(

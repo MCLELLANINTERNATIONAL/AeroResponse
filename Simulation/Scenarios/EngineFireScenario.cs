@@ -9,102 +9,147 @@ public class EngineFireScenario : ISimulationScenario
 
     public string ScenarioType => "Engine Fire";
 
-    public CockpitState Start(CockpitLayoutDefinition aircraft)
+    public ScenarioStartCondition StartCondition =>
+        new()
+        {
+            MinimumAltitude = 2_000,
+            MinimumAirspeed = 80,
+            MinimumAverageEnginePower = 50,
+            RequiresAircraftAirborne = true,
+            RequiresEnginesRunning = true
+        };
+
+    public CockpitState Start(
+        CockpitLayoutDefinition aircraft,
+        CockpitState currentState)
     {
-        var engineCount = aircraft.EngineCount > 0
-            ? aircraft.EngineCount
-            : 2;
+        ArgumentNullException.ThrowIfNull(aircraft);
+        ArgumentNullException.ThrowIfNull(currentState);
 
-        var engines = Enumerable.Range(1, engineCount)
-            .Select(number => new EngineState
-            {
-                Number = number,
-                Power = 92,
-                Running = true,
-                OnFire = false,
-                EngineFire = false,
-                FuelCutoff = false,
-                FireSuppressionActivated = false
-            })
-            .ToList();
+        if (currentState.Engines.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"{aircraft.Name} cannot run the engine-fire scenario " +
+                "because no engines are available.");
+        }
 
-        // Engine 2 is the affected engine where available.
-    var affectedEngine = engines.FirstOrDefault(engine => engine.Number == 2)
-                    ?? engines[0];
+        var affectedEngine =
+            currentState.Engines.FirstOrDefault(
+                engine => engine.Number == 2)
+            ?? currentState.Engines[0];
 
-        affectedEngine.Power = 40;
+        affectedEngine.Power =
+            Math.Min(affectedEngine.Power, 40);
+
+        affectedEngine.Running = true;
         affectedEngine.OnFire = true;
         affectedEngine.EngineFire = true;
+        affectedEngine.FuelCutoff = false;
+        affectedEngine.FireSuppressionActivated = false;
 
-        return new CockpitState
-        {
-            Airspeed = 260,
-            Altitude = 8000,
-            Heading = 270,
-            Engines = engines,
-            AlertMessage = $"{aircraft.Name}: ENGINE {affectedEngine.Number} FIRE DETECTED"
-        };
+        // Give the pilot an actual handling disturbance.
+        currentState.Bank =
+            Math.Clamp(
+                currentState.Bank + 8,
+                -30,
+                30);
+
+        currentState.VerticalSpeed =
+            Math.Min(
+                currentState.VerticalSpeed,
+                -500);
+
+        currentState.AlertMessage =
+            $"{aircraft.Name}: ENGINE {affectedEngine.Number} FIRE DETECTED";
+
+        return currentState;
     }
 
     public List<ScenarioProcedureStep> GetProcedureSteps(
         CockpitLayoutDefinition aircraft,
         int scenarioId)
     {
+        var affectedEngineNumber =
+            aircraft.EngineCount >= 2 ? 2 : 1;
+
         return
         [
-            new()
+            new ScenarioProcedureStep
             {
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 1,
-                Instruction = "Reduce affected engine thrust",
-                CorrectAction = "Reduce Throttle",
+                Instruction = "Maintain aircraft control",
+                CorrectAction = "Stabilize Aircraft",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
                 IsSafetyCritical = true
             },
-            new()
+
+            new ScenarioProcedureStep
             {
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 2,
-                Instruction = "Cut off fuel to affected engine",
-                CorrectAction = "Fuel Cutoff",
+                Instruction =
+                    $"Reduce engine {affectedEngineNumber} thrust",
+                CorrectAction =
+                    $"Reduce Throttle Engine {affectedEngineNumber}",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
                 IsSafetyCritical = true
             },
-            new()
+
+            new ScenarioProcedureStep
             {
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 3,
-                Instruction = "Shut down affected engine",
-                CorrectAction = "Engine Shutdown",
+                Instruction =
+                    $"Cut off fuel to engine {affectedEngineNumber}",
+                CorrectAction =
+                    $"Cut Fuel Engine {affectedEngineNumber}",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
                 IsSafetyCritical = true
             },
-            new()
+
+            new ScenarioProcedureStep
             {
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 4,
-                Instruction = "Pull fire handle",
-                CorrectAction = "Pull Fire Handle",
+                Instruction =
+                    $"Activate fire suppression for engine {affectedEngineNumber}",
+                CorrectAction =
+                    $"Activate Fire Suppression Engine {affectedEngineNumber}",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
                 IsSafetyCritical = true
             },
-            new()
+
+            new ScenarioProcedureStep
             {
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 5,
-                Instruction = "Discharge fire bottle",
-                CorrectAction = "Discharge Fire Bottle",
-                IsSafetyCritical = true
+                Instruction = "Declare emergency",
+                CorrectAction = "Declare Emergency",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = false
             },
-            new()
+
+            new ScenarioProcedureStep
             {
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 6,
-                Instruction = "Declare emergency and prepare diversion",
-                CorrectAction = "Declare Emergency",
-                IsSafetyCritical = false
+                Instruction = "Prepare to divert and land",
+                CorrectAction = "Prepare Landing",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
             }
         ];
     }
@@ -113,55 +158,19 @@ public class EngineFireScenario : ISimulationScenario
         CockpitState state,
         string actionName)
     {
-        var affectedEngine =
-            state.Engines.FirstOrDefault(engine =>
-                engine.EngineFire || engine.OnFire)
-            ?? state.Engines.FirstOrDefault(engine => engine.Number == 2)
-            ?? state.Engines.FirstOrDefault();
-
-        if (affectedEngine is null)
-        {
-            state.AlertMessage = "No engine information is available.";
-            return state;
-        }
+        ArgumentNullException.ThrowIfNull(state);
 
         switch (actionName)
         {
-            case "Reduce Throttle":
-                affectedEngine.Power = 20;
-                break;
-
-            case "Fuel Cutoff":
-                affectedEngine.FuelCutoff = true;
-                break;
-
-            case "Engine Shutdown":
-                affectedEngine.Power = 0;
-                affectedEngine.Running = false;
-                break;
-
-            case "Pull Fire Handle":
-                affectedEngine.FuelCutoff = true;
-                break;
-
-            case "Discharge Fire Bottle":
-                affectedEngine.FireSuppressionActivated = true;
-                break;
-
             case "Declare Emergency":
                 state.AlertMessage =
                     "EMERGENCY DECLARED - PREPARE TO DIVERT";
                 break;
-        }
 
-        if (affectedEngine.FuelCutoff &&
-            affectedEngine.FireSuppressionActivated)
-        {
-            affectedEngine.EngineFire = false;
-            affectedEngine.OnFire = false;
-
-            state.AlertMessage =
-                "ENGINE FIRE SUPPRESSED - DIVERT TO NEAREST AIRPORT";
+            case "Prepare Landing":
+                state.AlertMessage =
+                    "DIVERSION AND LANDING PREPARATION ACTIVE";
+                break;
         }
 
         return state;
@@ -172,13 +181,58 @@ public class EngineFireScenario : ISimulationScenario
         string actionName,
         int expectedStep)
     {
-        var steps = GetProcedureSteps(aircraft, ScenarioId);
+        return GetProcedureSteps(
+                aircraft,
+                ScenarioId)
+            .Any(step =>
+                step.StepOrder == expectedStep &&
+                step.ValidationType ==
+                    ProcedureValidationType.PilotAction &&
+                string.Equals(
+                    step.CorrectAction,
+                    actionName,
+                    StringComparison.OrdinalIgnoreCase));
+    }
 
-        return steps.Any(step =>
-            step.StepOrder == expectedStep &&
-            string.Equals(
-                step.CorrectAction,
-                actionName,
-                StringComparison.OrdinalIgnoreCase));
+    public bool IsStepSatisfied(
+        CockpitState state,
+        int stepOrder)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        var affectedEngineNumber =
+            state.Engines.Count >= 2 ? 2 : 1;
+
+        var affectedEngine =
+            state.Engines.FirstOrDefault(
+                engine =>
+                    engine.Number ==
+                    affectedEngineNumber);
+
+        if (affectedEngine is null)
+        {
+            return false;
+        }
+
+        return stepOrder switch
+        {
+            1 =>
+                Math.Abs(state.Bank) <= 5 &&
+                Math.Abs(state.VerticalSpeed) <= 300 &&
+                Math.Abs(state.Pitch) <= 5,
+
+            2 =>
+                affectedEngine.Power <= 20,
+
+            3 =>
+                affectedEngine.FuelCutoff &&
+                affectedEngine.Power <= 0 &&
+                !affectedEngine.Running,
+
+            4 =>
+                affectedEngine.FireSuppressionActivated,
+
+            _ => false
+        };
     }
 }

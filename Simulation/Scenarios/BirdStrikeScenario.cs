@@ -10,7 +10,18 @@ public class BirdStrikeScenario : ISimulationScenario
 
     public string ScenarioType => "Bird Strike";
 
-    public CockpitState Start(CockpitLayoutDefinition aircraft)
+     public ScenarioStartCondition StartCondition =>
+        new()
+        {
+            MinimumAltitude = 1_500,
+            MinimumAirspeed = 70,
+            RequiresAircraftAirborne = true,
+            RequiresEnginesRunning = true
+        };
+
+    public CockpitState Start(
+        CockpitLayoutDefinition aircraft,
+        CockpitState currentState)
     {
         if (aircraft.EngineCount < 1)
         {
@@ -19,43 +30,38 @@ public class BirdStrikeScenario : ISimulationScenario
                 "because it defines no engines.");
         }
 
-        var defaults = aircraft.DefaultState;
+        var affectedEngine =
+            currentState.Engines.FirstOrDefault(
+                engine =>
+                    engine.Number ==
+                    AffectedEngineNumber);
 
-        var engines = Enumerable
-            .Range(1, aircraft.EngineCount)
-            .Select(number => new EngineState
-            {
-                Number = number,
-
-                Power = number == AffectedEngineNumber
-                    ? GetDegradedPower(defaults.NormalEnginePower)
-                    : defaults.NormalEnginePower,
-
-                Running = true,
-                OnFire = false,
-                FuelCutoff = false,
-                FireSuppressionActivated = false
-            })
-            .ToList();
-
-        return new CockpitState
+        if (affectedEngine is null)
         {
-            Airspeed = defaults.CruiseAirspeed,
-            Altitude = defaults.CruiseAltitude,
-            Heading = defaults.DefaultHeading,
-            VerticalSpeed = defaults.DefaultVerticalSpeed,
-            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
+            throw new InvalidOperationException(
+                $"Engine {AffectedEngineNumber} was not found.");
+        }
 
-            Pitch = defaults.DefaultPitch,
-            Bank = defaults.DefaultBank,
+        affectedEngine.Power =
+            GetDegradedPower(
+                affectedEngine.Power);
+            
+        currentState.Bank =
+            Math.Clamp(
+                currentState.Bank + 8,
+                -30,
+                30);
 
-            FuelPercentage = defaults.FuelPercentage,
-            Engines = engines,
+        currentState.VerticalSpeed =
+            Math.Min(
+                currentState.VerticalSpeed,
+                -500);
 
-            AlertMessage =
-                $"{aircraft.Name}: BIRD STRIKE - " +
-                $"ENGINE {AffectedEngineNumber} PERFORMANCE DEGRADED"
-        };
+        currentState.AlertMessage =
+            $"{aircraft.Name}: BIRD STRIKE - " +
+            $"ENGINE {AffectedEngineNumber} PERFORMANCE DEGRADED";
+
+        return currentState;
     }
 
     public List<ScenarioProcedureStep> GetProcedureSteps(
@@ -86,6 +92,7 @@ public class BirdStrikeScenario : ISimulationScenario
                 StepOrder = 1,
                 Instruction = "Maintain aircraft control",
                 CorrectAction = "Stabilize Aircraft",
+                ValidationType = ProcedureValidationType.CockpitState,
                 IsSafetyCritical = true
             },
 
@@ -96,6 +103,7 @@ public class BirdStrikeScenario : ISimulationScenario
                 StepOrder = 2,
                 Instruction = engineAssessmentInstruction,
                 CorrectAction = "Check Engine Status",
+                ValidationType = ProcedureValidationType.PilotAction,
                 IsSafetyCritical = true
             },
 
@@ -106,6 +114,7 @@ public class BirdStrikeScenario : ISimulationScenario
                 StepOrder = 3,
                 Instruction = throttleInstruction,
                 CorrectAction = "Reduce Throttle",
+                ValidationType = ProcedureValidationType.CockpitState,
                 IsSafetyCritical = true
             },
 
@@ -116,6 +125,7 @@ public class BirdStrikeScenario : ISimulationScenario
                 StepOrder = 4,
                 Instruction = "Declare emergency",
                 CorrectAction = "Declare Emergency",
+                ValidationType = ProcedureValidationType.PilotAction,
                 IsSafetyCritical = false
             },
 
@@ -126,6 +136,8 @@ public class BirdStrikeScenario : ISimulationScenario
                 StepOrder = 5,
                 Instruction = landingInstruction,
                 CorrectAction = "Prepare Landing",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
                 IsSafetyCritical = true
             }
         ];
@@ -137,9 +149,6 @@ public class BirdStrikeScenario : ISimulationScenario
     {
         switch (actionName)
         {
-            case "Stabilize Aircraft":
-                state.VerticalSpeed = 0;
-                break;
 
             case "Check Engine Status":
                 state.AlertMessage =
@@ -147,28 +156,9 @@ public class BirdStrikeScenario : ISimulationScenario
                     "MONITOR PARAMETERS";
                 break;
 
-            case "Reduce Throttle":
-                var affectedEngine = state.Engines.FirstOrDefault(
-                    engine => engine.Number == AffectedEngineNumber);
-
-                if (affectedEngine is null)
-                {
-                    throw new InvalidOperationException(
-                        $"Engine {AffectedEngineNumber} was not found " +
-                        "in the current cockpit state.");
-                }
-
-                affectedEngine.Power = 45;
-                break;
-
             case "Declare Emergency":
                 state.AlertMessage =
                     "EMERGENCY DECLARED - RETURN TO AIRPORT";
-                break;
-
-            case "Prepare Landing":
-                state.AlertMessage =
-                    "LANDING PREPARATION INITIATED";
                 break;
         }
 
@@ -191,6 +181,36 @@ public class BirdStrikeScenario : ISimulationScenario
                    expectedProcedure.CorrectAction,
                    actionName,
                    StringComparison.OrdinalIgnoreCase);
+    }
+
+    public bool IsStepSatisfied(
+        CockpitState state,
+        int stepOrder)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return stepOrder switch
+        {
+            1 =>
+                Math.Abs(state.Bank) <= 5 &&
+                Math.Abs(state.VerticalSpeed) <= 300 &&
+                Math.Abs(state.Pitch) <= 5,
+
+            3 =>
+                state.Engines
+                    .FirstOrDefault(
+                        engine =>
+                            engine.Number ==
+                            AffectedEngineNumber)
+                    ?.Power <= 45,
+            5 =>
+                state.VerticalSpeed <= -300 &&
+                state.FlightPhase is
+                    "Descent" or
+                    "Approach" or
+                    "Landing",
+            _ => false
+        };
     }
 
     private static int GetDegradedPower(double normalPower)

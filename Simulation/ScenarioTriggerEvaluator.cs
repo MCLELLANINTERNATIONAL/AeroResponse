@@ -8,7 +8,8 @@ public class ScenarioTriggerEvaluator
         EmergencyScenario scenario,
         CockpitState state,
         TimeSpan elapsedTime,
-        bool manuallyActivated = false)
+        bool manuallyActivated = false,
+        string? pilotAction = null)
     {
         ArgumentNullException.ThrowIfNull(scenario);
         ArgumentNullException.ThrowIfNull(state);
@@ -20,17 +21,17 @@ public class ScenarioTriggerEvaluator
             "Time" =>
                 scenario.TriggerDelaySeconds.HasValue &&
                 elapsedTime.TotalSeconds >=
-                scenario.TriggerDelaySeconds.Value,
+                    scenario.TriggerDelaySeconds.Value,
 
             "Altitude" =>
                 scenario.TriggerAltitudeFeet.HasValue &&
                 state.Altitude >=
-                scenario.TriggerAltitudeFeet.Value,
+                    scenario.TriggerAltitudeFeet.Value,
 
             "Airspeed" =>
                 scenario.TriggerAirspeedKnots.HasValue &&
                 state.Airspeed >=
-                scenario.TriggerAirspeedKnots.Value,
+                    scenario.TriggerAirspeedKnots.Value,
 
             "Flight Phase" =>
                 !string.IsNullOrWhiteSpace(
@@ -42,6 +43,16 @@ public class ScenarioTriggerEvaluator
 
             "Manual" =>
                 manuallyActivated,
+
+            "Action" =>
+                !string.IsNullOrWhiteSpace(
+                    scenario.TriggerAction) &&
+                !string.IsNullOrWhiteSpace(
+                    pilotAction) &&
+                string.Equals(
+                    scenario.TriggerAction,
+                    pilotAction,
+                    StringComparison.OrdinalIgnoreCase),
 
             _ => false
         };

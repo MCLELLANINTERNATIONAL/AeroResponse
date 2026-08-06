@@ -47,11 +47,13 @@ public sealed class SimulationService(
         EmergencyScenario scenario,
         CockpitLayoutDefinition aircraft,
         IReadOnlyList<ScenarioProcedureStep> expectedSteps,
+        CockpitState initialState,
         string pilotName = "Pilot")
     {
         ArgumentNullException.ThrowIfNull(scenario);
         ArgumentNullException.ThrowIfNull(aircraft);
         ArgumentNullException.ThrowIfNull(expectedSteps);
+        ArgumentNullException.ThrowIfNull(initialState);
 
         _currentAircraft = aircraft;
         _currentScenario = scenario;
@@ -77,17 +79,18 @@ public sealed class SimulationService(
 
         _pilotActions.Clear();
 
-        _currentState =
-            CreateInitialState(
-                aircraft,
-                scenario);
+        _currentState = initialState;
 
         return _currentState;
     }
 
-    public void MarkEmergencyTriggered(
+    public CockpitState MarkEmergencyTriggered(
+        CockpitState currentState,
         DateTime? triggeredAt = null)
     {
+        ArgumentNullException.ThrowIfNull(
+            currentState);
+
         if (_currentRun is null ||
             _currentScenario is null ||
             _currentAircraft is null)
@@ -98,7 +101,7 @@ public sealed class SimulationService(
 
         if (_emergencyTriggeredAt.HasValue)
         {
-            return;
+            return _currentState ?? currentState;
         }
 
         _emergencyTriggeredAt =
@@ -110,7 +113,10 @@ public sealed class SimulationService(
         _currentState =
             simulationEngine.StartScenario(
                 _currentScenario.EmergencyType,
-                _currentAircraft);
+                _currentAircraft,
+                currentState);
+
+        return _currentState;
     }
 
     /// <summary>
@@ -169,7 +175,8 @@ public sealed class SimulationService(
         DateTime? now = null)
     {
         if (_currentScenario is null ||
-            !_emergencyTriggeredAt.HasValue)
+            !_emergencyTriggeredAt.HasValue ||
+            _currentScenario.TimeLimitSeconds <= 0)
         {
             return false;
         }
@@ -187,10 +194,14 @@ public sealed class SimulationService(
         DateTime? now = null)
     {
         if (_currentScenario is null ||
-            !_emergencyTriggeredAt.HasValue)
+            _currentScenario.TimeLimitSeconds <= 0)
         {
-            return _currentScenario?
-                .TimeLimitSeconds ?? 0;
+            return 0;
+        }
+
+        if (!_emergencyTriggeredAt.HasValue)
+        {
+            return _currentScenario.TimeLimitSeconds;
         }
 
         var currentTime =
@@ -272,33 +283,29 @@ public sealed class SimulationService(
                 report);
     }
 
+    public CockpitState RecordStateStepCompletion(
+        ScenarioProcedureStep step,
+        CockpitState currentState)
+    {
+        ArgumentNullException.ThrowIfNull(step);
+        ArgumentNullException.ThrowIfNull(currentState);
+
+        EnsureActiveSimulation();
+        EnsureEmergencyTriggered();
+
+        _currentState = currentState;
+
+        RecordActionOnly(
+            step.CorrectAction,
+            step.StepOrder);
+
+        return _currentState;
+    }
+
     public IReadOnlyList<ScenarioProcedureStep>
         GetCurrentChecklist()
     {
         return _expectedSteps;
-    }
-
-    private CockpitState CreateInitialState(
-        CockpitLayoutDefinition aircraft,
-        EmergencyScenario scenario)
-    {
-        if (string.Equals(
-                scenario.TriggerType,
-                "Immediate",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            _emergencyTriggeredAt =
-                DateTime.UtcNow;
-
-            _currentRun!.StartedAt =
-                _emergencyTriggeredAt.Value;
-
-            return simulationEngine.StartScenario(
-                scenario.EmergencyType,
-                aircraft);
-        }
-
-        return new CockpitState();
     }
 
     private void RecordActionOnly(
@@ -323,8 +330,9 @@ public sealed class SimulationService(
                     !_pilotActions.Any(
                         action =>
                             action.WasCorrect &&
+                            action.WasInCorrectOrder &&
                             action.ExpectedStepOrder ==
-                            step.StepOrder))
+                                step.StepOrder))
                 .OrderBy(step =>
                     step.StepOrder)
                 .FirstOrDefault();

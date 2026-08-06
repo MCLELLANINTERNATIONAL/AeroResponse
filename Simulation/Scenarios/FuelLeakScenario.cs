@@ -9,81 +9,191 @@ public class FuelLeakScenario : ISimulationScenario
 
     public string ScenarioType => "Fuel Leak";
 
-    public CockpitState Start(CockpitLayoutDefinition aircraft)
-    {
-        var defaults = aircraft.DefaultState;
-        var engines = Enumerable.Range(1, aircraft.EngineCount)
-            .Select(number => new EngineState
-            {
-                Number = number,
-                Power = defaults.NormalEnginePower,
-                Running = true,
-                FuelPercentage = Math.Max(0, defaults.FuelPercentage - 25)
-            })
-            .ToList();
-
-        return new CockpitState
+    public ScenarioStartCondition StartCondition =>
+        new()
         {
-            Airspeed = defaults.CruiseAirspeed,
-            Altitude = defaults.CruiseAltitude,
-            Heading = defaults.DefaultHeading,
-            VerticalSpeed = defaults.DefaultVerticalSpeed,
-            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
-            Pitch = defaults.DefaultPitch,
-            Bank = defaults.DefaultBank,
-            FuelPercentage = defaults.FuelPercentage,
-            Engines = engines,
-            AlertMessage = $"{aircraft.Name}: FUEL LEAK DETECTED - FUEL QUANTITY DECREASING"
+            MinimumAltitude = 1_000,
+            MinimumAirspeed = 60,
+            MinimumFuelPercentage = 25,
+            RequiresAircraftAirborne = true,
+            RequiresEnginesRunning = true
         };
+
+    public CockpitState Start(
+        CockpitLayoutDefinition aircraft,
+        CockpitState currentState)
+    {
+        ArgumentNullException.ThrowIfNull(aircraft);
+        ArgumentNullException.ThrowIfNull(currentState);
+
+        if (currentState.FuelTanks.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"{aircraft.Name} cannot run the fuel-leak scenario " +
+                "because no fuel tanks are configured.");
+        }
+
+        var affectedTank =
+            currentState.FuelTanks.First();
+
+        currentState.FuelLeakActive = true;
+        currentState.LeakingFuelTankNumber =
+            affectedTank.Number;
+
+        currentState.AlertMessage =
+            $"{aircraft.Name}: FUEL LEAK DETECTED - " +
+            $"TANK {affectedTank.Number} QUANTITY DECREASING";
+
+        return currentState;
     }
 
-    public List<ScenarioProcedureStep> GetProcedureSteps(CockpitLayoutDefinition aircraft, int scenarioId)
+    public List<ScenarioProcedureStep> GetProcedureSteps(
+        CockpitLayoutDefinition aircraft,
+        int scenarioId)
     {
+        const int affectedTankNumber = 1;
+
         return
         [
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 1, Instruction = "Maintain aircraft control and monitor fuel", CorrectAction = "Monitor Fuel", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 2, Instruction = "Identify affected fuel system", CorrectAction = "Identify Fuel Leak", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 3, Instruction = "Isolate affected fuel source if required", CorrectAction = "Fuel Cutoff", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 4, Instruction = "Declare emergency", CorrectAction = "Declare Emergency", IsSafetyCritical = false },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 5, Instruction = "Divert to nearest suitable airport", CorrectAction = "Prepare Diversion", IsSafetyCritical = false }
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 1,
+                Instruction =
+                    "Maintain aircraft control and monitor fuel quantity",
+                CorrectAction = "Monitor Fuel",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 2,
+                Instruction =
+                    $"Identify tank {affectedTankNumber} as the leaking source",
+                CorrectAction =
+                    $"Identify Fuel Leak Tank {affectedTankNumber}",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 3,
+                Instruction =
+                    $"Isolate fuel tank {affectedTankNumber}",
+                CorrectAction =
+                    $"Isolate Fuel Tank {affectedTankNumber}",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 4,
+                Instruction = "Declare emergency",
+                CorrectAction = "Declare Emergency",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = false
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 5,
+                Instruction =
+                    "Divert to the nearest suitable airport",
+                CorrectAction = "Prepare Diversion",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = false
+            }
         ];
     }
 
-    public CockpitState ApplyPilotAction(CockpitState state, string actionName)
+    public CockpitState ApplyPilotAction(
+        CockpitState state,
+        string actionName)
     {
-        if (actionName == "Monitor Fuel")
-        {
-            foreach (var engine in state.Engines)
-            {
-                engine.FuelPercentage = Math.Max(0, engine.FuelPercentage - 5);
-            }
-        }
+        ArgumentNullException.ThrowIfNull(state);
 
-        if (actionName == "Identify Fuel Leak")
-        {
-            state.AlertMessage = "LEFT FUEL SYSTEM LEAK SUSPECTED";
-        }
+        var affectedTank =
+            state.FuelTanks.FirstOrDefault(
+                tank =>
+                    tank.Number ==
+                    state.LeakingFuelTankNumber);
 
-        if (actionName == "Fuel Cutoff")
+        switch (actionName)
         {
-            foreach (var engine in state.Engines)
-            {
-                engine.FuelCutoff = true;
-            }
-            state.AlertMessage = "AFFECTED FUEL SYSTEM ISOLATED";
-        }
+            case "Monitor Fuel":
+                state.AlertMessage =
+                    affectedTank is null
+                        ? "FUEL QUANTITY MONITORING ACTIVE"
+                        : $"TANK {affectedTank.Number} FUEL LOSS CONFIRMED";
+                break;
 
-        if (actionName == "Prepare Diversion")
-        {
-            state.AlertMessage = "DIVERSION PLANNED - LAND AS SOON AS PRACTICAL";
+            case "Identify Fuel Leak Tank 1":
+                state.AlertMessage =
+                    "TANK 1 FUEL LEAK CONFIRMED";
+                break;
+
+            case "Isolate Fuel Tank 1":
+                state.FuelLeakActive = false;
+
+                state.AlertMessage =
+                    "AFFECTED FUEL SOURCE ISOLATED";
+                break;
+
+            case "Declare Emergency":
+                state.AlertMessage =
+                    "EMERGENCY DECLARED - FUEL LEAK DIVERSION REQUIRED";
+                break;
+
+            case "Prepare Diversion":
+                state.AlertMessage =
+                    "DIVERSION PLANNED - LAND AS SOON AS PRACTICAL";
+                break;
         }
 
         return state;
     }
 
-    public bool IsActionCorrect(CockpitLayoutDefinition aircraft, string actionName, int expectedStep)
+    public bool IsActionCorrect(
+        CockpitLayoutDefinition aircraft,
+        string actionName,
+        int expectedStep)
     {
-        var steps = GetProcedureSteps(aircraft, 0);
-        return steps.Any(s => s.StepOrder == expectedStep && s.CorrectAction == actionName);
+        return GetProcedureSteps(
+                aircraft,
+                scenarioId: 0)
+            .Any(step =>
+                step.StepOrder == expectedStep &&
+                step.ValidationType ==
+                    ProcedureValidationType.PilotAction &&
+                string.Equals(
+                    step.CorrectAction,
+                    actionName,
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool IsStepSatisfied(
+        CockpitState state,
+        int stepOrder)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return false;
     }
 }

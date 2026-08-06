@@ -5,7 +5,8 @@ namespace AeroResponse.Data.Mongo.Accounts;
 
 public sealed class MongoUserAccount
 {
-    public const string DefaultAccountType = "guest";
+    public const string DefaultAccountType =
+        "guest";
 
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
@@ -38,6 +39,31 @@ public sealed class MongoUserAccount
     [BsonElement("account_type")]
     public string AccountType { get; set; } =
         DefaultAccountType;
+
+    [BsonElement("businessName")]
+    [BsonIgnoreIfNull]
+    public string? BusinessName { get; set; }
+
+    [BsonElement("ownerIdentityUserId")]
+    [BsonIgnoreIfNull]
+    public string? OwnerIdentityUserId { get; set; }
+
+    [BsonElement("referralCodeUsed")]
+    [BsonIgnoreIfNull]
+    public string? ReferralCodeUsed { get; set; }
+
+    /*
+     * These counters are stored on owner accounts.
+     *
+     * They allow registration capacity to be reserved
+     * atomically, preventing two simultaneous signups
+     * from both claiming the final available seat.
+     */
+    [BsonElement("linkedPilotCount")]
+    public int LinkedPilotCount { get; set; }
+
+    [BsonElement("linkedTrainerCount")]
+    public int LinkedTrainerCount { get; set; }
 
     [BsonElement("createdAtUtc")]
     public DateTime CreatedAtUtc { get; set; }

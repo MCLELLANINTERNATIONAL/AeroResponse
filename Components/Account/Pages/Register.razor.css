@@ -74,10 +74,6 @@
     display: block;
 }
 
-/*
-    Blazor InputText renders the actual input inside a child component.
-    ::deep ensures this isolated stylesheet reaches that element.
-*/
 .auth-input-wrapper ::deep .auth-input {
     display: block;
     width: 100%;
@@ -233,9 +229,6 @@
     cursor: pointer;
 }
 
-/*
-    InputCheckbox is also a child Blazor component.
-*/
 .terms-option ::deep .terms-checkbox {
     width: 20px;
     height: 20px;
@@ -287,6 +280,7 @@
     font-family: inherit;
     font-size: 1rem;
     font-weight: 750;
+    text-decoration: none;
 
     background:
         linear-gradient(
@@ -309,6 +303,8 @@
 }
 
 .primary-auth-button:hover {
+    color: #ffffff;
+    text-decoration: none;
     filter: brightness(1.04);
 
     box-shadow:
@@ -322,6 +318,9 @@
 }
 
 .primary-auth-button:focus-visible {
+    color: #ffffff;
+    text-decoration: none;
+
     outline: 4px solid rgba(22, 140, 255, 0.25);
     outline-offset: 2px;
 }
@@ -339,18 +338,6 @@
     height: 25px;
     object-fit: contain;
     filter: brightness(0) invert(1);
-}
-
-.button-aircraft-icon {
-    width: 23px;
-    height: 23px;
-    flex: 0 0 auto;
-
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
 }
 
 .auth-divider {
@@ -435,10 +422,6 @@
     margin-bottom: 1rem;
 }
 
-/*
-    Optional styles for external-provider buttons rendered
-    by ExternalLoginPicker.
-*/
 ::deep .external-login-section {
     width: 100%;
 }
@@ -449,6 +432,7 @@
     display: grid;
     grid-template-columns:
         repeat(2, minmax(0, 1fr));
+
     gap: 0.85rem;
 }
 
@@ -513,6 +497,109 @@
     object-fit: contain;
 }
 
+/* =========================================================
+   COMPANY CAPACITY POPUP
+   ========================================================= */
+
+.capacity-popup-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+
+    display: grid;
+    place-items: center;
+
+    padding: 1rem;
+
+    background: rgba(1, 13, 25, 0.78);
+    backdrop-filter: blur(5px);
+}
+
+.capacity-popup {
+    width: min(460px, 100%);
+
+    box-sizing: border-box;
+    padding: 2rem;
+
+    color: #eef7ff;
+    text-align: center;
+
+    background:
+        linear-gradient(
+            145deg,
+            #0d365c,
+            #082742);
+
+    border:
+        1px solid rgba(255, 107, 107, 0.55);
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.capacity-popup-icon {
+    width: 64px;
+    height: 64px;
+
+    display: grid;
+    place-items: center;
+
+    margin: 0 auto 1rem;
+
+    color: #ffffff;
+
+    background:
+        linear-gradient(
+            145deg,
+            #e65353,
+            #a92727);
+
+    border:
+        1px solid rgba(255, 255, 255, 0.18);
+
+    border-radius: 50%;
+
+    font-size: 1.5rem;
+
+    box-shadow:
+        0 12px 28px rgba(182, 39, 39, 0.28);
+}
+
+.capacity-popup h2 {
+    margin: 0 0 0.75rem;
+
+    color: #ffffff;
+
+    font-size: 1.7rem;
+    line-height: 1.2;
+}
+
+.capacity-popup p {
+    margin: 0 0 1.5rem;
+
+    color: #c8dced;
+
+    font-size: 0.98rem;
+    line-height: 1.6;
+}
+
+.capacity-popup-button {
+    max-width: 220px;
+    min-height: 48px;
+    margin: 0 auto;
+
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.capacity-popup-button:hover,
+.capacity-popup-button:focus-visible {
+    color: #ffffff;
+    text-decoration: none;
+}
+
 @media (max-width: 620px) {
     .name-grid {
         grid-template-columns: 1fr;
@@ -555,6 +642,14 @@
 
     ::deep .external-login-buttons {
         grid-template-columns: 1fr;
+    }
+
+    .capacity-popup {
+        padding: 1.5rem 1.2rem;
+    }
+
+    .capacity-popup h2 {
+        font-size: 1.45rem;
     }
 }
 

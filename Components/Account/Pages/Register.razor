@@ -6,16 +6,53 @@
 @using MongoDB.Driver
 @using AeroResponse.Data
 @using AeroResponse.Data.Mongo.Accounts
+@using AeroResponse.Data.Mongo.Referrals
+@using AeroResponse.Services
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
 @inject SignInManager<ApplicationUser> SignInManager
 @inject MongoUserAccountRepository MongoUserAccounts
+@inject OwnerReferralCodeService ReferralCodeService
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
 <PageTitle>Sign up | AeroResponse</PageTitle>
+
+@if (showCompanyCapacityPopup)
+{
+    <div class="capacity-popup-backdrop"
+         role="presentation">
+
+        <section class="capacity-popup"
+                 role="alertdialog"
+                 aria-modal="true"
+                 aria-labelledby="capacity-popup-title"
+                 aria-describedby="capacity-popup-description">
+
+            <div class="capacity-popup-icon"
+                 aria-hidden="true">
+
+                <i class="fa-solid fa-users-slash"></i>
+            </div>
+
+            <h2 id="capacity-popup-title">
+                Company account is full
+            </h2>
+
+            <p id="capacity-popup-description">
+                @companyCapacityMessage
+            </p>
+
+            <a href="/Account/Register"
+               class="primary-auth-button capacity-popup-button">
+
+                Close
+            </a>
+        </section>
+    </div>
+}
 
 <section class="register-card">
     <header class="register-heading">
@@ -33,18 +70,16 @@
 
     <StatusMessage Message="@Message" />
 
-    <EditForm
-        Model="Input"
-        method="post"
-        OnValidSubmit="RegisterUser"
-        FormName="register"
-        class="register-form">
+    <EditForm Model="Input"
+              method="post"
+              OnValidSubmit="RegisterUser"
+              FormName="register"
+              class="register-form">
 
         <DataAnnotationsValidator />
 
-        <ValidationSummary
-            class="validation-summary"
-            role="alert" />
+        <ValidationSummary class="validation-summary"
+                           role="alert" />
 
         <div class="name-grid">
             <div class="auth-field">
@@ -53,27 +88,24 @@
                 </label>
 
                 <div class="auth-input-wrapper">
-                    <InputText
-                        @bind-Value="Input.FirstName"
-                        id="Input.FirstName"
-                        class="auth-input"
-                        autocomplete="given-name"
-                        aria-required="true"
-                        placeholder="Enter your first name" />
+                    <InputText @bind-Value="Input.FirstName"
+                               id="Input.FirstName"
+                               class="auth-input"
+                               autocomplete="given-name"
+                               aria-required="true"
+                               placeholder="Enter your first name" />
 
-                    <svg
-                        class="auth-input-icon"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true">
+                    <svg class="auth-input-icon"
+                         viewBox="0 0 24 24"
+                         aria-hidden="true">
 
                         <circle cx="12" cy="8" r="4" />
                         <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
                     </svg>
                 </div>
 
-                <ValidationMessage
-                    For="() => Input.FirstName"
-                    class="validation-message" />
+                <ValidationMessage For="() => Input.FirstName"
+                                   class="validation-message" />
             </div>
 
             <div class="auth-field">
@@ -82,27 +114,24 @@
                 </label>
 
                 <div class="auth-input-wrapper">
-                    <InputText
-                        @bind-Value="Input.Surname"
-                        id="Input.Surname"
-                        class="auth-input"
-                        autocomplete="family-name"
-                        aria-required="true"
-                        placeholder="Enter your surname" />
+                    <InputText @bind-Value="Input.Surname"
+                               id="Input.Surname"
+                               class="auth-input"
+                               autocomplete="family-name"
+                               aria-required="true"
+                               placeholder="Enter your surname" />
 
-                    <svg
-                        class="auth-input-icon"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true">
+                    <svg class="auth-input-icon"
+                         viewBox="0 0 24 24"
+                         aria-hidden="true">
 
                         <circle cx="12" cy="8" r="4" />
                         <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
                     </svg>
                 </div>
 
-                <ValidationMessage
-                    For="() => Input.Surname"
-                    class="validation-message" />
+                <ValidationMessage For="() => Input.Surname"
+                                   class="validation-message" />
             </div>
         </div>
 
@@ -112,27 +141,24 @@
             </label>
 
             <div class="auth-input-wrapper">
-                <InputText
-                    @bind-Value="Input.Email"
-                    id="Input.Email"
-                    class="auth-input"
-                    autocomplete="email"
-                    aria-required="true"
-                    placeholder="Enter your email" />
+                <InputText @bind-Value="Input.Email"
+                           id="Input.Email"
+                           class="auth-input"
+                           autocomplete="email"
+                           aria-required="true"
+                           placeholder="Enter your email" />
 
-                <svg
-                    class="auth-input-icon"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true">
+                <svg class="auth-input-icon"
+                     viewBox="0 0 24 24"
+                     aria-hidden="true">
 
                     <path d="M3 5h18v14H3z" />
                     <path d="m3 7 9 6 9-6" />
                 </svg>
             </div>
 
-            <ValidationMessage
-                For="() => Input.Email"
-                class="validation-message" />
+            <ValidationMessage For="() => Input.Email"
+                               class="validation-message" />
         </div>
 
         <div class="auth-field">
@@ -145,26 +171,23 @@
             </label>
 
             <div class="auth-input-wrapper">
-                <InputText
-                    @bind-Value="Input.ReferenceCode"
-                    id="Input.ReferenceCode"
-                    class="auth-input"
-                    autocomplete="off"
-                    placeholder="Enter a reference code" />
+                <InputText @bind-Value="Input.ReferenceCode"
+                           id="Input.ReferenceCode"
+                           class="auth-input"
+                           autocomplete="off"
+                           placeholder="Enter a reference code" />
 
-                <svg
-                    class="auth-input-icon"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true">
+                <svg class="auth-input-icon"
+                     viewBox="0 0 24 24"
+                     aria-hidden="true">
 
                     <path d="M20 12 12 20 4 12l8-8 8 8Z" />
                     <circle cx="12" cy="12" r="1.5" />
                 </svg>
             </div>
 
-            <ValidationMessage
-                For="() => Input.ReferenceCode"
-                class="validation-message" />
+            <ValidationMessage For="() => Input.ReferenceCode"
+                               class="validation-message" />
         </div>
 
         <div class="auth-field">
@@ -173,42 +196,37 @@
             </label>
 
             <div class="auth-input-wrapper">
-                <InputText
-                    type="@passwordInputType"
-                    @bind-Value="Input.Password"
-                    id="Input.Password"
-                    class="auth-input auth-input-password"
-                    autocomplete="new-password"
-                    aria-required="true"
-                    placeholder="Create a password" />
+                <InputText type="@passwordInputType"
+                           @bind-Value="Input.Password"
+                           id="Input.Password"
+                           class="auth-input auth-input-password"
+                           autocomplete="new-password"
+                           aria-required="true"
+                           placeholder="Create a password" />
 
-                <svg
-                    class="auth-input-icon auth-lock-icon"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true">
+                <svg class="auth-input-icon auth-lock-icon"
+                     viewBox="0 0 24 24"
+                     aria-hidden="true">
 
-                    <rect
-                        x="5"
-                        y="10"
-                        width="14"
-                        height="10"
-                        rx="2" />
+                    <rect x="5"
+                          y="10"
+                          width="14"
+                          height="10"
+                          rx="2" />
 
                     <path d="M8 10V7a4 4 0 0 1 8 0v3" />
                 </svg>
 
-                <button
-                    type="button"
-                    class="password-toggle"
-                    aria-label="@passwordToggleLabel"
-                    title="@passwordToggleLabel"
-                    @onclick="TogglePasswordVisibility">
+                <button type="button"
+                        class="password-toggle"
+                        aria-label="@passwordToggleLabel"
+                        title="@passwordToggleLabel"
+                        @onclick="TogglePasswordVisibility">
 
                     @if (showPassword)
                     {
-                        <svg
-                            viewBox="0 0 24 24"
-                            aria-hidden="true">
+                        <svg viewBox="0 0 24 24"
+                             aria-hidden="true">
 
                             <path d="M3 3l18 18" />
                             <path d="M10.6 10.7a2 2 0 0 0 2.7 2.7" />
@@ -218,12 +236,13 @@
                     }
                     else
                     {
-                        <svg
-                            viewBox="0 0 24 24"
-                            aria-hidden="true">
+                        <svg viewBox="0 0 24 24"
+                             aria-hidden="true">
 
                             <path d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z" />
-                            <circle cx="12" cy="12" r="2.5" />
+                            <circle cx="12"
+                                    cy="12"
+                                    r="2.5" />
                         </svg>
                     }
                 </button>
@@ -233,9 +252,8 @@
                 Use at least 6 characters.
             </p>
 
-            <ValidationMessage
-                For="() => Input.Password"
-                class="validation-message" />
+            <ValidationMessage For="() => Input.Password"
+                               class="validation-message" />
         </div>
 
         <div class="auth-field">
@@ -244,42 +262,37 @@
             </label>
 
             <div class="auth-input-wrapper">
-                <InputText
-                    type="@confirmPasswordInputType"
-                    @bind-Value="Input.ConfirmPassword"
-                    id="Input.ConfirmPassword"
-                    class="auth-input auth-input-password"
-                    autocomplete="new-password"
-                    aria-required="true"
-                    placeholder="Confirm your password" />
+                <InputText type="@confirmPasswordInputType"
+                           @bind-Value="Input.ConfirmPassword"
+                           id="Input.ConfirmPassword"
+                           class="auth-input auth-input-password"
+                           autocomplete="new-password"
+                           aria-required="true"
+                           placeholder="Confirm your password" />
 
-                <svg
-                    class="auth-input-icon auth-lock-icon"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true">
+                <svg class="auth-input-icon auth-lock-icon"
+                     viewBox="0 0 24 24"
+                     aria-hidden="true">
 
-                    <rect
-                        x="5"
-                        y="10"
-                        width="14"
-                        height="10"
-                        rx="2" />
+                    <rect x="5"
+                          y="10"
+                          width="14"
+                          height="10"
+                          rx="2" />
 
                     <path d="M8 10V7a4 4 0 0 1 8 0v3" />
                 </svg>
 
-                <button
-                    type="button"
-                    class="password-toggle"
-                    aria-label="@confirmPasswordToggleLabel"
-                    title="@confirmPasswordToggleLabel"
-                    @onclick="ToggleConfirmPasswordVisibility">
+                <button type="button"
+                        class="password-toggle"
+                        aria-label="@confirmPasswordToggleLabel"
+                        title="@confirmPasswordToggleLabel"
+                        @onclick="ToggleConfirmPasswordVisibility">
 
                     @if (showConfirmPassword)
                     {
-                        <svg
-                            viewBox="0 0 24 24"
-                            aria-hidden="true">
+                        <svg viewBox="0 0 24 24"
+                             aria-hidden="true">
 
                             <path d="M3 3l18 18" />
                             <path d="M10.6 10.7a2 2 0 0 0 2.7 2.7" />
@@ -289,55 +302,53 @@
                     }
                     else
                     {
-                        <svg
-                            viewBox="0 0 24 24"
-                            aria-hidden="true">
+                        <svg viewBox="0 0 24 24"
+                             aria-hidden="true">
 
                             <path d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z" />
-                            <circle cx="12" cy="12" r="2.5" />
+                            <circle cx="12"
+                                    cy="12"
+                                    r="2.5" />
                         </svg>
                     }
                 </button>
             </div>
 
-            <ValidationMessage
-                For="() => Input.ConfirmPassword"
-                class="validation-message" />
+            <ValidationMessage For="() => Input.ConfirmPassword"
+                               class="validation-message" />
         </div>
 
         <label class="terms-option">
-            <InputCheckbox
-                @bind-Value="Input.AcceptTerms"
-                class="terms-checkbox" />
+            <InputCheckbox @bind-Value="Input.AcceptTerms"
+                           class="terms-checkbox" />
 
             <span>
                 I agree to the
 
-                <a href="/terms" target="_blank">
+                <a href="/terms"
+                   target="_blank">
                     Terms of Service
                 </a>
 
                 and
 
-                <a href="/privacy" target="_blank">
+                <a href="/privacy"
+                   target="_blank">
                     Privacy Policy
                 </a>.
             </span>
         </label>
 
-        <ValidationMessage
-            For="() => Input.AcceptTerms"
-            class="validation-message terms-validation" />
+        <ValidationMessage For="() => Input.AcceptTerms"
+                           class="validation-message terms-validation" />
 
-        <button
-            type="submit"
-            class="primary-auth-button"
-            disabled="@isSubmitting">
+        <button type="submit"
+                class="primary-auth-button"
+                disabled="@isSubmitting">
 
-            <img
-                src="/images/aircraft.png"
-                alt=""
-                aria-hidden="true" />
+            <img src="/images/aircraft.png"
+                 alt=""
+                 aria-hidden="true" />
 
             @if (isSubmitting)
             {
@@ -367,15 +378,23 @@
 
 @code {
     private IEnumerable<IdentityError>? identityErrors;
+
     private bool showPassword;
     private bool showConfirmPassword;
     private bool isSubmitting;
+    private bool showCompanyCapacityPopup;
+
+    private string companyCapacityMessage =
+        string.Empty;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = default!;
 
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "referenceCode")]
+    private string? ReferenceCodeFromQuery { get; set; }
 
     private string? Message =>
         identityErrors is null
@@ -416,6 +435,15 @@
     protected override void OnInitialized()
     {
         Input ??= new InputModel();
+
+        if (!string.IsNullOrWhiteSpace(
+                ReferenceCodeFromQuery))
+        {
+            Input.ReferenceCode =
+                ReferenceCodeFromQuery
+                    .Trim()
+                    .ToUpperInvariant();
+        }
     }
 
     public async Task RegisterUser(
@@ -428,8 +456,15 @@
 
         isSubmitting = true;
         identityErrors = null;
+        showCompanyCapacityPopup = false;
+        companyCapacityMessage = string.Empty;
 
         ApplicationUser? user = null;
+        ReferralCodeResolution? referralResolution = null;
+
+        var companySeatReserved = false;
+        var identityUserCreated = false;
+        var mongoAccountCreated = false;
 
         try
         {
@@ -441,14 +476,80 @@
             user.Surname =
                 Input.Surname.Trim();
 
-            user.ReferenceCode =
+            var normalisedEmail =
+                Input.Email.Trim();
+
+            var suppliedReferenceCode =
                 string.IsNullOrWhiteSpace(
                     Input.ReferenceCode)
                     ? null
-                    : Input.ReferenceCode.Trim();
+                    : Input.ReferenceCode
+                        .Trim()
+                        .ToUpperInvariant();
 
-            var normalisedEmail =
-                Input.Email.Trim();
+            referralResolution =
+                await ReferralCodeService
+                    .ResolveCodeAsync(
+                        suppliedReferenceCode);
+
+            if (suppliedReferenceCode is not null &&
+                referralResolution is null)
+            {
+                identityErrors =
+                [
+                    new IdentityError
+                    {
+                        Code = "InvalidReferenceCode",
+                        Description =
+                            "The reference code is invalid " +
+                            "or has expired."
+                    }
+                ];
+
+                return;
+            }
+
+            if (referralResolution is not null)
+            {
+                companySeatReserved =
+                    await MongoUserAccounts
+                        .TryReserveCompanySeatAsync(
+                            referralResolution
+                                .OwnerIdentityUserId,
+                            referralResolution
+                                .AccountType);
+
+                if (!companySeatReserved)
+                {
+                    var memberTypeLabel =
+                        referralResolution.AccountType ==
+                            "trainer"
+                            ? "trainers"
+                            : "pilots";
+
+                    companyCapacityMessage =
+                        "This company has reached its maximum " +
+                        $"number of {memberTypeLabel}. " +
+                        "Your account could not be created.";
+
+                    showCompanyCapacityPopup = true;
+
+                    identityErrors =
+                    [
+                        new IdentityError
+                        {
+                            Code = "CompanyCapacityReached",
+                            Description =
+                                companyCapacityMessage
+                        }
+                    ];
+
+                    return;
+                }
+            }
+
+            user.ReferenceCode =
+                suppliedReferenceCode;
 
             await UserStore.SetUserNameAsync(
                 user,
@@ -470,11 +571,19 @@
 
             if (!identityResult.Succeeded)
             {
+                await ReleaseReservedSeatAsync(
+                    referralResolution,
+                    companySeatReserved);
+
+                companySeatReserved = false;
+
                 identityErrors =
                     identityResult.Errors;
 
                 return;
             }
+
+            identityUserCreated = true;
 
             var mongoAccount =
                 new MongoUserAccount
@@ -501,43 +610,51 @@
                         ?? string.Empty,
 
                     AccountType =
-                        MongoUserAccount
+                        referralResolution?.AccountType
+                        ?? MongoUserAccount
                             .DefaultAccountType,
+
+                    OwnerIdentityUserId =
+                        referralResolution?
+                            .OwnerIdentityUserId,
+
+                    ReferralCodeUsed =
+                        referralResolution is null
+                            ? null
+                            : suppliedReferenceCode,
+
+                    LinkedPilotCount =
+                        0,
+
+                    LinkedTrainerCount =
+                        0,
 
                     CreatedAtUtc =
                         DateTime.UtcNow
                 };
 
-            /*
-             * ReferenceCode is deliberately not stored
-             * inside the MongoDB account document.
-             */
             try
             {
                 await MongoUserAccounts.CreateAsync(
                     mongoAccount);
+
+                mongoAccountCreated = true;
             }
             catch (Exception mongoException)
                 when (
                     mongoException is MongoException
                     or TimeoutException)
             {
-                /*
-                 * Remove the Identity account if its
-                 * MongoDB profile could not be created.
-                 */
-                var deleteResult =
-                    await UserManager.DeleteAsync(
-                        user);
+                await DeleteIdentityUserIfPresentAsync(
+                    user);
 
-                if (!deleteResult.Succeeded)
-                {
-                    Logger.LogError(
-                        "Could not roll back Identity user " +
-                        "{UserId} after MongoDB account " +
-                        "creation failed.",
-                        user.Id);
-                }
+                identityUserCreated = false;
+
+                await ReleaseReservedSeatAsync(
+                    referralResolution,
+                    companySeatReserved);
+
+                companySeatReserved = false;
 
                 Logger.LogError(
                     mongoException,
@@ -560,22 +677,18 @@
             }
 
             Logger.LogInformation(
-                "User {Email} created a new guest account.",
-                normalisedEmail);
+                "User {Email} created a new {AccountType} " +
+                "account linked to owner {OwnerId}.",
+                normalisedEmail,
+                mongoAccount.AccountType,
+                mongoAccount.OwnerIdentityUserId);
 
-            /*
-             * Immediately sign in the newly created
-             * user. No confirmation page is shown.
-             */
             await SignInManager.SignInAsync(
                 user,
                 isPersistent: false);
 
-            /*
-             * Redirect directly to the home page.
-             * The home page will now render the
-             * authenticated navigation controls.
-             */
+            companySeatReserved = false;
+
             RedirectManager.RedirectTo("/");
         }
         catch (Exception exception)
@@ -585,31 +698,33 @@
                 "Unexpected registration error for {Email}.",
                 Input.Email);
 
-            /*
-             * If Identity creation succeeded but another
-             * unexpected operation failed before sign-in,
-             * attempt to remove the incomplete account.
-             */
-            if (user is not null)
+            if (!mongoAccountCreated &&
+                identityUserCreated &&
+                user is not null)
             {
-                var existingUser =
-                    await UserManager.FindByIdAsync(
-                        user.Id);
+                await DeleteIdentityUserIfPresentAsync(
+                    user);
 
-                if (existingUser is not null)
-                {
-                    var deleteResult =
-                        await UserManager.DeleteAsync(
-                            existingUser);
+                identityUserCreated = false;
+            }
+            else if (user is not null &&
+                     identityUserCreated)
+            {
+                Logger.LogError(
+                    "Registration failed after MongoDB account " +
+                    "creation for user {UserId}. Manual review " +
+                    "may be required.",
+                    user.Id);
+            }
 
-                    if (!deleteResult.Succeeded)
-                    {
-                        Logger.LogError(
-                            "Could not roll back incomplete " +
-                            "Identity user {UserId}.",
-                            user.Id);
-                    }
-                }
+            if (companySeatReserved &&
+                !mongoAccountCreated)
+            {
+                await ReleaseReservedSeatAsync(
+                    referralResolution,
+                    companySeatReserved);
+
+                companySeatReserved = false;
             }
 
             identityErrors =
@@ -626,6 +741,76 @@
         finally
         {
             isSubmitting = false;
+        }
+    }
+
+    private async Task ReleaseReservedSeatAsync(
+        ReferralCodeResolution? referralResolution,
+        bool companySeatReserved)
+    {
+        if (!companySeatReserved ||
+            referralResolution is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await MongoUserAccounts
+                .ReleaseCompanySeatAsync(
+                    referralResolution
+                        .OwnerIdentityUserId,
+                    referralResolution
+                        .AccountType);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(
+                exception,
+                "Could not release a reserved {MemberType} " +
+                "seat for owner {OwnerId}.",
+                referralResolution.AccountType,
+                referralResolution.OwnerIdentityUserId);
+        }
+    }
+
+    private async Task DeleteIdentityUserIfPresentAsync(
+        ApplicationUser user)
+    {
+        try
+        {
+            var existingUser =
+                await UserManager.FindByIdAsync(
+                    user.Id);
+
+            if (existingUser is null)
+            {
+                return;
+            }
+
+            var deleteResult =
+                await UserManager.DeleteAsync(
+                    existingUser);
+
+            if (!deleteResult.Succeeded)
+            {
+                Logger.LogError(
+                    "Could not roll back incomplete Identity " +
+                    "user {UserId}. Errors: {Errors}",
+                    user.Id,
+                    string.Join(
+                        ", ",
+                        deleteResult.Errors.Select(
+                            error => error.Description)));
+            }
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(
+                exception,
+                "Could not roll back incomplete Identity " +
+                "user {UserId}.",
+                user.Id);
         }
     }
 

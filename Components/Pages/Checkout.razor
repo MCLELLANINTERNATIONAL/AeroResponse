@@ -1,6 +1,7 @@
 @page "/checkout"
 @layout MainLayout
 @rendermode InteractiveServer
+
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Authorization
@@ -39,9 +40,8 @@
                         <strong>Payment details received</strong>
 
                         <p>
-                            This demonstration checkout has not charged
-                            your card. Connect a payment provider to
-                            process real payments.
+                            Your membership has been created.
+                            Redirecting to confirmation...
                         </p>
                     </div>
                 </div>
@@ -86,6 +86,34 @@
                 </div>
 
                 <div class="form-grid">
+
+                    @if (IsCommercialPlan)
+                    {
+                        <div class="form-field full-width">
+                            <label for="business-name">
+                                Business Name
+                            </label>
+
+                            <div class="input-shell">
+                                <InputText id="business-name"
+                                           class="form-control"
+                                           @bind-Value="Payment.BusinessName"
+                                           autocomplete="organization"
+                                           placeholder="Enter your company name" />
+
+                                <span class="valid-icon">
+                                    <i class="fa-solid fa-check"
+                                       aria-hidden="true"></i>
+                                </span>
+                            </div>
+
+                            <small class="field-help">
+                                Pilots and trainers connected to this
+                                account will see this company name.
+                            </small>
+                        </div>
+                    }
+
                     <div class="form-field full-width">
                         <label for="card-number">
                             Card Number
@@ -185,6 +213,7 @@
                                          class="form-control"
                                          @bind-Value="Payment.Country"
                                          autocomplete="country-name">
+
                                 <option value="United Kingdom">
                                     United Kingdom
                                 </option>
@@ -285,6 +314,7 @@
                                          class="form-control"
                                          @bind-Value="Payment.Region"
                                          autocomplete="address-level1">
+
                                 <option value="">
                                     County / State / Region
                                 </option>
@@ -321,15 +351,13 @@
                 </div>
 
                 <label class="save-card-option">
-
                     <InputCheckbox class="save-checkbox"
-                                @bind-Value="Payment.SaveCard" />
+                                   @bind-Value="Payment.SaveCard" />
 
                     <span class="save-card-text">
                         <strong>Save card for future payments</strong>
                         <small>Pay faster on your next purchase</small>
                     </span>
-
                 </label>
 
                 <button class="pay-button"
@@ -337,7 +365,7 @@
                         disabled="@PaymentSubmitting">
 
                     <i class="fa-solid fa-lock"
-                    aria-hidden="true"></i>
+                       aria-hidden="true"></i>
 
                     @if (PaymentSubmitting)
                     {
@@ -367,16 +395,17 @@
                         </a>.
                     </span>
                 </p>
-                @if (!string.IsNullOrWhiteSpace(PaymentError))
-                    {
-                        <div class="payment-error"
-                            role="alert">
-                            <i class="fa-solid fa-circle-exclamation"
-                            aria-hidden="true"></i>
 
-                            <span>@PaymentError</span>
-                        </div>
-                    }
+                @if (!string.IsNullOrWhiteSpace(PaymentError))
+                {
+                    <div class="payment-error"
+                         role="alert">
+                        <i class="fa-solid fa-circle-exclamation"
+                           aria-hidden="true"></i>
+
+                        <span>@PaymentError</span>
+                    </div>
+                }
             </EditForm>
         </section>
 
@@ -410,7 +439,9 @@
                     </div>
 
                     <div class="selected-plan-price">
-                        <strong>@FormatMoney(DisplayedMonthlyPrice)</strong>
+                        <strong>
+                            @FormatMoney(DisplayedMonthlyPrice)
+                        </strong>
 
                         <span>
                             per month
@@ -426,7 +457,10 @@
 
                         <span>
                             Charged as one annual payment of
-                            <strong>@FormatMoney(AnnualTotal)</strong>
+
+                            <strong>
+                                @FormatMoney(AnnualTotal)
+                            </strong>
                         </span>
                     </div>
                 }
@@ -458,8 +492,13 @@
                     </div>
 
                     <div>
-                        <strong>30-Day Money Back Guarantee</strong>
-                        <span>Cancel anytime. No questions asked.</span>
+                        <strong>
+                            30-Day Money Back Guarantee
+                        </strong>
+
+                        <span>
+                            Cancel anytime. No questions asked.
+                        </span>
                     </div>
                 </div>
 
@@ -471,6 +510,7 @@
 
                     <div>
                         <strong>Secure &amp; Encrypted</strong>
+
                         <span>
                             Your payment information is safe with us.
                         </span>
@@ -485,6 +525,7 @@
 
                     <div>
                         <strong>24/7 Customer Support</strong>
+
                         <span>
                             We are here to help whenever you need us.
                         </span>
@@ -502,6 +543,7 @@
                     <span>
                         <i class="fa-solid fa-plane-up"
                            aria-hidden="true"></i>
+
                         AIRBUS
                     </span>
 
@@ -512,6 +554,7 @@
                     <span>
                         <i class="fa-solid fa-plane"
                            aria-hidden="true"></i>
+
                         EMBRAER
                     </span>
 
@@ -548,6 +591,10 @@
         MongoUserAccounts { get; set; } = default!;
 
     [Inject]
+    private NavigationManager
+        NavigationManager { get; set; } = default!;
+
+    [Inject]
     private ILogger<Checkout>
         Logger { get; set; } = default!;
 
@@ -558,10 +605,11 @@
     private string? PaymentError;
     private string? IdentityUserId;
 
-    private PaymentFormModel Payment { get; } = new()
-    {
-        Country = "United Kingdom"
-    };
+    private PaymentFormModel Payment { get; } =
+        new()
+        {
+            Country = "United Kingdom"
+        };
 
     protected override async Task OnInitializedAsync()
     {
@@ -575,16 +623,17 @@
         if (user.Identity?.IsAuthenticated != true)
         {
             PaymentError =
-                "You must be signed in to complete a membership purchase.";
+                "You must be signed in to complete " +
+                "a membership purchase.";
 
             return;
         }
 
         IdentityUserId =
             user.FindFirst(
-                System.Security.Claims
-                    .ClaimTypes
-                    .NameIdentifier)?
+                    System.Security.Claims
+                        .ClaimTypes
+                        .NameIdentifier)?
                 .Value;
 
         if (string.IsNullOrWhiteSpace(IdentityUserId))
@@ -595,7 +644,9 @@
             return;
         }
 
-        await LoadSavedPaymentMethodAsync();
+        await Task.WhenAll(
+            LoadSavedPaymentMethodAsync(),
+            LoadBusinessNameAsync());
     }
 
     private async Task LoadSavedPaymentMethodAsync()
@@ -641,15 +692,48 @@
             Payment.SaveCard = true;
 
             /*
-             * CVC is deliberately never restored.
+             * CVC values must never be restored.
              */
-            Payment.Cvc = string.Empty;
+            Payment.Cvc =
+                string.Empty;
         }
         catch (Exception exception)
         {
             Logger.LogWarning(
                 exception,
-                "Could not load the saved payment method for {UserId}.",
+                "Could not load the saved payment method " +
+                "for {UserId}.",
+                IdentityUserId);
+        }
+    }
+
+    private async Task LoadBusinessNameAsync()
+    {
+        if (string.IsNullOrWhiteSpace(IdentityUserId))
+        {
+            return;
+        }
+
+        try
+        {
+            var account =
+                await MongoUserAccounts
+                    .FindByIdentityUserIdAsync(
+                        IdentityUserId);
+
+            if (!string.IsNullOrWhiteSpace(
+                    account?.BusinessName))
+            {
+                Payment.BusinessName =
+                    account.BusinessName.Trim();
+            }
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(
+                exception,
+                "Could not load the business name " +
+                "for {UserId}.",
                 IdentityUserId);
         }
     }
@@ -665,17 +749,17 @@
         get
         {
             if (string.Equals(
-                PlanName,
-                "Small Commercial",
-                StringComparison.OrdinalIgnoreCase))
+                    PlanName,
+                    "Small Commercial",
+                    StringComparison.OrdinalIgnoreCase))
             {
                 return Plans[1];
             }
 
             if (string.Equals(
-                PlanName,
-                "Large Commercial",
-                StringComparison.OrdinalIgnoreCase))
+                    PlanName,
+                    "Large Commercial",
+                    StringComparison.OrdinalIgnoreCase))
             {
                 return Plans[2];
             }
@@ -683,6 +767,11 @@
             return Plans[0];
         }
     }
+
+    private bool IsCommercialPlan =>
+        SelectedAccountType is
+            "owner_small" or
+            "owner_large";
 
     private decimal DisplayedMonthlyPrice =>
         IsAnnual
@@ -700,7 +789,8 @@
             ? AnnualTotal
             : DisplayedMonthlyPrice;
 
-    private decimal Tax => 0m;
+    private decimal Tax =>
+        0m;
 
     private decimal TotalDue =>
         Subtotal + Tax;
@@ -750,7 +840,19 @@
         if (string.IsNullOrWhiteSpace(IdentityUserId))
         {
             PaymentError =
-                "You must be signed in to complete this purchase.";
+                "You must be signed in to complete " +
+                "this purchase.";
+
+            return;
+        }
+
+        if (IsCommercialPlan &&
+            string.IsNullOrWhiteSpace(
+                Payment.BusinessName))
+        {
+            PaymentError =
+                "Enter your business name before completing " +
+                "a commercial membership purchase.";
 
             return;
         }
@@ -778,13 +880,22 @@
 
             if (Payment.SaveCard)
             {
-                await SavePaymentMethodAsync(now);
+                await SavePaymentMethodAsync(
+                    now);
             }
 
             await MongoUserAccounts
                 .UpdateAccountTypeAsync(
                     IdentityUserId,
                     SelectedAccountType);
+
+            if (IsCommercialPlan)
+            {
+                await MongoUserAccounts
+                    .UpdateBusinessNameAsync(
+                        IdentityUserId,
+                        Payment.BusinessName);
+            }
 
             await MemberTimelines.UpsertAsync(
                 new MongoMemberTimeline
@@ -813,14 +924,23 @@
                         now
                 });
 
-            PaymentSubmitted = true;
+            PaymentSubmitted =
+                true;
 
             Logger.LogInformation(
                 "User {UserId} purchased the {Plan} plan " +
-                "with {Billing} billing.",
+                "with {Billing} billing for business {BusinessName}.",
                 IdentityUserId,
                 SelectedPlan.Name,
-                IsAnnual ? "annual" : "monthly");
+                IsAnnual
+                    ? "annual"
+                    : "monthly",
+                IsCommercialPlan
+                    ? Payment.BusinessName.Trim()
+                    : null);
+
+            NavigationManager.NavigateTo(
+                "/payment-confirmation");
         }
         catch (Exception exception)
         {
@@ -835,7 +955,8 @@
         }
         finally
         {
-            PaymentSubmitting = false;
+            PaymentSubmitting =
+                false;
         }
     }
 
@@ -971,6 +1092,9 @@
 
     private sealed class PaymentFormModel
     {
+        public string BusinessName { get; set; } =
+            string.Empty;
+
         public string CardNumber { get; set; } =
             string.Empty;
 

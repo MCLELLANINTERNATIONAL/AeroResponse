@@ -1,0 +1,1673 @@
+@page "/user"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
+@using AeroResponse.Data
+@using AeroResponse.Data.Mongo.Accounts
+@using AeroResponse.Data.Mongo.Memberships
+@using AeroResponse.Data.Mongo.Payments
+@using AeroResponse.Data.Mongo.Referrals
+@using AeroResponse.Services
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using MongoDB.Driver
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject MongoUserAccountRepository MongoUserAccounts
+@inject MongoMemberTimelineRepository MemberTimelines
+@inject MongoSavedPaymentMethodRepository SavedPaymentMethods
+@inject OwnerReferralCodeService ReferralCodeService
+@inject UserManager<ApplicationUser> UserManager
+@inject ILogger<UserProfile> Logger
+
+<PageTitle>User Profile</PageTitle>
+
+<section class="profile-page">
+    <div class="profile-container">
+
+        @if (isLoading)
+        {
+            <div class="profile-state"
+                 role="status">
+
+                Loading your account...
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="profile-state profile-state-error"
+                 role="alert">
+
+                @errorMessage
+            </div>
+        }
+        else
+        {
+            <header class="profile-hero">
+                <div class="profile-avatar"
+                     aria-hidden="true">
+
+                    @initials
+                </div>
+
+                <div>
+                    <p class="profile-eyebrow">
+                        AeroResponse account
+                    </p>
+
+                    <h1>@displayName</h1>
+
+                    <p class="profile-email">
+                        @email
+                    </p>
+                </div>
+
+                <span class="account-type-badge">
+                    @AccountTypeLabel
+                </span>
+            </header>
+
+            @if (!string.IsNullOrWhiteSpace(successMessage))
+            {
+                <div class="profile-message profile-message-success"
+                     role="status">
+
+                    @successMessage
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(actionErrorMessage))
+            {
+                <div class="profile-message profile-message-error"
+                     role="alert">
+
+                    @actionErrorMessage
+                </div>
+            }
+
+            <div class="profile-grid">
+
+                <article class="profile-card account-details-card">
+                    <div class="card-heading-row">
+                        <h2>Account details</h2>
+
+                        @if (!isEditing)
+                        {
+                            <button type="button"
+                                    class="secondary-action edit-button"
+                                    disabled="@(isSaving || isLoading)"
+                                    @onclick="BeginEditingAsync">
+
+                                Edit details
+                            </button>
+                        }
+                    </div>
+
+                    @if (isEditing)
+                    {
+                        <EditForm Model="editModel"
+                                  OnValidSubmit="SaveAccountDetailsAsync">
+
+                            <DataAnnotationsValidator />
+
+                            <ValidationSummary class="validation-summary" />
+
+                            <div class="profile-form-grid">
+
+                                <div class="form-field">
+                                    <label for="first-name">
+                                        First name
+                                    </label>
+
+                                    <InputText id="first-name"
+                                               class="profile-input"
+                                               @bind-Value="editModel.FirstName" />
+
+                                    <ValidationMessage
+                                        For="() => editModel.FirstName"
+                                        class="field-error" />
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="surname">
+                                        Surname
+                                    </label>
+
+                                    <InputText id="surname"
+                                               class="profile-input"
+                                               @bind-Value="editModel.Surname" />
+
+                                    <ValidationMessage
+                                        For="() => editModel.Surname"
+                                        class="field-error" />
+                                </div>
+
+                                <div class="form-field form-field-full">
+                                    <label for="email">
+                                        Email
+                                    </label>
+
+                                    <InputText id="email"
+                                               type="email"
+                                               class="profile-input"
+                                               @bind-Value="editModel.Email" />
+
+                                    <ValidationMessage
+                                        For="() => editModel.Email"
+                                        class="field-error" />
+                                </div>
+
+                            </div>
+
+                            <div class="profile-actions">
+                                <button type="submit"
+                                        class="primary-action"
+                                        disabled="@isSaving">
+
+                                    @(isSaving
+                                        ? "Saving..."
+                                        : "Save changes")
+                                </button>
+
+                                <button type="button"
+                                        class="secondary-action"
+                                        disabled="@isSaving"
+                                        @onclick="CancelEditingAsync">
+
+                                    Cancel
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                    else
+                    {
+                        <dl class="details-list">
+                            <div>
+                                <dt>Name</dt>
+                                <dd>@displayName</dd>
+                            </div>
+
+                            <div>
+                                <dt>Email</dt>
+                                <dd>@email</dd>
+                            </div>
+
+                            <div>
+                                <dt>Account type</dt>
+                                <dd>@AccountTypeLabel</dd>
+                            </div>
+
+                            @if (IsOwnerAccount &&
+                                 !string.IsNullOrWhiteSpace(businessName))
+                            {
+                                <div>
+                                    <dt>Business name</dt>
+                                    <dd>@businessName</dd>
+                                </div>
+                            }
+
+                            <div>
+                                <dt>Member since</dt>
+                                <dd>@MemberSinceLabel</dd>
+                            </div>
+                        </dl>
+                    }
+                </article>
+
+                @if (accountType == "pilot")
+                {
+                    <article class="profile-card profile-card-featured">
+                        <p class="card-kicker">
+                            Pilot account
+                        </p>
+
+                        <h2>Your training account</h2>
+
+                        @if (UsesCompanyMembership)
+                        {
+                            <p>
+                                Your pilot account is connected to
+                                <strong>@ConnectedCompanyName</strong>.
+                            </p>
+                        }
+                        else
+                        {
+                            <p>
+                                Access personal simulation training,
+                                performance reports, scoring, badges
+                                and flight history.
+                            </p>
+                        }
+
+                        <div class="profile-actions">
+                            <a class="primary-action"
+                               href="/simulation">
+
+                                Start simulation
+                            </a>
+
+                            <a class="secondary-action"
+                               href="/reports">
+
+                                View reports
+                            </a>
+                        </div>
+                    </article>
+                }
+                else if (accountType == "trainer")
+                {
+                    <article class="profile-card profile-card-featured">
+                        <p class="card-kicker">
+                            Trainer account
+                        </p>
+
+                        <h2>Your trainer account</h2>
+
+                        @if (UsesCompanyMembership)
+                        {
+                            <p>
+                                Your trainer account is connected to
+                                <strong>@ConnectedCompanyName</strong>.
+                            </p>
+                        }
+                        else
+                        {
+                            <p>
+                                Access training tools, pilot performance
+                                information and simulation features.
+                            </p>
+                        }
+                    </article>
+                }
+                else if (accountType == "guest")
+                {
+                    <article class="profile-card profile-card-featured">
+                        <p class="card-kicker">
+                            Guest account
+                        </p>
+
+                        <h2>Choose a membership</h2>
+
+                        <p>
+                            Your account is active, but it does not
+                            currently have a paid membership. Select
+                            a plan to unlock training features.
+                        </p>
+
+                        <div class="profile-actions">
+                            <a class="primary-action"
+                               href="/membership">
+
+                                View memberships
+                            </a>
+                        </div>
+                    </article>
+                }
+
+                <article class="profile-card membership-card">
+                    <h2>Membership</h2>
+
+                    @if (UsesCompanyMembership)
+                    {
+                        <p class="company-membership-note">
+                            This membership is provided by
+                            <strong>@ConnectedCompanyName</strong>.
+                        </p>
+                    }
+
+                    @if (membership is null)
+                    {
+                        <p>
+                            No active membership details were found.
+                        </p>
+                    }
+                    else
+                    {
+                        <dl class="details-list">
+                            <div>
+                                <dt>Plan</dt>
+                                <dd>@membership.PlanName</dd>
+                            </div>
+
+                            <div>
+                                <dt>Billing</dt>
+
+                                <dd>
+                                    @FormatValue(
+                                        membership.BillingFrequency)
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt>Started</dt>
+
+                                <dd>
+                                    @FormatDate(
+                                        membership
+                                            .MembershipStartedAtUtc)
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt>
+                                    @(membershipPaymentMethod is not null
+                                        ? "Renews"
+                                        : "Expires")
+                                </dt>
+
+                                <dd>
+                                    @FormatDate(
+                                        membership
+                                            .MembershipExpiresAtUtc)
+                                </dd>
+                            </div>
+                        </dl>
+                    }
+                </article>
+
+                @if (savedPaymentMethod is not null)
+                {
+                    <article class="profile-card payment-card">
+                        <div class="card-heading-row">
+                            <div>
+                                <p class="card-kicker">
+                                    Payment method
+                                </p>
+
+                                <h2>Saved card</h2>
+                            </div>
+                        </div>
+
+                        <dl class="details-list">
+                            <div>
+                                <dt>Card</dt>
+
+                                <dd>
+                                    @FormatCardBrand(
+                                        savedPaymentMethod.CardBrand)
+                                    ending in
+                                    @savedPaymentMethod.LastFour
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt>Cardholder</dt>
+
+                                <dd>
+                                    @savedPaymentMethod.CardholderName
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt>Card expiry</dt>
+
+                                <dd>
+                                    @FormatCardExpiry(
+                                        savedPaymentMethod.ExpiryDate)
+                                </dd>
+                            </div>
+                        </dl>
+
+                        @if (confirmCardDeletion)
+                        {
+                            <div class="delete-confirmation">
+                                <p>
+                                    Are you sure you want to delete
+                                    your saved card?
+                                </p>
+
+                                <div class="profile-actions">
+                                    <button type="button"
+                                            class="danger-action"
+                                            disabled="@isDeletingCard"
+                                            @onclick="DeleteSavedCardAsync">
+
+                                        @(isDeletingCard
+                                            ? "Deleting..."
+                                            : "Yes, delete card")
+                                    </button>
+
+                                    <button type="button"
+                                            class="secondary-action"
+                                            disabled="@isDeletingCard"
+                                            @onclick="CancelCardDeletionAsync">
+
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="danger-action"
+                                    disabled="@isDeletingCard"
+                                    @onclick="RequestCardDeletionAsync">
+
+                                Delete saved card
+                            </button>
+                        }
+                    </article>
+                }
+
+                @if (IsOwnerAccount &&
+                     ownerReferralCodes is not null)
+                {
+                    <article class="profile-card referral-card">
+                        <p class="card-kicker">
+                            Company invitations
+                        </p>
+
+                        <h2>Pilot and trainer links</h2>
+
+                        <p>
+                            Share the appropriate code with members
+                            of your organisation. Each code is unique
+                            to your company and changes every 24 hours.
+                        </p>
+
+                        <div class="referral-code-list">
+
+                            <section class="referral-code">
+                                <div class="referral-code-details">
+                                    <span class="referral-label">
+                                        Pilot code
+                                    </span>
+
+                                    <strong>
+                                        @ownerReferralCodes.PilotCode
+                                    </strong>
+                                </div>
+
+                                <span class="secondary-action referral-display-button">
+                                    Pilot registration link
+                                </span>
+                            </section>
+
+                            <section class="referral-code">
+                                <div class="referral-code-details">
+                                    <span class="referral-label">
+                                        Trainer code
+                                    </span>
+
+                                    <strong>
+                                        @ownerReferralCodes.TrainerCode
+                                    </strong>
+                                </div>
+
+                                <span class="secondary-action referral-display-button">
+                                    Trainer registration link
+                                </span>
+                            </section>
+
+                        </div>
+
+                        <p class="referral-expiry">
+                            These codes expire on
+                            @FormatDateAndTime(
+                                ownerReferralCodes.ExpiresAtUtc).
+                        </p>
+                    </article>
+                }
+
+                @if (IsOwnerAccount)
+                {
+                    <article class="profile-card company-members-card">
+                        <div class="company-members-heading">
+                            <div>
+                                <p class="card-kicker">
+                                    Company members
+                                </p>
+
+                                <h2>Pilots and trainers</h2>
+                            </div>
+
+                            <div class="company-member-totals">
+                                <span>
+                                    @CompanyPilots.Count / @PilotLimit pilots
+                                </span>
+
+                                <span>
+                                    @CompanyTrainers.Count / @TrainerLimit trainers
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="company-member-groups">
+                            <section class="company-member-group">
+                                <h3>
+                                    Pilots
+
+                                    <span>
+                                        @CompanyPilots.Count / @PilotLimit
+                                    </span>
+                                </h3>
+
+                                @if (CompanyPilots.Count == 0)
+                                {
+                                    <p class="empty-member-message">
+                                        No pilots are currently connected.
+                                    </p>
+                                }
+                                else
+                                {
+                                    <div class="company-member-list">
+                                        @foreach (var member in CompanyPilots)
+                                        {
+                                            <div class="company-member-row">
+                                                <div>
+                                                    <strong>
+                                                        @member.DisplayName
+                                                    </strong>
+
+                                                    <span>
+                                                        @member.Email
+                                                    </span>
+                                                </div>
+
+                                                <button type="button"
+                                                        class="danger-action"
+                                                        disabled="@isRemovingCompanyMember"
+                                                        @onclick="() => RequestMemberRemoval(member)">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </section>
+
+                            <section class="company-member-group">
+                                <h3>
+                                    Trainers
+
+                                    <span>
+                                        @CompanyTrainers.Count / @TrainerLimit
+                                    </span>
+                                </h3>
+
+                                @if (CompanyTrainers.Count == 0)
+                                {
+                                    <p class="empty-member-message">
+                                        No trainers are currently connected.
+                                    </p>
+                                }
+                                else
+                                {
+                                    <div class="company-member-list">
+                                        @foreach (var member in CompanyTrainers)
+                                        {
+                                            <div class="company-member-row">
+                                                <div>
+                                                    <strong>
+                                                        @member.DisplayName
+                                                    </strong>
+
+                                                    <span>
+                                                        @member.Email
+                                                    </span>
+                                                </div>
+
+                                                <button type="button"
+                                                        class="danger-action"
+                                                        disabled="@isRemovingCompanyMember"
+                                                        @onclick="() => RequestMemberRemoval(member)">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </section>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(
+                                memberBeingRemovedId))
+                        {
+                            <div class="member-removal-confirmation">
+                                <p>
+                                    Remove
+                                    <strong>@memberBeingRemovedName</strong>
+                                    from this company?
+                                </p>
+
+                                <p>
+                                    Their login will remain active, but their
+                                    account will become a guest account and
+                                    will no longer use the company membership.
+                                </p>
+
+                                <div class="profile-actions">
+                                    <button type="button"
+                                            class="danger-action"
+                                            disabled="@isRemovingCompanyMember"
+                                            @onclick="ConfirmMemberRemovalAsync">
+                                        @(isRemovingCompanyMember
+                                            ? "Removing..."
+                                            : "Yes, remove connection")
+                                    </button>
+
+                                    <button type="button"
+                                            class="secondary-action"
+                                            disabled="@isRemovingCompanyMember"
+                                            @onclick="CancelMemberRemoval">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </article>
+                }
+
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private bool isLoading = true;
+    private bool isEditing;
+    private bool isSaving;
+    private bool isDeletingCard;
+    private bool confirmCardDeletion;
+
+    private string? errorMessage;
+    private string? successMessage;
+    private string? actionErrorMessage;
+
+    private string identityUserId = string.Empty;
+    private string displayName = "Account";
+    private string firstName = string.Empty;
+    private string surname = string.Empty;
+    private string email = string.Empty;
+    private string initials = "A";
+    private string? businessName;
+
+    private string accountType =
+        MongoUserAccount.DefaultAccountType;
+
+    private DateTime? createdAtUtc;
+
+    private MongoUserAccount? mongoAccount;
+    private MongoUserAccount? connectedOwnerAccount;
+    private MongoMemberTimeline? membership;
+
+    /*
+     * The signed-in user's own saved card.
+     *
+     * Only this card is shown and only this card can
+     * be deleted by the signed-in user.
+     */
+    private MongoSavedPaymentMethod? savedPaymentMethod;
+
+    /*
+     * The payment method belonging to whoever owns
+     * the displayed membership.
+     *
+     * For referred pilots and trainers, this is the
+     * connected company's payment method.
+     *
+     * It is used only to decide whether the membership
+     * says "Renews" or "Expires". Its details are never
+     * shown to the referred account.
+     */
+    private MongoSavedPaymentMethod?
+        membershipPaymentMethod;
+
+    private OwnerReferralCodes? ownerReferralCodes;
+
+    private IReadOnlyList<CompanyMemberSummary>
+        companyMembers =
+            Array.Empty<CompanyMemberSummary>();
+
+    private string? memberBeingRemovedId;
+    private string? memberBeingRemovedName;
+    private bool isRemovingCompanyMember;
+    private ApplicationUser? identityUser;
+
+    private EditAccountModel editModel = new();
+
+    private bool IsOwnerAccount =>
+        accountType is
+            "owner_small" or
+            "owner_large";
+
+    private IReadOnlyList<CompanyMemberSummary> CompanyPilots =>
+        companyMembers
+            .Where(member =>
+                member.AccountType == "pilot")
+            .ToArray();
+
+    private IReadOnlyList<CompanyMemberSummary> CompanyTrainers =>
+        companyMembers
+            .Where(member =>
+                member.AccountType == "trainer")
+            .ToArray();
+
+    private int PilotLimit =>
+        CompanyMemberLimits.GetLimit(
+            accountType,
+            "pilot");
+
+    private int TrainerLimit =>
+        CompanyMemberLimits.GetLimit(
+            accountType,
+            "trainer");
+
+
+    private bool UsesCompanyMembership =>
+        !string.IsNullOrWhiteSpace(
+            mongoAccount?.OwnerIdentityUserId);
+
+    private string ConnectedCompanyName
+    {
+        get
+        {
+            var connectedBusinessName =
+                connectedOwnerAccount?
+                    .BusinessName?
+                    .Trim();
+
+            return !string.IsNullOrWhiteSpace(
+                    connectedBusinessName)
+                ? connectedBusinessName
+                : "your connected company";
+        }
+    }
+
+    private string MembershipIdentityUserId =>
+        UsesCompanyMembership
+            ? mongoAccount!.OwnerIdentityUserId!
+            : identityUserId;
+
+    private string AccountTypeLabel =>
+        accountType switch
+        {
+            "pilot" => "Pilot",
+            "trainer" => "Trainer",
+            "owner_small" => "Small Commercial",
+            "owner_large" => "Large Commercial",
+            _ => "Guest"
+        };
+
+    private string MemberSinceLabel =>
+        createdAtUtc.HasValue
+            ? FormatDate(createdAtUtc.Value)
+            : "Not available";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var principal =
+            authenticationState.User;
+
+        identityUserId =
+            principal.FindFirstValue(
+                ClaimTypes.NameIdentifier)
+            ?? string.Empty;
+
+        if (principal.Identity?.IsAuthenticated != true ||
+            string.IsNullOrWhiteSpace(identityUserId))
+        {
+            errorMessage =
+                "Your account could not be loaded. " +
+                "Please sign in again.";
+
+            isLoading = false;
+            return;
+        }
+
+        email =
+            principal.FindFirstValue(
+                ClaimTypes.Email)
+            ?? principal.Identity?.Name
+            ?? string.Empty;
+
+        displayName =
+            GetFallbackName(principal);
+
+        initials =
+            BuildInitials(displayName);
+
+        try
+        {
+            identityUser =
+                await UserManager.GetUserAsync(
+                    principal);
+
+            /*
+             * The MongoDB account must be loaded first
+             * because it contains OwnerIdentityUserId.
+             */
+            mongoAccount =
+                await MongoUserAccounts
+                    .FindByIdentityUserIdAsync(
+                        identityUserId);
+
+            if (mongoAccount is not null)
+            {
+                firstName =
+                    mongoAccount.FirstName?.Trim()
+                    ?? string.Empty;
+
+                surname =
+                    mongoAccount.Surname?.Trim()
+                    ?? string.Empty;
+
+                businessName =
+                    mongoAccount.BusinessName?.Trim();
+
+                var storedName =
+                    BuildDisplayName(
+                        firstName,
+                        surname);
+
+                if (!string.IsNullOrWhiteSpace(storedName))
+                {
+                    displayName =
+                        storedName;
+
+                    initials =
+                        BuildInitials(storedName);
+                }
+
+                if (!string.IsNullOrWhiteSpace(
+                        mongoAccount.Email))
+                {
+                    email =
+                        mongoAccount.Email;
+                }
+
+                accountType =
+                    NormaliseAccountType(
+                        mongoAccount.AccountType);
+
+                createdAtUtc =
+                    mongoAccount.CreatedAtUtc;
+            }
+
+            /*
+             * Load the connected owner account so referred
+             * pilots and trainers can see the owner's current
+             * business name.
+             */
+            if (!string.IsNullOrWhiteSpace(
+                    mongoAccount?.OwnerIdentityUserId))
+            {
+                connectedOwnerAccount =
+                    await MongoUserAccounts
+                        .FindByIdentityUserIdAsync(
+                            mongoAccount.OwnerIdentityUserId);
+            }
+
+            /*
+             * For referred accounts, this is the owner's ID.
+             * For all other accounts, it is the signed-in
+             * user's own ID.
+             */
+            var membershipIdentityUserId =
+                MembershipIdentityUserId;
+
+            var membershipTask =
+                MemberTimelines
+                    .FindByIdentityUserIdAsync(
+                        membershipIdentityUserId);
+
+            /*
+             * Load the signed-in user's personal payment
+             * method. This controls what card may be shown
+             * or deleted on the page.
+             */
+            var personalPaymentMethodTask =
+                SavedPaymentMethods
+                    .FindByIdentityUserIdAsync(
+                        identityUserId);
+
+            /*
+             * Load the membership owner's payment method
+             * separately. This only determines whether the
+             * membership renews or expires.
+             */
+            var membershipPaymentMethodTask =
+                SavedPaymentMethods
+                    .FindByIdentityUserIdAsync(
+                        membershipIdentityUserId);
+
+            await Task.WhenAll(
+                membershipTask,
+                personalPaymentMethodTask,
+                membershipPaymentMethodTask);
+
+            membership =
+                await membershipTask;
+
+            savedPaymentMethod =
+                await personalPaymentMethodTask;
+
+            membershipPaymentMethod =
+                await membershipPaymentMethodTask;
+
+            if (IsOwnerAccount)
+            {
+                var referralCodesTask =
+                    ReferralCodeService
+                        .GetOrCreateCodesAsync(
+                            identityUserId);
+
+                var companyMembersTask =
+                    MongoUserAccounts
+                        .FindLinkedMembersAsync(
+                            identityUserId);
+
+                await Task.WhenAll(
+                    referralCodesTask,
+                    companyMembersTask);
+
+                ownerReferralCodes =
+                    await referralCodesTask;
+
+                companyMembers =
+                    await companyMembersTask;
+            }
+
+            PopulateEditModel();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(
+                exception,
+                "Could not load profile data for user {UserId}.",
+                identityUserId);
+
+            errorMessage =
+                "Your profile information is temporarily " +
+                "unavailable. Please try again later.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task BeginEditingAsync()
+    {
+        successMessage = null;
+        actionErrorMessage = null;
+
+        PopulateEditModel();
+
+        isEditing = true;
+
+        await InvokeAsync(
+            StateHasChanged);
+    }
+
+    private async Task CancelEditingAsync()
+    {
+        actionErrorMessage = null;
+
+        PopulateEditModel();
+
+        isEditing = false;
+
+        await InvokeAsync(
+            StateHasChanged);
+    }
+
+    private void PopulateEditModel()
+    {
+        editModel =
+            new EditAccountModel
+            {
+                FirstName =
+                    firstName,
+
+                Surname =
+                    surname,
+
+                Email =
+                    email
+            };
+    }
+
+    private async Task SaveAccountDetailsAsync()
+    {
+        if (isSaving)
+        {
+            return;
+        }
+
+        if (identityUser is null ||
+            string.IsNullOrWhiteSpace(identityUserId))
+        {
+            actionErrorMessage =
+                "Your account could not be updated. " +
+                "Please sign in again.";
+
+            return;
+        }
+
+        isSaving = true;
+        successMessage = null;
+        actionErrorMessage = null;
+
+        try
+        {
+            var cleanFirstName =
+                editModel.FirstName?.Trim()
+                ?? string.Empty;
+
+            var cleanSurname =
+                editModel.Surname?.Trim()
+                ?? string.Empty;
+
+            var cleanEmail =
+                editModel.Email?.Trim()
+                ?? string.Empty;
+
+            var existingUserWithEmail =
+                await UserManager
+                    .FindByEmailAsync(
+                        cleanEmail);
+
+            if (existingUserWithEmail is not null &&
+                existingUserWithEmail.Id != identityUser.Id)
+            {
+                actionErrorMessage =
+                    "That email address is already being used " +
+                    "by another account.";
+
+                return;
+            }
+
+            var currentIdentityEmail =
+                await UserManager
+                    .GetEmailAsync(
+                        identityUser);
+
+            var emailChanged =
+                !string.Equals(
+                    currentIdentityEmail,
+                    cleanEmail,
+                    StringComparison.OrdinalIgnoreCase);
+
+            /*
+             * Update the MongoDB profile.
+             */
+            await MongoUserAccounts
+                .UpdateProfileAsync(
+                    identityUserId,
+                    cleanFirstName,
+                    cleanSurname,
+                    cleanEmail);
+
+            /*
+             * Update ASP.NET Identity when the email changed.
+             */
+            if (emailChanged)
+            {
+                var emailResult =
+                    await UserManager
+                        .SetEmailAsync(
+                            identityUser,
+                            cleanEmail);
+
+                if (!emailResult.Succeeded)
+                {
+                    actionErrorMessage =
+                        BuildIdentityErrorMessage(
+                            emailResult);
+
+                    return;
+                }
+
+                var usernameResult =
+                    await UserManager
+                        .SetUserNameAsync(
+                            identityUser,
+                            cleanEmail);
+
+                if (!usernameResult.Succeeded)
+                {
+                    actionErrorMessage =
+                        BuildIdentityErrorMessage(
+                            usernameResult);
+
+                    return;
+                }
+            }
+
+            firstName =
+                cleanFirstName;
+
+            surname =
+                cleanSurname;
+
+            email =
+                cleanEmail;
+
+            displayName =
+                BuildDisplayName(
+                    firstName,
+                    surname);
+
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                displayName =
+                    GetNameFromEmail(email);
+            }
+
+            initials =
+                BuildInitials(displayName);
+
+            if (mongoAccount is not null)
+            {
+                mongoAccount.FirstName =
+                    firstName;
+
+                mongoAccount.Surname =
+                    surname;
+
+                mongoAccount.Email =
+                    email;
+
+                mongoAccount.NormalizedEmail =
+                    email.ToUpperInvariant();
+            }
+
+            PopulateEditModel();
+
+            isEditing = false;
+
+            successMessage =
+                emailChanged
+                    ? "Your account details have been updated. " +
+                      "Use your new email the next time you sign in."
+                    : "Your account details have been updated.";
+        }
+        catch (MongoWriteException exception)
+        {
+            Logger.LogWarning(
+                exception,
+                "A MongoDB write error prevented an account " +
+                "update for user {UserId}.",
+                identityUserId);
+
+            actionErrorMessage =
+                "Your account details could not be saved. " +
+                "The email address may already be in use.";
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(
+                exception,
+                "Could not update profile for user {UserId}.",
+                identityUserId);
+
+            actionErrorMessage =
+                "Your account details could not be saved. " +
+                "Please try again.";
+        }
+        finally
+        {
+            isSaving = false;
+
+            await InvokeAsync(
+                StateHasChanged);
+        }
+    }
+
+    private async Task RequestCardDeletionAsync()
+    {
+        successMessage = null;
+        actionErrorMessage = null;
+
+        confirmCardDeletion = true;
+
+        await InvokeAsync(
+            StateHasChanged);
+    }
+
+    private async Task CancelCardDeletionAsync()
+    {
+        confirmCardDeletion = false;
+
+        await InvokeAsync(
+            StateHasChanged);
+    }
+
+    private async Task DeleteSavedCardAsync()
+    {
+        if (isDeletingCard)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(identityUserId))
+        {
+            actionErrorMessage =
+                "Your saved card could not be deleted.";
+
+            return;
+        }
+
+        isDeletingCard = true;
+        successMessage = null;
+        actionErrorMessage = null;
+
+        try
+        {
+            /*
+             * This always deletes the signed-in user's
+             * personal card. It never deletes a connected
+             * company's card.
+             */
+            await SavedPaymentMethods
+                .DeleteByIdentityUserIdAsync(
+                    identityUserId);
+
+            savedPaymentMethod =
+                null;
+
+            /*
+             * For an account using its own membership,
+             * its membership payment method is the same
+             * card and must also be cleared.
+             *
+             * For a referred account, the company payment
+             * method remains unchanged.
+             */
+            if (!UsesCompanyMembership)
+            {
+                membershipPaymentMethod =
+                    null;
+            }
+
+            confirmCardDeletion =
+                false;
+
+            successMessage =
+                "Your saved card has been deleted.";
+        }
+        catch (InvalidOperationException)
+        {
+            savedPaymentMethod =
+                null;
+
+            confirmCardDeletion =
+                false;
+
+            actionErrorMessage =
+                "No saved card was found.";
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(
+                exception,
+                "Could not delete saved payment method " +
+                "for user {UserId}.",
+                identityUserId);
+
+            actionErrorMessage =
+                "Your saved card could not be deleted. " +
+                "Please try again.";
+        }
+        finally
+        {
+            isDeletingCard =
+                false;
+
+            await InvokeAsync(
+                StateHasChanged);
+        }
+    }
+
+
+
+    private void RequestMemberRemoval(
+        CompanyMemberSummary member)
+    {
+        successMessage = null;
+        actionErrorMessage = null;
+
+        memberBeingRemovedId =
+            member.IdentityUserId;
+
+        memberBeingRemovedName =
+            member.DisplayName;
+    }
+
+    private void CancelMemberRemoval()
+    {
+        memberBeingRemovedId = null;
+        memberBeingRemovedName = null;
+    }
+
+    private async Task ConfirmMemberRemovalAsync()
+    {
+        if (isRemovingCompanyMember ||
+            string.IsNullOrWhiteSpace(
+                memberBeingRemovedId))
+        {
+            return;
+        }
+
+        isRemovingCompanyMember = true;
+        successMessage = null;
+        actionErrorMessage = null;
+
+        var removedMemberName =
+            memberBeingRemovedName;
+
+        try
+        {
+            var removed =
+                await MongoUserAccounts
+                    .DisconnectCompanyMemberAsync(
+                        identityUserId,
+                        memberBeingRemovedId);
+
+            if (!removed)
+            {
+                actionErrorMessage =
+                    "That account is no longer connected " +
+                    "to this company.";
+
+                return;
+            }
+
+            companyMembers =
+                await MongoUserAccounts
+                    .FindLinkedMembersAsync(
+                        identityUserId);
+
+            successMessage =
+                $"{removedMemberName} has been removed " +
+                "from the company.";
+
+            CancelMemberRemoval();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(
+                exception,
+                "Could not remove company member {MemberId} " +
+                "from owner {OwnerId}.",
+                memberBeingRemovedId,
+                identityUserId);
+
+            actionErrorMessage =
+                "The company member could not be removed. " +
+                "Please try again.";
+        }
+        finally
+        {
+            isRemovingCompanyMember = false;
+
+            await InvokeAsync(
+                StateHasChanged);
+        }
+    }
+
+    private static string BuildIdentityErrorMessage(
+        IdentityResult result)
+    {
+        var errors =
+            result.Errors
+                .Select(
+                    error =>
+                        error.Description)
+                .Where(
+                    description =>
+                        !string.IsNullOrWhiteSpace(
+                            description));
+
+        var message =
+            string.Join(
+                " ",
+                errors);
+
+        return string.IsNullOrWhiteSpace(message)
+            ? "Your account details could not be updated."
+            : message;
+    }
+
+    private static string FormatDate(
+        DateTime utcDate)
+    {
+        return utcDate
+            .ToLocalTime()
+            .ToString(
+                "d MMMM yyyy");
+    }
+
+    private static string FormatDateAndTime(
+        DateTime utcDate)
+    {
+        return utcDate
+            .ToLocalTime()
+            .ToString(
+                "d MMMM yyyy 'at' HH:mm");
+    }
+
+    private static string FormatCardBrand(
+        string? cardBrand)
+    {
+        return string.IsNullOrWhiteSpace(cardBrand)
+            ? "Card"
+            : FormatValue(cardBrand);
+    }
+
+    private static string FormatCardExpiry(
+        string? expiry)
+    {
+        if (string.IsNullOrWhiteSpace(expiry))
+        {
+            return "Not available";
+        }
+
+        var cleaned =
+            expiry.Trim();
+
+        var parts =
+            cleaned.Split(
+                '/',
+                StringSplitOptions.RemoveEmptyEntries |
+                StringSplitOptions.TrimEntries);
+
+        if (parts.Length == 2 &&
+            int.TryParse(
+                parts[0],
+                out var month) &&
+            int.TryParse(
+                parts[1],
+                out var year))
+        {
+            if (year < 100)
+            {
+                year += 2000;
+            }
+
+            if (month is >= 1 and <= 12)
+            {
+                return new DateTime(
+                        year,
+                        month,
+                        1)
+                    .ToString(
+                        "MMMM yyyy");
+            }
+        }
+
+        return cleaned;
+    }
+
+    private static string NormaliseAccountType(
+        string? value)
+    {
+        return value?
+            .Trim()
+            .ToLowerInvariant() switch
+        {
+            "pilot" =>
+                "pilot",
+
+            "trainer" =>
+                "trainer",
+
+            "owner_small" =>
+                "owner_small",
+
+            "owner_large" =>
+                "owner_large",
+
+            _ =>
+                MongoUserAccount.DefaultAccountType
+        };
+    }
+
+    private static string BuildDisplayName(
+        string? firstName,
+        string? surname)
+    {
+        return string.Join(
+            " ",
+            new[]
+            {
+                firstName?.Trim(),
+                surname?.Trim()
+            }
+            .Where(
+                value =>
+                    !string.IsNullOrWhiteSpace(
+                        value)));
+    }
+
+    private static string GetFallbackName(
+        ClaimsPrincipal user)
+    {
+        var identityName =
+            user.Identity?.Name;
+
+        if (string.IsNullOrWhiteSpace(identityName))
+        {
+            return "Account";
+        }
+
+        return GetNameFromEmail(
+            identityName);
+    }
+
+    private static string GetNameFromEmail(
+        string value)
+    {
+        var atIndex =
+            value.IndexOf(
+                '@',
+                StringComparison.Ordinal);
+
+        return atIndex > 0
+            ? value[..atIndex]
+            : value;
+    }
+
+    private static string BuildInitials(
+        string name)
+    {
+        var parts =
+            name.Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries |
+                StringSplitOptions.TrimEntries);
+
+        return parts.Length switch
+        {
+            0 =>
+                "A",
+
+            1 =>
+                parts[0][0]
+                    .ToString()
+                    .ToUpperInvariant(),
+
+            _ =>
+                string.Concat(
+                        parts[0][0],
+                        parts[^1][0])
+                    .ToUpperInvariant()
+        };
+    }
+
+    private static string FormatValue(
+        string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "Not available";
+        }
+
+        var cleaned =
+            value
+                .Trim()
+                .Replace(
+                    "_",
+                    " ")
+                .Replace(
+                    "-",
+                    " ");
+
+        return string.Join(
+            " ",
+            cleaned
+                .Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries)
+                .Select(
+                    word =>
+                        char.ToUpperInvariant(
+                            word[0])
+                        + word[1..]
+                            .ToLowerInvariant()));
+    }
+
+    private sealed class EditAccountModel
+    {
+        [Required(
+            ErrorMessage =
+                "Please enter your first name.")]
+        [StringLength(
+            100,
+            ErrorMessage =
+                "First name cannot exceed 100 characters.")]
+        public string FirstName { get; set; } =
+            string.Empty;
+
+        [Required(
+            ErrorMessage =
+                "Please enter your surname.")]
+        [StringLength(
+            100,
+            ErrorMessage =
+                "Surname cannot exceed 100 characters.")]
+        public string Surname { get; set; } =
+            string.Empty;
+
+        [Required(
+            ErrorMessage =
+                "Please enter your email address.")]
+        [EmailAddress(
+            ErrorMessage =
+                "Please enter a valid email address.")]
+        [StringLength(
+            256,
+            ErrorMessage =
+                "Email cannot exceed 256 characters.")]
+        public string Email { get; set; } =
+            string.Empty;
+    }
+}

@@ -7,180 +7,83 @@
 @inject MongoUserAccountRepository MongoUserAccounts
 @inject ILogger<UserAccountEmblem> Logger
 
-<span class="user-emblem"
-      title="@displayName"
-      aria-label="@($"Logged in as {displayName}")">
+<a href="/user"
+   class="user-emblem"
+   title="@displayName"
+   aria-label="Open profile">
 
-    <span class="user-initials"
-          aria-hidden="true">
+    <span class="user-initials">
         @initials
     </span>
 
     <span class="user-name">
         @displayName
     </span>
-</span>
 
-@code {
+</a>
+
+@code
+{
     private string displayName = "Account";
     private string initials = "A";
 
     protected override async Task OnInitializedAsync()
     {
-        var authenticationState =
-            await AuthenticationStateProvider
-                .GetAuthenticationStateAsync();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
 
-        var user =
-            authenticationState.User;
-
-        if (user.Identity?.IsAuthenticated != true)
-        {
+        if (!(user.Identity?.IsAuthenticated ?? false))
             return;
-        }
 
-        /*
-         * Use the Identity name as a fallback in
-         * case MongoDB is temporarily unavailable.
-         */
-        displayName =
-            GetFallbackName(user);
+        displayName = GetFallbackName(user);
+        initials = BuildInitials(displayName);
 
-        initials =
-            BuildInitials(displayName);
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var identityUserId =
-            user.FindFirstValue(
-                ClaimTypes.NameIdentifier);
-
-        if (string.IsNullOrWhiteSpace(
-            identityUserId))
-        {
+        if (string.IsNullOrWhiteSpace(userId))
             return;
-        }
 
         try
         {
-            var mongoAccount =
-                await MongoUserAccounts
-                    .FindByIdentityUserIdAsync(
-                        identityUserId);
+            var account = await MongoUserAccounts.FindByIdentityUserIdAsync(userId);
 
-            if (mongoAccount is null)
+            if (account != null)
             {
-                Logger.LogWarning(
-                    "No MongoDB account was found " +
-                    "for Identity user {UserId}.",
-                    identityUserId);
+                var name = $"{account.FirstName} {account.Surname}".Trim();
 
-                return;
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    displayName = name;
+                    initials = BuildInitials(name);
+                }
             }
-
-            var mongoDisplayName =
-                BuildDisplayName(
-                    mongoAccount.FirstName,
-                    mongoAccount.Surname);
-
-            if (string.IsNullOrWhiteSpace(
-                mongoDisplayName))
-            {
-                return;
-            }
-
-            displayName =
-                mongoDisplayName;
-
-            initials =
-                BuildInitials(
-                    mongoDisplayName);
         }
-        catch (Exception exception)
-            when (
-                exception is MongoException
-                or TimeoutException)
+        catch
         {
-            /*
-             * A MongoDB problem should not log out
-             * the authenticated user or break the
-             * navigation menu.
-             */
-            Logger.LogWarning(
-                exception,
-                "Could not load the navigation name " +
-                "from MongoDB for Identity user " +
-                "{UserId}.",
-                identityUserId);
+            // Ignore database errors and keep fallback values.
         }
     }
 
-    private static string BuildDisplayName(
-        string? firstName,
-        string? surname)
+    private static string GetFallbackName(ClaimsPrincipal user)
     {
-        return string.Join(
-            " ",
-            new[]
-            {
-                firstName?.Trim(),
-                surname?.Trim()
-            }
-            .Where(
-                value =>
-                    !string.IsNullOrWhiteSpace(
-                        value)));
+        var name = user.Identity?.Name ?? "Account";
+
+        if (name.Contains("@"))
+            name = name.Split('@')[0];
+
+        return name;
     }
 
-    private static string GetFallbackName(
-        ClaimsPrincipal user)
+    private static string BuildInitials(string name)
     {
-        var identityName =
-            user.Identity?.Name;
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        if (string.IsNullOrWhiteSpace(
-            identityName))
-        {
-            return "Account";
-        }
-
-        /*
-         * Identity.Name will normally be the user's
-         * email. Display only the part before @ as
-         * the temporary fallback.
-         */
-        var atIndex =
-            identityName.IndexOf(
-                '@',
-                StringComparison.Ordinal);
-
-        return atIndex > 0
-            ? identityName[..atIndex]
-            : identityName;
-    }
-
-    private static string BuildInitials(
-        string name)
-    {
-        var nameParts =
-            name.Split(
-                ' ',
-                StringSplitOptions.RemoveEmptyEntries
-                | StringSplitOptions.TrimEntries);
-
-        if (nameParts.Length == 0)
-        {
+        if (parts.Length == 0)
             return "A";
-        }
 
-        if (nameParts.Length == 1)
-        {
-            return nameParts[0][0]
-                .ToString()
-                .ToUpperInvariant();
-        }
+        if (parts.Length == 1)
+            return parts[0][0].ToString().ToUpper();
 
-        return string.Concat(
-            nameParts[0][0],
-            nameParts[^1][0])
-            .ToUpperInvariant();
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
     }
 }

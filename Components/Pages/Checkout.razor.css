@@ -955,3 +955,13 @@ select.form-control {
     opacity: 0.68;
     transform: none;
 }
+
+.field-help {
+    display: block;
+    margin-top: 0.45rem;
+
+    color: #8eb7d8;
+
+    font-size: 0.82rem;
+    line-height: 1.45;
+}

@@ -1,0 +1,252 @@
+.profile-page {
+    min-height: 70vh;
+    padding: 3rem 1.5rem 5rem;
+    background: linear-gradient(180deg, rgba(6, 28, 52, 0.98), rgba(8, 40, 72, 0.94));
+    color: #eef7ff;
+}
+
+.profile-container { width: min(1120px, 100%); margin: 0 auto; }
+
+.profile-hero {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    background: rgba(11, 47, 81, 0.82);
+    border: 1px solid rgba(86, 166, 244, 0.35);
+    border-radius: 18px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+}
+
+.profile-avatar {
+    width: 74px;
+    height: 74px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #168cff, #0759b4);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+
+.profile-eyebrow,
+.card-kicker {
+    margin: 0 0 0.3rem;
+    color: #75bdff;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.profile-hero h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.7rem); }
+.profile-email { margin: 0.3rem 0 0; color: #b9d1e7; }
+
+.account-type-badge {
+    padding: 0.55rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(22, 140, 255, 0.16);
+    border: 1px solid rgba(77, 167, 255, 0.5);
+    color: #d9efff;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.profile-card,
+.profile-state,
+.profile-message {
+    padding: 1.5rem;
+    background: rgba(9, 39, 69, 0.88);
+    border: 1px solid rgba(86, 166, 244, 0.28);
+    border-radius: 16px;
+}
+
+.account-details-card,
+.membership-card { grid-column: span 1; }
+
+.profile-card-featured {
+    background: linear-gradient(145deg, rgba(13, 63, 108, 0.95), rgba(8, 43, 77, 0.95));
+}
+
+.profile-card h2 { margin-top: 0; }
+.profile-card p { color: #c5d8e8; line-height: 1.65; }
+
+.card-heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.card-heading-row h2 { margin: 0; }
+.details-list { margin: 0; }
+
+.details-list div {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.75fr) 1.25fr;
+    gap: 1rem;
+    padding: 0.9rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.details-list div:last-child { border-bottom: 0; }
+.details-list dt { color: #8eb7d8; font-weight: 700; }
+.details-list dd { margin: 0; text-align: right; font-weight: 700; overflow-wrap: anywhere; }
+
+.profile-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-field { display: flex; flex-direction: column; gap: 0.45rem; }
+.form-field-full { grid-column: 1 / -1; }
+.form-field label { color: #a8c9e5; font-weight: 700; }
+
+.profile-input {
+    width: 100%;
+    min-height: 46px;
+    padding: 0.7rem 0.8rem;
+    color: #ffffff;
+    background: rgba(5, 26, 47, 0.75);
+    border: 1px solid rgba(95, 176, 255, 0.4);
+    border-radius: 8px;
+    font: inherit;
+}
+.profile-input:focus { outline: 2px solid rgba(71, 163, 255, 0.45); outline-offset: 2px; border-color: #62aff7; }
+
+.profile-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
+.primary-action,
+.secondary-action,
+.danger-action {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1rem;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+}
+.primary-action { color: #ffffff; background: #117ee8; border: 1px solid #117ee8; }
+.secondary-action { color: #dff1ff; background: transparent; border: 1px solid rgba(94, 176, 255, 0.55); }
+.danger-action { color: #fff1f1; background: rgba(174, 42, 42, 0.28); border: 1px solid rgba(255, 104, 104, 0.7); }
+.primary-action:hover,
+.primary-action:focus-visible { background: #2391f5; }
+.secondary-action:hover,
+.secondary-action:focus-visible { background: rgba(77, 167, 255, 0.12); }
+.danger-action:hover,
+.danger-action:focus-visible { background: rgba(196, 50, 50, 0.45); }
+.primary-action:disabled,
+.secondary-action:disabled,
+.danger-action:disabled { opacity: 0.55; cursor: not-allowed; }
+.edit-button { margin: 0; }
+.profile-state { text-align: center; }
+.profile-state-error,
+.profile-message-error { border-color: rgba(255, 107, 107, 0.55); color: #ffd3d3; }
+.profile-message { margin-bottom: 1.25rem; }
+.profile-message-success { color: #d8ffe9; background: rgba(20, 104, 67, 0.35); border-color: rgba(78, 220, 145, 0.48); }
+.validation-summary,
+.field-error { color: #ffb8b8; }
+.validation-summary { margin-bottom: 1rem; }
+
+.delete-confirmation,
+.member-removal-confirmation {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    background: rgba(139, 37, 37, 0.18);
+    border: 1px solid rgba(255, 105, 105, 0.35);
+    border-radius: 10px;
+}
+.delete-confirmation p,
+.member-removal-confirmation p { margin-top: 0; }
+
+.referral-card,
+.company-members-card { grid-column: 1 / -1; }
+
+.referral-code-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1.25rem; }
+.referral-code {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(5, 27, 49, 0.55);
+    border: 1px solid rgba(86, 166, 244, 0.25);
+    border-radius: 12px;
+}
+.referral-code-details { display: flex; flex-direction: column; gap: 0.3rem; }
+.referral-label { color: #8eb7d8; font-size: 0.82rem; font-weight: 700; }
+.referral-code strong { color: #ffffff; font-size: 1.25rem; letter-spacing: 0.08em; }
+.referral-expiry { margin-bottom: 0; color: #8eb7d8 !important; font-size: 0.88rem; }
+.company-membership-note { margin: -0.25rem 0 1rem; color: #9dc8ea !important; font-size: 0.9rem; line-height: 1.5; }
+.referral-display-button { cursor: default; user-select: none; }
+.referral-display-button:hover,
+.referral-display-button:focus { background: transparent; }
+
+.company-members-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+.company-members-heading h2 { margin-bottom: 0; }
+.company-member-totals { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.65rem; }
+.company-member-totals span,
+.company-member-group h3 span {
+    padding: 0.4rem 0.7rem;
+    color: #d9efff;
+    background: rgba(22, 140, 255, 0.14);
+    border: 1px solid rgba(77, 167, 255, 0.38);
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+.company-member-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.company-member-group {
+    padding: 1rem;
+    background: rgba(5, 27, 49, 0.48);
+    border: 1px solid rgba(86, 166, 244, 0.22);
+    border-radius: 12px;
+}
+.company-member-group h3 { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0 0 1rem; }
+.company-member-list { display: flex; flex-direction: column; }
+.company-member-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.company-member-row:last-child { border-bottom: 0; }
+.company-member-row > div { min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.company-member-row strong,
+.company-member-row span { overflow-wrap: anywhere; }
+.company-member-row span { color: #8eb7d8; font-size: 0.86rem; }
+.company-member-row .danger-action { min-height: 36px; padding: 0.45rem 0.75rem; }
+.empty-member-message { margin: 0; color: #8eb7d8 !important; }
+
+@media (max-width: 760px) {
+    .profile-page { padding: 1.5rem 1rem 3rem; }
+    .profile-hero { grid-template-columns: auto 1fr; }
+    .account-type-badge { grid-column: 1 / -1; justify-self: start; }
+    .profile-grid,
+    .profile-form-grid { grid-template-columns: 1fr; }
+    .form-field-full { grid-column: auto; }
+    .card-heading-row,
+    .company-members-heading { align-items: flex-start; flex-direction: column; }
+    .details-list div { grid-template-columns: 1fr; gap: 0.3rem; }
+    .details-list dd { text-align: left; }
+    .referral-code-list,
+    .company-member-groups { grid-template-columns: 1fr; }
+    .referral-code,
+    .company-member-row { align-items: flex-start; flex-direction: column; }
+    .company-member-totals { justify-content: flex-start; }
+}

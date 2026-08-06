@@ -36,6 +36,8 @@ public class CabinDepressurizationScenario
         CockpitLayoutDefinition aircraft,
         int scenarioId)
     {
+        ArgumentNullException.ThrowIfNull(aircraft);
+
         return
         [
             new ScenarioProcedureStep
@@ -43,9 +45,16 @@ public class CabinDepressurizationScenario
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 1,
-                Instruction = "Don oxygen masks",
-                CorrectAction = "Oxygen Masks",
-                ValidationType = ProcedureValidationType.PilotAction,
+
+                Instruction =
+                    "Don oxygen masks and confirm oxygen flow",
+
+                CorrectAction =
+                    "Oxygen Masks",
+
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+
                 IsSafetyCritical = true
             },
 
@@ -54,9 +63,16 @@ public class CabinDepressurizationScenario
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 2,
-                Instruction = "Begin emergency descent",
-                CorrectAction = "Emergency Descent",
-                ValidationType = ProcedureValidationType.CockpitState,
+
+                Instruction =
+                    "Begin emergency descent",
+
+                CorrectAction =
+                    "Emergency Descent",
+
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+
                 IsSafetyCritical = true
             },
 
@@ -65,9 +81,16 @@ public class CabinDepressurizationScenario
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 3,
-                Instruction = "Transmit emergency status",
-                CorrectAction = "Transmit Emergency",
-                ValidationType = ProcedureValidationType.PilotAction,
+
+                Instruction =
+                    "Declare emergency with air traffic control",
+
+                CorrectAction =
+                    "Declare Emergency",
+
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+
                 IsSafetyCritical = false
             },
 
@@ -76,9 +99,17 @@ public class CabinDepressurizationScenario
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 4,
-                Instruction = "Declare emergency",
-                CorrectAction = "Declare Emergency",
-                ValidationType = ProcedureValidationType.PilotAction,
+
+                Instruction =
+                    "Set transponder code 7700 if unable to " +
+                    "establish immediate communication",
+
+                CorrectAction =
+                    "Set Emergency Code",
+
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+
                 IsSafetyCritical = false
             },
 
@@ -87,9 +118,17 @@ public class CabinDepressurizationScenario
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 5,
-                Instruction = "Level at safe altitude",
-                CorrectAction = "Level Off",
-                ValidationType = ProcedureValidationType.CockpitState,
+
+                Instruction =
+                    "Level at 10,000 feet or the minimum " +
+                    "safe altitude, whichever is higher",
+
+                CorrectAction =
+                    "Level Off",
+
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+
                 IsSafetyCritical = true
             }
         ];
@@ -105,17 +144,41 @@ public class CabinDepressurizationScenario
         {
             case "Oxygen Masks":
                 state.AlertMessage =
-                    "OXYGEN MASKS ON - BEGIN EMERGENCY DESCENT";
+                    "CREW OXYGEN MASKS ON - " +
+                    "OXYGEN FLOW CONFIRMED";
                 break;
 
-            case "Set Emergency Code":
+            case "Emergency Descent":
+                state.VerticalSpeed = -5_000;
+                state.Pitch = -10;
+
                 state.AlertMessage =
-                    "EMERGENCY TRANSPONDER CODE SET";
+                    "EMERGENCY DESCENT IN PROGRESS";
                 break;
 
             case "Declare Emergency":
+                state.CommunicationStatus =
+                    "MAYDAY - CABIN DEPRESSURIZATION";
+
                 state.AlertMessage =
-                    "EMERGENCY DECLARED - CABIN DEPRESSURIZATION";
+                    "EMERGENCY DECLARED WITH " +
+                    "AIR TRAFFIC CONTROL";
+                break;
+
+            case "Set Emergency Code":
+                state.DynamicValues[
+                    "communication.transponder-code"] = 7700;
+
+                state.AlertMessage =
+                    "TRANSPONDER SET TO 7700";
+                break;
+
+            case "Level Off":
+                state.VerticalSpeed = 0;
+                state.Pitch = 0;
+
+                state.AlertMessage =
+                    "AIRCRAFT LEVELLED AT SAFE ALTITUDE";
                 break;
         }
 
@@ -127,13 +190,13 @@ public class CabinDepressurizationScenario
         string actionName,
         int expectedStep)
     {
+        ArgumentNullException.ThrowIfNull(aircraft);
+
         return GetProcedureSteps(
                 aircraft,
                 scenarioId: 0)
             .Any(step =>
                 step.StepOrder == expectedStep &&
-                step.ValidationType ==
-                    ProcedureValidationType.PilotAction &&
                 string.Equals(
                     step.CorrectAction,
                     actionName,
@@ -148,11 +211,12 @@ public class CabinDepressurizationScenario
 
         return stepOrder switch
         {
-            // Emergency descent has actually been established.
+            // Emergency descent has been established.
             2 =>
                 state.VerticalSpeed <= -900,
 
-            // Aircraft has reached a safer altitude and is substantially level.
+            // Aircraft has reached a safer altitude
+            // and is substantially level.
             5 =>
                 state.Altitude <= 10_000 &&
                 Math.Abs(state.VerticalSpeed) <= 300,

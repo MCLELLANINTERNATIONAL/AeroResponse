@@ -9,79 +9,176 @@ public class WindShearScenario : ISimulationScenario
 
     public string ScenarioType => "Wind Shear";
 
-    public CockpitState Start(CockpitLayoutDefinition aircraft)
-    {
-        var defaults = aircraft.DefaultState;
-        var engines = Enumerable.Range(1, aircraft.EngineCount)
-            .Select(number => new EngineState
-            {
-                Number = number,
-                Power = Math.Max(0, defaults.NormalEnginePower - 5),
-                Running = true,
-                FuelPercentage = defaults.FuelPercentage
-            })
-            .ToList();
-
-        return new CockpitState
+    public ScenarioStartCondition StartCondition =>
+        new()
         {
-            Airspeed = defaults.CruiseAirspeed + 30,
-            Altitude = defaults.CruiseAltitude * 0.30,
-            Heading = defaults.DefaultHeading,
-            VerticalSpeed = -1200,
-            DisplayedVerticalSpeed = -1200,
-            Pitch = defaults.DefaultPitch,
-            Bank = defaults.DefaultBank,
-            FuelPercentage = defaults.FuelPercentage,
-            Engines = engines,
-            AlertMessage = $"{aircraft.Name}: WINDSHEAR WARNING - TAKEOFF/LANDING PHASE"
+            MinimumAltitude = 300,
+            MaximumAltitude = 2_500,
+            MinimumAirspeed = 70,
+            MinimumAverageEnginePower = 50,
+            RequiresAircraftAirborne = true,
+            RequiresEnginesRunning = true
         };
+
+    public CockpitState Start(
+        CockpitLayoutDefinition aircraft,
+        CockpitState currentState)
+    {
+        ArgumentNullException.ThrowIfNull(aircraft);
+        ArgumentNullException.ThrowIfNull(currentState);
+
+        currentState.VerticalSpeed =
+            Math.Min(
+                currentState.VerticalSpeed,
+                -1200);
+
+        currentState.DisplayedVerticalSpeed =
+            currentState.VerticalSpeed;
+
+        currentState.Airspeed =
+            Math.Max(
+                0,
+                currentState.Airspeed - 20);
+
+        currentState.AlertMessage =
+            $"{aircraft.Name}: WINDSHEAR WARNING - " +
+            "IMMEDIATE ESCAPE MANEUVER REQUIRED";
+
+        return currentState;
     }
 
-    public List<ScenarioProcedureStep> GetProcedureSteps(CockpitLayoutDefinition aircraft, int scenarioId)
+    public List<ScenarioProcedureStep> GetProcedureSteps(
+        CockpitLayoutDefinition aircraft,
+        int scenarioId)
     {
         return
         [
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 1, Instruction = "Apply maximum thrust", CorrectAction = "Maximum Thrust", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 2, Instruction = "Maintain pitch attitude", CorrectAction = "Maintain Pitch", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 3, Instruction = "Do not change configuration until clear", CorrectAction = "Hold Configuration", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 4, Instruction = "Monitor vertical speed and altitude", CorrectAction = "Monitor Flight Path", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 5, Instruction = "Advise ATC when able", CorrectAction = "Declare Emergency", IsSafetyCritical = false }
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 1,
+                Instruction = "Apply maximum available thrust",
+                CorrectAction = "Maximum Thrust",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 2,
+                Instruction =
+                    "Establish and maintain the windshear escape pitch",
+                CorrectAction = "Maintain Pitch",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 3,
+                Instruction =
+                    "Maintain the current aircraft configuration until clear",
+                CorrectAction = "Hold Configuration",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 4,
+                Instruction =
+                    "Monitor vertical speed and altitude trend",
+                CorrectAction = "Monitor Flight Path",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 5,
+                Instruction = "Advise ATC when workload permits",
+                CorrectAction = "Declare Emergency",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = false
+            }
         ];
     }
 
-    public CockpitState ApplyPilotAction(CockpitState state, string actionName)
+    public CockpitState ApplyPilotAction(
+        CockpitState state,
+        string actionName)
     {
-        if (actionName == "Maximum Thrust")
-        {
-            foreach (var engine in state.Engines)
-            {
-                engine.Power = 100;
-            }
-            state.Airspeed += 20;
-        }
+        ArgumentNullException.ThrowIfNull(state);
 
-        if (actionName == "Maintain Pitch")
+        switch (actionName)
         {
-            state.VerticalSpeed = 800;
-        }
+            case "Hold Configuration":
+                state.AlertMessage =
+                    "AIRCRAFT CONFIGURATION HELD - " +
+                    "CONTINUE WINDSHEAR ESCAPE MANEUVER";
+                break;
 
-        if (actionName == "Hold Configuration")
-        {
-            state.AlertMessage = "CONFIGURATION HELD - RECOVERING FROM WINDSHEAR";
-        }
-
-        if (actionName == "Monitor Flight Path")
-        {
-            state.Altitude += 500;
-            state.AlertMessage = "POSITIVE CLIMB - WINDSHEAR RECOVERY IN PROGRESS";
+            case "Declare Emergency":
+                state.AlertMessage =
+                    "ATC ADVISED - WINDSHEAR ENCOUNTER";
+                break;
         }
 
         return state;
     }
 
-    public bool IsActionCorrect(CockpitLayoutDefinition aircraft, string actionName, int expectedStep)
+    public bool IsActionCorrect(
+        CockpitLayoutDefinition aircraft,
+        string actionName,
+        int expectedStep)
     {
-        var steps = GetProcedureSteps(aircraft, 0);
-        return steps.Any(s => s.StepOrder == expectedStep && s.CorrectAction == actionName);
+        return GetProcedureSteps(
+                aircraft,
+                scenarioId: 0)
+            .Any(step =>
+                step.StepOrder == expectedStep &&
+                step.ValidationType ==
+                    ProcedureValidationType.PilotAction &&
+                string.Equals(
+                    step.CorrectAction,
+                    actionName,
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool IsStepSatisfied(
+        CockpitState state,
+        int stepOrder)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return stepOrder switch
+        {
+            1 =>
+                state.Engines.Count > 0 &&
+                state.Engines.All(
+                    engine => engine.Power >= 95),
+
+            2 =>
+                state.Pitch >= 10,
+
+            4 =>
+                state.VerticalSpeed >= 0,
+
+            _ => false
+        };
     }
 }

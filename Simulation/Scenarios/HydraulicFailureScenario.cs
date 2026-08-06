@@ -9,59 +9,183 @@ public class HydraulicFailureScenario : ISimulationScenario
 
     public string ScenarioType => "Hydraulic Failure";
 
-    public CockpitState Start(CockpitLayoutDefinition aircraft)
-    {
-        var defaults = aircraft.DefaultState;
-        var engines = Enumerable.Range(1, aircraft.EngineCount)
-            .Select(number => new EngineState
-            {
-                Number = number,
-                Power = defaults.NormalEnginePower,
-                Running = true,
-                FuelPercentage = defaults.FuelPercentage
-            })
-            .ToList();
-
-        return new CockpitState
+    public ScenarioStartCondition StartCondition =>
+        new()
         {
-            Airspeed = defaults.CruiseAirspeed,
-            Altitude = defaults.CruiseAltitude,
-            Heading = defaults.DefaultHeading,
-            VerticalSpeed = defaults.DefaultVerticalSpeed,
-            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
-            Pitch = defaults.DefaultPitch,
-            Bank = defaults.DefaultBank,
-            FuelPercentage = defaults.FuelPercentage,
-            Engines = engines,
-            AlertMessage = $"{aircraft.Name}: HYDRAULIC SYSTEM FAILURE"
+            MinimumAltitude = 1_500,
+            MinimumAirspeed = 70,
+            MinimumHydraulicPressure = 2_500,
+            RequiresAircraftAirborne = true,
+            RequiresEnginesRunning = true
         };
+
+    public CockpitState Start(
+        CockpitLayoutDefinition aircraft,
+        CockpitState currentState)
+    {
+        ArgumentNullException.ThrowIfNull(aircraft);
+        ArgumentNullException.ThrowIfNull(currentState);
+
+        currentState.HydraulicPressure = 250;
+        currentState.HydraulicPumpOnline = false;
+        currentState.HydraulicFault = true;
+
+        // Give the pilot something to recover from.
+        currentState.Bank =
+            Math.Clamp(
+                currentState.Bank + 6,
+                -30,
+                30);
+
+        currentState.VerticalSpeed =
+            Math.Min(
+                currentState.VerticalSpeed,
+                -400);
+
+        currentState.AlertMessage =
+            $"{aircraft.Name}: HYDRAULIC SYSTEM FAILURE - " +
+            "PRESSURE BELOW SAFE OPERATING RANGE";
+
+        return currentState;
     }
 
-    public List<ScenarioProcedureStep> GetProcedureSteps(CockpitLayoutDefinition aircraft, int scenarioId)
+    public List<ScenarioProcedureStep> GetProcedureSteps(
+        CockpitLayoutDefinition aircraft,
+        int scenarioId)
     {
         return
         [
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 1, Instruction = "Maintain aircraft control", CorrectAction = "Stabilize Aircraft", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 2, Instruction = "Identify failed hydraulic system", CorrectAction = "Identify Failure", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 3, Instruction = "Activate alternate system", CorrectAction = "Activate Backup System", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 4, Instruction = "Declare emergency", CorrectAction = "Declare Emergency", IsSafetyCritical = false },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 5, Instruction = "Prepare abnormal landing", CorrectAction = "Prepare Landing", IsSafetyCritical = false }
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 1,
+                Instruction = "Maintain aircraft control",
+                CorrectAction = "Stabilize Aircraft",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 2,
+                Instruction =
+                    "Confirm hydraulic pressure loss and identify the failed system",
+                CorrectAction = "Identify Hydraulic Failure",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 3,
+                Instruction = "Activate the alternate hydraulic system",
+                CorrectAction = "Activate Backup Hydraulic System",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 4,
+                Instruction = "Declare emergency",
+                CorrectAction = "Declare Emergency",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = false
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 5,
+                Instruction =
+                    "Prepare for an abnormal landing and reduced braking capability",
+                CorrectAction = "Prepare Landing",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            }
         ];
     }
 
-    public CockpitState ApplyPilotAction(CockpitState state, string actionName)
+    public CockpitState ApplyPilotAction(
+        CockpitState state,
+        string actionName)
     {
-        if (actionName == "Activate Backup System")
+        ArgumentNullException.ThrowIfNull(state);
+
+        switch (actionName)
         {
-            state.AlertMessage = "BACKUP HYDRAULIC SYSTEM ACTIVE";
+            case "Identify Hydraulic Failure":
+                state.AlertMessage =
+                    $"HYDRAULIC PRESSURE LOW - " +
+                    $"{state.HydraulicPressure:N0} PSI";
+                break;
+
+            case "Declare Emergency":
+                state.AlertMessage =
+                    "EMERGENCY DECLARED - " +
+                    "ABNORMAL LANDING PROCEDURE REQUIRED";
+                break;
+
+            case "Prepare Landing":
+                state.AlertMessage =
+                    "ABNORMAL LANDING PREPARATION ACTIVE - " +
+                    "EXPECT REDUCED BRAKING AND CONTROL ASSISTANCE";
+                break;
         }
 
         return state;
     }
 
-    public bool IsActionCorrect(CockpitLayoutDefinition aircraft, string actionName, int expectedStep)
+    public bool IsActionCorrect(
+        CockpitLayoutDefinition aircraft,
+        string actionName,
+        int expectedStep)
     {
-        var steps = GetProcedureSteps(aircraft, 0);
-        return steps.Any(s => s.StepOrder == expectedStep && s.CorrectAction == actionName);
+        return GetProcedureSteps(
+                aircraft,
+                scenarioId: 0)
+            .Any(step =>
+                step.StepOrder == expectedStep &&
+                step.ValidationType ==
+                    ProcedureValidationType.PilotAction &&
+                string.Equals(
+                    step.CorrectAction,
+                    actionName,
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool IsStepSatisfied(
+        CockpitState state,
+        int stepOrder)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return stepOrder switch
+        {
+            1 =>
+                Math.Abs(state.Bank) <= 5 &&
+                Math.Abs(state.VerticalSpeed) <= 300 &&
+                Math.Abs(state.Pitch) <= 5,
+
+            3 =>
+                state.HydraulicPumpOnline &&
+                state.HydraulicPressure >= 2_000 &&
+                !state.HydraulicFault,
+
+            _ => false
+        };
     }
 }

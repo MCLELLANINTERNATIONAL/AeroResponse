@@ -12,6 +12,8 @@ public class ScenarioProcedureStep
 
     public int StepOrder { get; set; }
 
+    public ProcedureValidationType ValidationType { get; set; } = ProcedureValidationType.PilotAction;
+
     public string Instruction { get; set; } = string.Empty;
 
     public string CorrectAction { get; set; } = string.Empty;
@@ -26,4 +28,9 @@ public class ScenarioProcedureStep
 
     // Procedure, Decision, Communication, or Checklist.
     public string PerformanceCategory { get; set; } = "Procedure";
+}
+public enum ProcedureValidationType
+{
+    PilotAction,
+    CockpitState
 }

@@ -64,65 +64,106 @@ else
             <div class="emergency-modal-layer"
                 role="dialog"
                 aria-modal="true"
-                aria-labelledby="emergency-modal-title">
+                aria-labelledby="emergency-modal-title"
+                aria-describedby="emergency-modal-description">
 
-                <div class="emergency-modal-backdrop">
-                </div>
+                <button type="button"
+                        class="btn btn-danger emergency-modal-start-button"
+                        @onclick="ActivateEmergencyScenario">
 
-                <section class="emergency-modal">
+                    Begin Emergency Procedure
 
-                    <div class="emergency-modal-icon">
-                        ⚠
+                </button>
+
+                <section class="emergency-modal-card">
+
+                    <div class="emergency-modal-header">
+
+                        <div class="emergency-modal-icon"
+                            aria-hidden="true">
+                            ⚠
+                        </div>
+
+                        <div>
+                            <span class="emergency-modal-eyebrow">
+                                Emergency Activated
+                            </span>
+
+                            <h2 id="emergency-modal-title">
+                                @selectedScenarioRecord.Title
+                            </h2>
+                        </div>
+
                     </div>
 
-                    <span class="scenario-eyebrow">
-                        Emergency Activated
-                    </span>
+                    <div class="emergency-modal-body">
 
-                    <h2 id="emergency-modal-title">
-                        @selectedScenarioRecord.Title
-                    </h2>
+                        <strong class="emergency-modal-system">
+                            @selectedScenarioRecord.EmergencyType
+                        </strong>
 
-                    <strong class="emergency-modal-system">
-                        @selectedScenarioRecord.EmergencyType
-                    </strong>
+                        <p id="emergency-modal-description">
+                            @selectedScenarioRecord.Description
+                        </p>
 
-                    <p>
-                        @selectedScenarioRecord.Description
-                    </p>
+                        @if (!string.IsNullOrWhiteSpace(
+                            selectedScenarioRecord.TriggerCondition))
+                        {
+                            <div class="emergency-modal-detail">
 
-                    @if (!string.IsNullOrWhiteSpace(
-                        selectedScenarioRecord.TriggerCondition))
-                    {
-                        <div class="emergency-modal-trigger">
-                            <strong>Condition</strong>
+                                <span>
+                                    Trigger condition
+                                </span>
+
+                                <strong>
+                                    @selectedScenarioRecord.TriggerCondition
+                                </strong>
+
+                            </div>
+                        }
+
+                        <div class="emergency-modal-detail">
 
                             <span>
-                                @selectedScenarioRecord.TriggerCondition
+                                Immediate objective
                             </span>
+
+                            <strong>
+                                @GetObjectiveText()
+                            </strong>
+
                         </div>
-                    }
 
-                    <div class="emergency-modal-objective">
-                        <strong>Immediate objective</strong>
+                        <div class="emergency-modal-detail">
 
-                        <span>
-                            @GetObjectiveText()
-                        </span>
-                    </div>
+                            <span>
+                                Time limit
+                            </span>
 
-                    <div class="emergency-modal-time">
-                        <span>Time available</span>
+                            <strong>
+                                @FormatAssessmentTime(
+                                    selectedScenarioRecord.TimeLimitSeconds)
+                            </strong>
 
-                        <strong>
-                            @FormatAssessmentTime(
-                                selectedScenarioRecord.TimeLimitSeconds)
-                        </strong>
+                        </div>
+
+                        <div class="emergency-modal-alert">
+
+                            <strong>
+                                Current aircraft warning
+                            </strong>
+
+                            <span>
+                                @cockpitState.AlertMessage
+                            </span>
+
+                        </div>
+
                     </div>
 
                     <button type="button"
-                            class="btn btn-danger"
-                            @onclick="DismissEmergencyModal">
+                            class="btn btn-danger emergency-modal-start-button"
+                            @onclick="ActivateEmergencyScenario">
 
                         Begin Emergency Procedure
 
@@ -395,7 +436,17 @@ Main cockpit
                 <div class="system-gauges-grid">
                     @foreach (var engine in cockpitState.Engines)
                     {
-                        <Tachometer Value="@engine.Power" Minimum="0" Maximum="100" Label="Engine Power" />
+                        <div class="engine-status-inspection"
+                            tabindex="0"
+                            @onfocus="() => HandleEngineStatusFocusAsync(engine)">
+
+                            <Tachometer
+                                Value="@engine.Power"
+                                Minimum="0"
+                                Maximum="100"
+                                Label="@($"Engine {engine.Number} Power")" />
+
+                        </div>
                     }
                     <OilGauges OilPressure="@cockpitState.OilPressure" OilTemperature="@cockpitState.OilTemperature" />
                     <FuelGaugeRenderer
@@ -442,7 +493,7 @@ Main cockpit
 
                             <ThrottleControl
                                 Power="@engine.Power"
-                                PowerChanged="value => engine.Power = value" />
+                                PowerChanged="value => HandleThrottleChanged(engine, value)" />
                         }
                     </div>
                 </div>
@@ -454,6 +505,52 @@ Main cockpit
                         PitchChanged="value => cockpitState.Pitch = value"
                         Bank="@cockpitState.Bank"
                         BankChanged="value => cockpitState.Bank = value" />
+                    <div class="pilot-actions-panel">
+                        @if (procedureSteps.Any(
+                                step => step.CorrectAction == "Oxygen Masks"))
+                            {
+                                <div class="debug-controls">
+                                    <button type="button"
+                                            class="btn btn-warning"
+                                            @onclick="DebugSetCruiseAltitude">
+                                        DEBUG: Jump to 12,000 ft
+                                    </button>
+                                </div>
+                                <button type="button"
+                                        class="btn btn-outline-primary"
+                                        @onclick='() => HandlePilotActionAsync("Oxygen Masks")'>
+                                    Oxygen Masks
+                                </button>
+                            }
+                        @if (procedureSteps.Any(
+                            step => string.Equals(
+                                step.CorrectAction,
+                                "Activate Backup Power",
+                                StringComparison.OrdinalIgnoreCase)))
+                        {
+                            <button type="button"
+                                    class="btn btn-outline-primary"
+                                    @onclick='() => HandlePilotActionAsync("Activate Backup Power")'>
+
+                                Activate Backup Power
+
+                            </button>
+                        }
+                        @if (procedureSteps.Any(
+                            step => string.Equals(
+                                step.CorrectAction,
+                                "Reduce Electrical Load",
+                                StringComparison.OrdinalIgnoreCase)))
+                        {
+                            <button type="button"
+                                    class="btn btn-outline-primary"
+                                    @onclick='() => HandlePilotActionAsync("Reduce Electrical Load")'>
+
+                                Shed Non-Essential Load
+
+                            </button>
+                        }
+                    </div>
                 </div>
                 <div class="communications-grid">
                     <CommunicationPanel
@@ -518,7 +615,9 @@ aria-label="Emergency checklist">
         ? "Active emergency"
         : "Emergency pending")
     </span>
-
+    <span class="emergency-panel-eyebrow" id="flight-phase">
+        Flight phase: @cockpitState.FlightPhase
+    </span>
     <div class="active-emergency-heading">
         <span class="active-emergency-icon"
         aria-hidden="true">
@@ -628,36 +727,45 @@ selectedScenarioRecord.TriggerCondition))
                 <li class="checklist-step
                 @(isCompleted ? "completed" : null)
                 @(step.IsSafetyCritical ? "safety-critical" : null)">
+                    <label>
+                        <input type="checkbox"
+                            checked="@isCompleted"
+                            disabled />
 
-                <label>
-                    <input type="checkbox"
-                        checked="@isCompleted"
-                        disabled />
+                        <span class="custom-check-box"
+                        aria-hidden="true">
+                        </span>
 
-                    <span class="custom-check-box"
-                    aria-hidden="true">
-                </span>
+                        <span class="checklist-step-content">
+                            <span class="checklist-step-number">
+                                @step.StepOrder.
+                            </span>
 
-                <span class="checklist-step-content">
-                    <span class="checklist-step-number">
-                        @step.StepOrder.
-                    </span>
+                            <span class="checklist-step-text">
+                                @step.Instruction
+                            </span>
 
-                    <span class="checklist-step-text">
-                        @step.Instruction
-                    </span>
+                            @if (step.IsSafetyCritical)
+                            {
+                                <small>
+                                    Critical
+                                </small>
+                            }
+                        </span>
+                    </label>
+                </li>
+            }
+        </ol>
+        if (selectedScenarioRecord.ProcedureSteps.Any(step => step.CorrectAction == "Check Engine Status"))
+        {
+            <button type="button"
+                    class="btn btn-outline-primary"
+                    @onclick='() => HandlePilotActionAsync("Check Engine Status")'>
 
-                    @if (step.IsSafetyCritical)
-                    {
-                        <small>
-                            Critical
-                        </small>
-                    }
-                </span>
-            </label>
-        </li>
-    }
-</ol>
+                Check Engine Status
+
+            </button>
+        }
 }
 </section>
 

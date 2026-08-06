@@ -1,6 +1,7 @@
 using AeroResponse.Models;
 using AeroResponse.Simulation;
 using AeroResponse.Simulation.Layouts;
+using AeroResponse.Simulation.Scenarios;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
@@ -46,6 +47,7 @@ public partial class Simulation : IAsyncDisposable
     private bool _voiceListening;
     private string _voiceStatus = "Select Start Voice Control.";
     private string? _lastVoiceTranscript;
+    private bool _emergencyModalHasBeenShown = false;
     private AiInstructorFeedback? _latestInstructorFeedback;
 
     private IReadOnlyList<EmergencyScenario>
@@ -414,11 +416,11 @@ public partial class Simulation : IAsyncDisposable
         {
             _loadFailed = true;
             _isReady = false;
-
             return;
         }
 
-        await InitializeSimulationStateAsync();
+        ArmSelectedScenario();
+
         await SaveCurrentSelectionAsync();
 
         UpdateSimulationUrl();
@@ -453,68 +455,71 @@ public partial class Simulation : IAsyncDisposable
         Navigation.NavigateTo(targetUrl, replace: true);
     }
 
-    private async Task InitializeSimulationStateAsync()
+    private Task InitializeSimulationStateAsync()
     {
         simulationStartedAt = DateTime.UtcNow;
+        emergencyTriggered = false;
         manualTriggerRequested = false;
+        _emergencyModalHasBeenShown = false;
+        _showEmergencyModal = false;
 
-        emergencyTriggered =
-            string.Equals(
-                selectedScenarioRecord.TriggerType,
-                "Immediate",
-                StringComparison.OrdinalIgnoreCase);
+        procedureSteps =
+            SimulationEngine.GetProcedureSteps(
+                selectedScenarioRecord.EmergencyType,
+                cockpitLayout,
+                selectedScenarioRecord.Id);
 
-        cockpitState = emergencyTriggered
-            ? selectedRuntimeScenario.Start(cockpitLayout)
-            : CreateNormalCockpitState();
-
-        // Runtime scenario definitions are the source of truth for the
-        // executable cockpit actions and their required sequence.
-        procedureSteps = SimulationEngine.GetProcedureSteps(
-            selectedScenarioRecord.EmergencyType,
-            cockpitLayout,
-            selectedScenarioRecord.Id);
-
-        // Apply scenario-wide timing defaults to executable steps.
         foreach (var step in procedureSteps)
         {
-            step.MaxResponseSeconds = Math.Min(
-                selectedScenarioRecord.TimeLimitSeconds,
-                Math.Max(
-                    step.MaxResponseSeconds,
-                    10 + ((step.StepOrder - 1) * 15)));
+            step.MaxResponseSeconds =
+                Math.Min(
+                    selectedScenarioRecord.TimeLimitSeconds,
+                    Math.Max(
+                        step.MaxResponseSeconds,
+                        10 + ((step.StepOrder - 1) * 15)));
         }
 
-        SimulationSession.StartSimulation(
-            userId: "test-pilot",
-            aircraftId: selectedAircraft.Id,
-            scenario: selectedScenarioRecord,
-            aircraft: cockpitLayout,
-            expectedSteps: procedureSteps,
-            pilotName: "Pilot");
+        // Build the complete aircraft state first.
+        cockpitState =
+            CreateNormalCockpitState();
 
-        if (emergencyTriggered &&
-            !SimulationSession.EmergencyTriggeredAt.HasValue)
-        {
-            SimulationSession.MarkEmergencyTriggered(simulationStartedAt);
-        }
+        // The service keeps this state for delayed scenarios and applies
+        // the emergency immediately when TriggerType is "Immediate".
+        cockpitState =
+            SimulationSession.StartSimulation(
+                userId: "test-pilot",
+                aircraftId: selectedAircraft.Id,
+                scenario: selectedScenarioRecord,
+                aircraft: cockpitLayout,
+                expectedSteps: procedureSteps,
+                initialState: cockpitState,
+                pilotName: "Pilot");
 
         _completedReport = null;
         _isCompleting = false;
-        _remainingSeconds = selectedScenarioRecord.TimeLimitSeconds;
+        _remainingSeconds =
+            selectedScenarioRecord.TimeLimitSeconds;
+
         _completedProcedureStepOrders.Clear();
 
         cockpitState.DisplayedVerticalSpeed =
             cockpitState.VerticalSpeed;
 
+        // An immediate scenario was already activated by StartSimulation.
+        _showEmergencyModal =
+            emergencyTriggered;
+
         _isReady = true;
         _loadFailed = false;
+
         CloseSelectorMenus();
 
         if (_simulationLoop is null)
         {
             StartSimulationLoop();
         }
+
+        return Task.CompletedTask;
     }
 
 
@@ -527,44 +532,6 @@ public partial class Simulation : IAsyncDisposable
     {
         return _completedProcedureStepOrders.Contains(
             step.StepOrder);
-    }
-
-    private void ToggleProcedureStep(
-        ScenarioProcedureStep step,
-        ChangeEventArgs eventArgs)
-    {
-        if (!emergencyTriggered)
-        {
-            return;
-        }
-
-        var isChecked =
-            eventArgs.Value is bool boolValue
-                ? boolValue
-                : bool.TryParse(
-                    eventArgs.Value?.ToString(),
-                    out var parsedValue) &&
-                parsedValue;
-
-        if (isChecked)
-        {
-            _completedProcedureStepOrders.Add(
-                step.StepOrder);
-
-            if (!string.IsNullOrWhiteSpace(
-                step.CorrectAction) &&
-                _completedReport is null)
-            {
-                cockpitState = SimulationSession.SubmitPilotAction(
-                    step.CorrectAction,
-                    step.StepOrder);
-            }
-        }
-        else
-        {
-            _completedProcedureStepOrders.Remove(
-                step.StepOrder);
-        }
     }
 
     private string GetChecklistProgressStyle()
@@ -622,8 +589,8 @@ public partial class Simulation : IAsyncDisposable
             .Select(number => new EngineState
             {
                 Number = number,
-                Power = defaults.NormalEnginePower,
-                Running = true,
+                Power = 0,
+                Running = false,
                 OnFire = false,
                 EngineFire = false,
                 FuelCutoff = false,
@@ -650,23 +617,29 @@ public partial class Simulation : IAsyncDisposable
 
         return new CockpitState
         {
-            Airspeed = defaults.CruiseAirspeed,
-            Altitude = defaults.CruiseAltitude,
+            Airspeed = 0,
+            Altitude = 0,
             Heading = defaults.DefaultHeading,
-            VerticalSpeed = defaults.DefaultVerticalSpeed,
-            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
-            Pitch = defaults.DefaultPitch,
-            Bank = defaults.DefaultBank,
-            FlightPhase = DetermineFlightPhase(
-                defaults.CruiseAltitude,
-                defaults.CruiseAirspeed,
-                defaults.DefaultVerticalSpeed),
+
+            VerticalSpeed = 0,
+            DisplayedVerticalSpeed = 0,
+
+            Pitch = 0,
+            Bank = 0,
+
+            FlightPhase = "Ground",
 
             Engines = engines,
             Brakes = brakes,
             FuelTanks = fuelTanks,
+
             FuelPercentage = defaults.FuelPercentage,
+
             AlertMessage = "Systems Normal",
+
+            HydraulicPressure = 3000,
+            HydraulicPumpOnline = true,
+            HydraulicFault = false,
 
             OilPressure = 70,
             OilTemperature = 180
@@ -681,13 +654,23 @@ public partial class Simulation : IAsyncDisposable
                 cockpitState.VerticalSpeed);
     }
     private static string DetermineFlightPhase(
-    double altitude,
-    double airspeed,
-    double verticalSpeed)
+        double altitude,
+        double airspeed,
+        double verticalSpeed)
     {
-        if (altitude <= 0 && airspeed < 40)
+        if (altitude <= 100 && airspeed < 5)
         {
             return "Ground";
+        }
+            
+        if (altitude <= 100 && airspeed < 40)
+        {
+            return "Taxi";
+        }
+
+        if (altitude <= 100 && airspeed >= 40)
+        {
+            return "Takeoff Roll";
         }
 
         if (altitude < 1_500 &&
@@ -702,10 +685,11 @@ public partial class Simulation : IAsyncDisposable
             return "Climb";
         }
 
-        if (verticalSpeed < -300 &&
-            altitude > 3_000)
+        if (altitude <= 500 &&
+            verticalSpeed <= 0 &&
+            airspeed > 40)
         {
-            return "Descent";
+            return "Landing";
         }
 
         if (altitude <= 3_000 &&
@@ -715,11 +699,9 @@ public partial class Simulation : IAsyncDisposable
             return "Approach";
         }
 
-        if (altitude <= 500 &&
-            verticalSpeed <= 0 &&
-            airspeed > 40)
+        if (verticalSpeed < -300)
         {
-            return "Landing";
+            return "Descent";
         }
 
         return "Cruise";
@@ -797,34 +779,166 @@ public partial class Simulation : IAsyncDisposable
             0,
             cockpitState.Altitude + cockpitState.VerticalSpeed / 60.0 * elapsedSeconds);
     }
+    private void UpdateFuelLeak(
+        double elapsedSeconds)
+    {
+        if (!cockpitState.FuelLeakActive ||
+            !cockpitState.LeakingFuelTankNumber.HasValue)
+        {
+            return;
+        }
+
+        var leakingTank =
+            cockpitState.FuelTanks.FirstOrDefault(
+                tank =>
+                    tank.Number ==
+                    cockpitState.LeakingFuelTankNumber.Value);
+
+        if (leakingTank is null)
+        {
+            return;
+        }
+
+        const double leakGallonsPerSecond = 0.05;
+
+        leakingTank.Quantity =
+            Math.Max(
+                0,
+                leakingTank.Quantity -
+                leakGallonsPerSecond *
+                elapsedSeconds);
+
+        cockpitState.FuelPercentage =
+            CalculateFuelPercentage();
+    }
+    private double CalculateFuelPercentage()
+    {
+        if (cockpitState.FuelTanks.Count == 0)
+        {
+            return 0;
+        }
+
+        const double capacityPerTank = 26.5;
+
+        var totalCapacity =
+            cockpitState.FuelTanks.Count *
+            capacityPerTank;
+
+        var totalQuantity =
+            cockpitState.FuelTanks.Sum(
+                tank => tank.Quantity);
+
+        return totalCapacity <= 0
+            ? 0
+            : Math.Clamp(
+                totalQuantity /
+                totalCapacity *
+                100,
+                0,
+                100);
+    }
+    private async Task EvaluateCockpitStateProcedureStepAsync()
+    {
+        if (!emergencyTriggered ||
+            _showEmergencyModal ||
+            _completedReport is not null)
+        {
+            return;
+        }
+
+        var nextStep =
+            procedureSteps
+                .OrderBy(step => step.StepOrder)
+                .FirstOrDefault(step =>
+                    !_completedProcedureStepOrders.Contains(
+                        step.StepOrder));
+
+        if (nextStep is null ||
+            nextStep.ValidationType !=
+                ProcedureValidationType.CockpitState)
+        {
+            return;
+        }
+
+        if (!selectedRuntimeScenario.IsStepSatisfied(
+                cockpitState,
+                nextStep.StepOrder))
+        {
+            return;
+        }
+
+        // Record this as a successful state-based procedure step.
+        cockpitState =
+            SimulationSession.RecordStateStepCompletion(
+                nextStep,
+                cockpitState);
+
+        _completedProcedureStepOrders.Add(
+            nextStep.StepOrder);
+
+        _latestInstructorFeedback =
+            new AiInstructorFeedback
+            {
+                Severity = "Success",
+                Message =
+                    $"Procedure step completed: " +
+                    $"{nextStep.Instruction}"
+            };
+
+        if (CompletedStepCount ==
+            procedureSteps.Count)
+        {
+            await CompleteAssessmentAsync(
+                "All procedure steps were completed.");
+        }
+    }
+
 
 /* ====================================================================================================
  |                                       Emergency Trigger                                             |
  ===================================================================================================== */
 
-    private void EvaluateEmergencyTrigger()
+    private void EvaluateEmergencyTrigger(
+        string? pilotAction = null)
     {
-        if (emergencyTriggered || !_isReady)
+        if (emergencyTriggered ||
+            _showEmergencyModal ||
+            _emergencyModalHasBeenShown ||
+            !_isReady)
+        {
+            return;
+        }
+
+        var startCondition =
+            selectedRuntimeScenario.StartCondition;
+
+        if (!ScenarioStartConditionEvaluator.IsSatisfied(
+                startCondition,
+                cockpitState,
+                selectedAircraft))
         {
             return;
         }
 
         var elapsed =
-            DateTime.UtcNow - simulationStartedAt;
+            DateTime.UtcNow -
+            simulationStartedAt;
 
-        var shouldTrigger =
+        var triggerSatisfied =
             TriggerEvaluator.ShouldTrigger(
                 selectedScenarioRecord,
                 cockpitState,
                 elapsed,
-                manualTriggerRequested);
+                manualTriggerRequested,
+                pilotAction);
 
-        if (!shouldTrigger)
+        if (!triggerSatisfied)
         {
             return;
         }
 
-        ActivateEmergencyScenario();
+        _emergencyModalHasBeenShown = true;
+        _showEmergencyModal = true;
     }
 
     private void ActivateEmergencyScenario()
@@ -836,19 +950,24 @@ public partial class Simulation : IAsyncDisposable
 
         emergencyTriggered = true;
 
-        SimulationSession.MarkEmergencyTriggered();
-
         cockpitState =
-            selectedRuntimeScenario.Start(
-                cockpitLayout);
+            SimulationSession.MarkEmergencyTriggered(
+                cockpitState);
 
         cockpitState.DisplayedVerticalSpeed =
             cockpitState.VerticalSpeed;
 
-        _remainingSeconds =
-            selectedScenarioRecord.TimeLimitSeconds;
+        if (selectedScenarioRecord.TimeLimitSeconds > 0)
+        {
+            _remainingSeconds =
+                selectedScenarioRecord.TimeLimitSeconds;
+        }
+        else
+        {
+            _remainingSeconds = 0;
+        }
 
-        _showEmergencyModal = true;
+        _showEmergencyModal = false;
     }
     private void DismissEmergencyModal()
     {
@@ -959,7 +1078,14 @@ public partial class Simulation : IAsyncDisposable
 
                 EvaluateEmergencyTrigger();
 
-                if (emergencyTriggered && _completedReport is null)
+                if (emergencyTriggered)
+                {
+                    await EvaluateCockpitStateProcedureStepAsync();
+                }
+                
+                if (emergencyTriggered &&
+                    _completedReport is null &&
+                    selectedScenarioRecord.TimeLimitSeconds > 0)
                 {
                     _remainingSeconds =
                         SimulationSession.GetRemainingSeconds();
@@ -979,6 +1105,52 @@ public partial class Simulation : IAsyncDisposable
         {
             // Expected when leaving the page.
         }
+    }
+
+    private void ArmSelectedScenario()
+    {
+        simulationStartedAt = DateTime.UtcNow;
+
+        emergencyTriggered = false;
+        manualTriggerRequested = false;
+        _emergencyModalHasBeenShown = false;
+        _showEmergencyModal = false;
+
+        _completedReport = null;
+        _isCompleting = false;
+
+        _completedProcedureStepOrders.Clear();
+
+        procedureSteps =
+            SimulationEngine.GetProcedureSteps(
+                selectedScenarioRecord.EmergencyType,
+                cockpitLayout,
+                selectedScenarioRecord.Id);
+
+        foreach (var step in procedureSteps)
+        {
+            step.MaxResponseSeconds =
+                Math.Min(
+                    selectedScenarioRecord.TimeLimitSeconds,
+                    Math.Max(
+                        step.MaxResponseSeconds,
+                        10 + ((step.StepOrder - 1) * 15)));
+        }
+
+        _remainingSeconds =
+            selectedScenarioRecord.TimeLimitSeconds;
+
+        // Register the selected scenario with the service,
+        // but pass the CURRENT aircraft state.
+        cockpitState =
+            SimulationSession.StartSimulation(
+                userId: "test-pilot",
+                aircraftId: selectedAircraft.Id,
+                scenario: selectedScenarioRecord,
+                aircraft: cockpitLayout,
+                expectedSteps: procedureSteps,
+                initialState: cockpitState,
+                pilotName: "Pilot");
     }
 
     private Task CompleteAssessmentAsync()
@@ -1010,8 +1182,147 @@ public partial class Simulation : IAsyncDisposable
             _isCompleting = false;
         }
     }
+    private async Task HandlePilotActionAsync(
+        string actionName)
+    {
+        if (!_isReady ||
+            _completedReport is not null)
+        {
+            return;
+        }
 
+        if (!emergencyTriggered)
+        {
+            EvaluateEmergencyTrigger(
+                actionName);
 
+            return;
+        }
+
+        var nextExpectedStep =
+            procedureSteps
+                .OrderBy(step => step.StepOrder)
+                .FirstOrDefault(step =>
+                    !_completedProcedureStepOrders.Contains(
+                        step.StepOrder));
+        if (nextExpectedStep is not null &&
+            nextExpectedStep.ValidationType ==
+                ProcedureValidationType.CockpitState)
+        {
+            _latestInstructorFeedback =
+                new AiInstructorFeedback
+                {
+                    Severity = "Information",
+                    Message =
+                        $"Complete the current procedure step first: " +
+                        $"{nextExpectedStep.Instruction}"
+                };
+
+            return;
+        }
+
+        var matchingStep =
+            procedureSteps.FirstOrDefault(
+                step =>
+                    step.ValidationType ==
+                        ProcedureValidationType.PilotAction &&
+                    string.Equals(
+                        step.CorrectAction,
+                        actionName,
+                        StringComparison.OrdinalIgnoreCase));
+
+        var selectedOrder =
+            matchingStep?.StepOrder ??
+            Math.Max(
+                1,
+                CompletedStepCount + 1);
+
+        cockpitState =
+            SimulationSession.SubmitPilotAction(
+                actionName,
+                selectedOrder);
+
+        var recordedAction =
+            SimulationSession.PilotActions.LastOrDefault();
+
+        if (recordedAction is null)
+        {
+            return;
+        }
+
+        if (recordedAction.WasCorrect &&
+            recordedAction.WasInCorrectOrder)
+        {
+            if (recordedAction.ExpectedStepOrder.HasValue)
+            {
+                _completedProcedureStepOrders.Add(
+                    recordedAction.ExpectedStepOrder.Value);
+            }
+
+            _latestInstructorFeedback =
+                new AiInstructorFeedback
+                {
+                    Severity =
+                        recordedAction.WasWithinTimeLimit
+                            ? "Success"
+                            : "Warning",
+
+                    Message =
+                        recordedAction.WasWithinTimeLimit
+                            ? $"Correct action: {actionName}."
+                            : $"Correct action, but performed late: {actionName}."
+                };
+        }
+        else if (recordedAction.WasCorrect)
+        {
+            _latestInstructorFeedback =
+                new AiInstructorFeedback
+                {
+                    Severity = "Warning",
+
+                    Message =
+                        $"'{actionName}' is part of the procedure, " +
+                        "but it was performed out of sequence.",
+
+                    RecommendedAction =
+                        GetNextExpectedInstruction()
+                };
+        }
+        else
+        {
+            _latestInstructorFeedback =
+                new AiInstructorFeedback
+                {
+                    Severity = "Warning",
+
+                    Message =
+                        $"'{actionName}' is not the expected procedure action.",
+
+                    RecommendedAction =
+                        GetNextExpectedInstruction()
+                };
+        }
+
+        if (CompletedStepCount ==
+            procedureSteps.Count &&
+            procedureSteps.Count > 0)
+        {
+            await CompleteAssessmentAsync(
+                "All procedure steps were completed.");
+        }
+
+        await InvokeAsync(
+            StateHasChanged);
+    }
+    private string? GetNextExpectedInstruction()
+    {
+        return procedureSteps
+            .OrderBy(step => step.StepOrder)
+            .FirstOrDefault(step =>
+                !_completedProcedureStepOrders.Contains(
+                    step.StepOrder))
+            ?.Instruction;
+    }
 
 
     private async Task ToggleVoiceControlAsync()
@@ -1054,13 +1365,14 @@ public partial class Simulation : IAsyncDisposable
             !emergencyTriggered ||
             _completedReport is not null)
         {
-            _latestInstructorFeedback = new AiInstructorFeedback
-            {
-                Severity = "Information",
-                Message =
-                    "The emergency assessment must be active before " +
-                    "commands can be processed."
-            };
+            _latestInstructorFeedback =
+                new AiInstructorFeedback
+                {
+                    Severity = "Information",
+                    Message =
+                        "The emergency assessment must be active before " +
+                        "commands can be processed."
+                };
 
             await InvokeAsync(StateHasChanged);
             return;
@@ -1073,15 +1385,16 @@ public partial class Simulation : IAsyncDisposable
 
         if (request is null)
         {
-            _latestInstructorFeedback = new AiInstructorFeedback
-            {
-                Severity = "Warning",
-                Message =
-                    $"I could not match '{transcript}' to an " +
-                    "available cockpit control.",
-                RecommendedAction =
-                    "Use the instrument name, action and value."
-            };
+            _latestInstructorFeedback =
+                new AiInstructorFeedback
+                {
+                    Severity = "Warning",
+                    Message =
+                        $"I could not match '{transcript}' to an " +
+                        "available cockpit control.",
+                    RecommendedAction =
+                        "Use the instrument name, action and value."
+                };
 
             await JSRuntime.InvokeVoidAsync(
                 "aeroVoice.speak",
@@ -1100,14 +1413,42 @@ public partial class Simulation : IAsyncDisposable
         if (result.Succeeded)
         {
             var matchedStep =
-                procedureSteps.FirstOrDefault(step =>
-                    step.CorrectAction.Equals(
-                        result.ActionName,
-                        StringComparison.OrdinalIgnoreCase));
+                procedureSteps.FirstOrDefault(
+                    step =>
+                        step.ValidationType ==
+                            ProcedureValidationType.PilotAction &&
+                        step.CorrectAction.Equals(
+                            result.ActionName,
+                            StringComparison.OrdinalIgnoreCase));
 
             var selectedOrder =
                 matchedStep?.StepOrder ??
-                Math.Max(1, CompletedStepCount + 1);
+                Math.Max(
+                    1,
+                    CompletedStepCount + 1);
+
+            var nextExpectedStep =
+                procedureSteps
+                    .OrderBy(step => step.StepOrder)
+                    .FirstOrDefault(step =>
+                        !_completedProcedureStepOrders.Contains(
+                            step.StepOrder));
+            
+            if (nextExpectedStep is not null &&
+                nextExpectedStep.ValidationType ==
+                    ProcedureValidationType.CockpitState)
+            {
+                _latestInstructorFeedback =
+                    new AiInstructorFeedback
+                    {
+                        Severity = "Information",
+                        Message =
+                            $"Complete the current procedure step first: " +
+                            $"{nextExpectedStep.Instruction}"
+                    };
+
+                return;
+            }
 
             cockpitState =
                 SimulationSession.RecordPilotAction(
@@ -1115,10 +1456,18 @@ public partial class Simulation : IAsyncDisposable
                     selectedOrder,
                     cockpitState);
 
-            if (matchedStep is not null)
+            var recordedAction =
+                SimulationSession.PilotActions.LastOrDefault();
+
+            if (recordedAction is
+                {
+                    WasCorrect: true,
+                    WasInCorrectOrder: true,
+                    ExpectedStepOrder: not null
+                })
             {
                 _completedProcedureStepOrders.Add(
-                    matchedStep.StepOrder);
+                    recordedAction.ExpectedStepOrder.Value);
             }
         }
 
@@ -1129,7 +1478,8 @@ public partial class Simulation : IAsyncDisposable
                 SimulationSession.PilotActions,
                 _remainingSeconds);
 
-        _voiceStatus = result.SpokenFeedback;
+        _voiceStatus =
+            result.SpokenFeedback;
 
         await JSRuntime.InvokeVoidAsync(
             "aeroVoice.speak",
@@ -1233,6 +1583,33 @@ public partial class Simulation : IAsyncDisposable
             ?? cockpitState.Engines.FirstOrDefault(e => e.Number == 2)
             ?? cockpitState.Engines.FirstOrDefault();
     }
+    private async Task HandleEngineStatusFocusAsync(
+        EngineState engine)
+    {
+        if (!emergencyTriggered)
+        {
+            return;
+        }
+
+        var nextStep =
+            procedureSteps
+                .OrderBy(step => step.StepOrder)
+                .FirstOrDefault(step =>
+                    !_completedProcedureStepOrders.Contains(
+                        step.StepOrder));
+
+        if (nextStep is null ||
+            !string.Equals(
+                nextStep.CorrectAction,
+                "Check Engine Status",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        await HandlePilotActionAsync(
+            "Check Engine Status");
+    }
     private async Task ActivateFireSuppression()
     {
         var engine = GetAffectedEngine();
@@ -1288,6 +1665,23 @@ public partial class Simulation : IAsyncDisposable
             engine.Running = true;
         }
     }
+    private void HandleThrottleChanged(
+        EngineState engine,
+        double power)
+    {
+        engine.Power = power;
+
+        if (power > 0 &&
+            !engine.FuelCutoff)
+        {
+            engine.Running = true;
+        }
+
+        if (power <= 0)
+        {
+            engine.Power = 0;
+        }
+    }
     private void HandleFuelControlChanged(
     EngineState engine)
     {
@@ -1335,6 +1729,23 @@ public partial class Simulation : IAsyncDisposable
 
         await InvokeAsync(StateHasChanged);
 
+        var nextStep =
+            procedureSteps
+                .OrderBy(step => step.StepOrder)
+                .FirstOrDefault(step =>
+                    !_completedProcedureStepOrders.Contains(
+                        step.StepOrder));
+
+        if (nextStep is not null &&
+            string.Equals(
+                nextStep.CorrectAction,
+                "Transmit Emergency",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            await HandlePilotActionAsync(
+                "Transmit Emergency");
+        }
+
         await Task.Delay(750);
 
         cockpitState.RadioTransmitting = false;
@@ -1365,13 +1776,36 @@ public partial class Simulation : IAsyncDisposable
     }
 
 
-    private void HandleSatelliteEmergency()
+    private async Task HandleSatelliteEmergency()
     {
         if (!cockpitState.SatellitePhoneConnected)
         {
             return;
         }
 
-        // Eventually record this as a pilot action.
+        cockpitState.CommunicationStatus =
+            "Emergency message transmitted by satellite.";
+
+        await HandlePilotActionAsync(
+            "Declare Emergency");
+    }
+    /* ====================================================================================================
+     |                                          Debug Controls                                              |
+     ===================================================================================================== */
+     private void DebugSetCruiseAltitude()
+    {
+        cockpitState.Altitude = 12_000;
+        cockpitState.Airspeed = 110;
+        cockpitState.VerticalSpeed = 0;
+        cockpitState.DisplayedVerticalSpeed = 0;
+        cockpitState.Pitch = 0;
+        cockpitState.Bank = 0;
+        cockpitState.FlightPhase = "Cruise";
+
+        foreach (var engine in cockpitState.Engines)
+        {
+            engine.Running = true;
+            engine.Power = 75;
+        }
     }
 }

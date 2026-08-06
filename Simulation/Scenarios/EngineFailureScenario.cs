@@ -9,72 +9,249 @@ public class EngineFailureScenario : ISimulationScenario
 
     public string ScenarioType => "Engine Failure";
 
-    public CockpitState Start(CockpitLayoutDefinition aircraft)
-    {
-        var defaults = aircraft.DefaultState;
-        var engines = Enumerable.Range(1, aircraft.EngineCount)
-            .Select(number => new EngineState
-            {
-                Number = number,
-                Power = defaults.NormalEnginePower,
-                Running = true,
-                FuelPercentage = defaults.FuelPercentage
-            })
-            .ToList();
-
-        var failedEngineNumber = aircraft.EngineCount >= 2 ? 2 : aircraft.EngineCount;
-        if (failedEngineNumber > 0)
+    public ScenarioStartCondition StartCondition =>
+        new()
         {
-            var failedEngine = engines.FirstOrDefault(e => e.Number == failedEngineNumber);
-            if (failedEngine is not null)
-            {
-                failedEngine.Power = 0;
-                failedEngine.Running = false;
-            }
+            MinimumAltitude = 1_500,
+            MinimumAirspeed = 70,
+            RequiresAircraftAirborne = true,
+            RequiresEnginesRunning = true
+        };
+
+    public CockpitState Start(
+        CockpitLayoutDefinition aircraft,
+        CockpitState currentState)
+    {
+        ArgumentNullException.ThrowIfNull(aircraft);
+        ArgumentNullException.ThrowIfNull(currentState);
+
+        if (currentState.Engines.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"{aircraft.Name} cannot run the engine-failure scenario " +
+                "because no engines are available in the cockpit state.");
         }
 
-        return new CockpitState
+        var failedEngineNumber =
+            currentState.Engines.Count >= 2
+                ? 2
+                : 1;
+
+        var failedEngine =
+            currentState.Engines.FirstOrDefault(
+                engine =>
+                    engine.Number ==
+                    failedEngineNumber);
+
+        if (failedEngine is null)
         {
-            Airspeed = defaults.CruiseAirspeed,
-            Altitude = defaults.CruiseAltitude,
-            Heading = defaults.DefaultHeading,
-            VerticalSpeed = defaults.DefaultVerticalSpeed,
-            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
-            Pitch = defaults.DefaultPitch,
-            Bank = defaults.DefaultBank,
-            FuelPercentage = defaults.FuelPercentage,
-            Engines = engines,
-            AlertMessage = $"{aircraft.Name}: ENGINE {failedEngineNumber} FAILURE"
-        };
+            throw new InvalidOperationException(
+                $"Engine {failedEngineNumber} was not found.");
+        }
+
+        failedEngine.Power = 0;
+        failedEngine.Running = false;
+
+        // Give the pilot something real to recover from.
+        currentState.Bank =
+            Math.Clamp(
+                currentState.Bank + 8,
+                -30,
+                30);
+
+        currentState.VerticalSpeed =
+            Math.Min(
+                currentState.VerticalSpeed,
+                -500);
+
+        currentState.AlertMessage =
+            $"{aircraft.Name}: ENGINE {failedEngineNumber} FAILURE";
+
+        return currentState;
     }
 
-    public List<ScenarioProcedureStep> GetProcedureSteps(CockpitLayoutDefinition aircraft, int scenarioId)
+    public List<ScenarioProcedureStep> GetProcedureSteps(
+        CockpitLayoutDefinition aircraft,
+        int scenarioId)
     {
+        var failedEngineNumber =
+            aircraft.EngineCount >= 2
+                ? 2
+                : 1;
+
         return
         [
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 1, Instruction = "Maintain aircraft control", CorrectAction = "Stabilize Aircraft", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 2, Instruction = "Reduce affected engine thrust", CorrectAction = "Reduce Throttle", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 3, Instruction = "Shut down failed engine", CorrectAction = "Engine Shutdown", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 4, Instruction = "Declare emergency", CorrectAction = "Declare Emergency", IsSafetyCritical = false },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 5, Instruction = "Prepare single-engine landing", CorrectAction = "Prepare Landing", IsSafetyCritical = false }
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 1,
+                Instruction = "Maintain aircraft control",
+                CorrectAction = "Stabilize Aircraft",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 2,
+                Instruction =
+                    aircraft.EngineCount >= 2
+                        ? $"Confirm engine {failedEngineNumber} failure"
+                        : "Confirm total engine power loss",
+                CorrectAction = "Confirm Engine Failure",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 3,
+                Instruction =
+                    aircraft.EngineCount >= 2
+                        ? $"Shut down engine {failedEngineNumber}"
+                        : "Secure the failed engine and fuel source",
+                CorrectAction =
+                    $"Engine Shutdown {failedEngineNumber}",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 4,
+                Instruction = "Declare emergency",
+                CorrectAction = "Declare Emergency",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = false
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 5,
+                Instruction =
+                    aircraft.EngineCount >= 2
+                        ? "Prepare for a single-engine landing"
+                        : "Prepare for a forced landing",
+                CorrectAction = "Prepare Landing",
+                ValidationType =
+                    aircraft.EngineCount >= 2
+                        ? ProcedureValidationType.PilotAction
+                        : ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            }
         ];
     }
 
-    public CockpitState ApplyPilotAction(CockpitState state, string actionName)
+    public CockpitState ApplyPilotAction(
+        CockpitState state,
+        string actionName)
     {
-        if (actionName == "Stabilize Aircraft") state.VerticalSpeed = 0;
-        if (actionName == "Reduce Throttle")
+        ArgumentNullException.ThrowIfNull(state);
+
+        var failedEngine =
+            state.Engines.FirstOrDefault(
+                engine =>
+                    !engine.Running ||
+                    engine.Power <= 0)
+            ?? state.Engines.FirstOrDefault(
+                engine =>
+                    engine.Number ==
+                    (state.Engines.Count >= 2 ? 2 : 1));
+
+        switch (actionName)
         {
-            var engine = state.Engines.FirstOrDefault(e => e.Number == 2);
-            if (engine is not null) engine.Power = 0;
+            case "Confirm Engine Failure":
+                if (failedEngine is not null)
+                {
+                    state.AlertMessage =
+                        $"ENGINE {failedEngine.Number} FAILURE CONFIRMED";
+                }
+                break;
+
+            case "Declare Emergency":
+                state.AlertMessage =
+                    "EMERGENCY DECLARED - ENGINE FAILURE PROCEDURE ACTIVE";
+                break;
+
+            case "Prepare Landing":
+                state.AlertMessage =
+                    state.Engines.Count >= 2
+                        ? "SINGLE-ENGINE LANDING PREPARATION ACTIVE"
+                        : "FORCED-LANDING PREPARATION ACTIVE";
+                break;
         }
-        if (actionName == "Declare Emergency") state.AlertMessage = "EMERGENCY DECLARED - SINGLE ENGINE PROCEDURE ACTIVE";
+
         return state;
     }
 
-    public bool IsActionCorrect(CockpitLayoutDefinition aircraft, string actionName, int expectedStep)
+    public bool IsActionCorrect(
+        CockpitLayoutDefinition aircraft,
+        string actionName,
+        int expectedStep)
     {
-        var steps = GetProcedureSteps(aircraft, 0);
-        return steps.Any(s => s.StepOrder == expectedStep && s.CorrectAction == actionName);
+        return GetProcedureSteps(
+                aircraft,
+                scenarioId: 0)
+            .Any(step =>
+                step.StepOrder == expectedStep &&
+                step.ValidationType ==
+                    ProcedureValidationType.PilotAction &&
+                string.Equals(
+                    step.CorrectAction,
+                    actionName,
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool IsStepSatisfied(
+        CockpitState state,
+        int stepOrder)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        var failedEngineNumber =
+            state.Engines.Count >= 2
+                ? 2
+                : 1;
+
+        var failedEngine =
+            state.Engines.FirstOrDefault(
+                engine =>
+                    engine.Number ==
+                    failedEngineNumber);
+
+        return stepOrder switch
+        {
+            1 =>
+                Math.Abs(state.Bank) <= 5 &&
+                Math.Abs(state.Pitch) <= 8 &&
+                state.Airspeed >= 55,
+
+            3 =>
+                failedEngine is not null &&
+                failedEngine.Power <= 0 &&
+                !failedEngine.Running &&
+                failedEngine.FuelCutoff,
+            
+            5 =>
+                state.Engines.Count <= 1 &&
+                state.VerticalSpeed < 0 &&
+                state.Airspeed >= 60 &&
+                state.Airspeed <= 80,
+
+            _ => false
+        };
     }
 }

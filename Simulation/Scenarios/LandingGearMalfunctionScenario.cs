@@ -7,61 +7,173 @@ public class LandingGearMalfunctionScenario : ISimulationScenario
 {
     public int ScenarioId => 8;
 
-    public string ScenarioType => "Landing Gear Malfunction";
+    public string ScenarioType =>
+        "Landing Gear Malfunction";
 
-    public CockpitState Start(CockpitLayoutDefinition aircraft)
-    {
-        var defaults = aircraft.DefaultState;
-        var engines = Enumerable.Range(1, aircraft.EngineCount)
-            .Select(number => new EngineState
-            {
-                Number = number,
-                Power = defaults.NormalEnginePower,
-                Running = true,
-                FuelPercentage = defaults.FuelPercentage
-            })
-            .ToList();
-
-        return new CockpitState
+    public ScenarioStartCondition StartCondition =>
+        new()
         {
-            Airspeed = defaults.CruiseAirspeed,
-            Altitude = defaults.CruiseAltitude,
-            Heading = defaults.DefaultHeading,
-            VerticalSpeed = defaults.DefaultVerticalSpeed,
-            DisplayedVerticalSpeed = defaults.DefaultVerticalSpeed,
-            Pitch = defaults.DefaultPitch,
-            Bank = defaults.DefaultBank,
-            FuelPercentage = defaults.FuelPercentage,
-            Engines = engines,
-            AlertMessage = $"{aircraft.Name}: LANDING GEAR UNSAFE"
+            MinimumAltitude = 500,
+            MaximumAltitude = 3_000,
+            MinimumAirspeed = 60,
+            RequiredFlightPhase = "Approach",
+            RequiresAircraftAirborne = true,
+            RequiresEnginesRunning = true
         };
+
+    public CockpitState Start(
+        CockpitLayoutDefinition aircraft,
+        CockpitState currentState)
+    {
+        ArgumentNullException.ThrowIfNull(aircraft);
+        ArgumentNullException.ThrowIfNull(currentState);
+
+        currentState.AlertMessage =
+            $"{aircraft.Name}: LANDING GEAR UNSAFE";
+
+        return currentState;
     }
 
-    public List<ScenarioProcedureStep> GetProcedureSteps(CockpitLayoutDefinition aircraft, int scenarioId)
+    public List<ScenarioProcedureStep> GetProcedureSteps(
+        CockpitLayoutDefinition aircraft,
+        int scenarioId)
     {
         return
         [
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 1, Instruction = "Go around if unstable", CorrectAction = "Go Around", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 2, Instruction = "Check landing gear indication", CorrectAction = "Check Gear Status", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 3, Instruction = "Attempt alternate gear extension", CorrectAction = "Alternate Gear Extension", IsSafetyCritical = true },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 4, Instruction = "Declare emergency", CorrectAction = "Declare Emergency", IsSafetyCritical = false },
-            new() { EmergencyScenarioId = scenarioId, AircraftType = aircraft.Name, StepOrder = 5, Instruction = "Prepare emergency landing", CorrectAction = "Prepare Landing", IsSafetyCritical = false }
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 1,
+                Instruction =
+                    "Go around if the approach is unstable",
+                CorrectAction = "Go Around",
+                ValidationType =
+                    ProcedureValidationType.CockpitState,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 2,
+                Instruction =
+                    "Check the landing gear indications",
+                CorrectAction = "Check Gear Status",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 3,
+                Instruction =
+                    "Attempt the alternate landing gear extension procedure",
+                CorrectAction = "Alternate Gear Extension",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 4,
+                Instruction = "Declare emergency",
+                CorrectAction = "Declare Emergency",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = false
+            },
+
+            new ScenarioProcedureStep
+            {
+                EmergencyScenarioId = scenarioId,
+                AircraftType = aircraft.Name,
+                StepOrder = 5,
+                Instruction =
+                    "Prepare for an emergency landing",
+                CorrectAction = "Prepare Landing",
+                ValidationType =
+                    ProcedureValidationType.PilotAction,
+                IsSafetyCritical = true
+            }
         ];
     }
 
-    public CockpitState ApplyPilotAction(CockpitState state, string actionName)
+    public CockpitState ApplyPilotAction(
+        CockpitState state,
+        string actionName)
     {
-        if (actionName == "Alternate Gear Extension")
+        ArgumentNullException.ThrowIfNull(state);
+
+        switch (actionName)
         {
-            state.AlertMessage = "ALTERNATE GEAR EXTENSION ATTEMPTED";
+            case "Check Gear Status":
+                state.AlertMessage =
+                    "LANDING GEAR INDICATION CHECKED - " +
+                    "ONE OR MORE UNITS REMAIN UNSAFE";
+                break;
+
+            case "Alternate Gear Extension":
+                state.AlertMessage =
+                    "ALTERNATE GEAR EXTENSION ATTEMPTED";
+                break;
+
+            case "Declare Emergency":
+                state.AlertMessage =
+                    "EMERGENCY DECLARED - " +
+                    "LANDING GEAR MALFUNCTION";
+                break;
+
+            case "Prepare Landing":
+                state.AlertMessage =
+                    "EMERGENCY LANDING PREPARATION ACTIVE";
+                break;
         }
 
         return state;
     }
 
-    public bool IsActionCorrect(CockpitLayoutDefinition aircraft, string actionName, int expectedStep)
+    public bool IsActionCorrect(
+        CockpitLayoutDefinition aircraft,
+        string actionName,
+        int expectedStep)
     {
-        var steps = GetProcedureSteps(aircraft, 0);
-        return steps.Any(s => s.StepOrder == expectedStep && s.CorrectAction == actionName);
+        return GetProcedureSteps(
+                aircraft,
+                scenarioId: 0)
+            .Any(step =>
+                step.StepOrder == expectedStep &&
+                step.ValidationType ==
+                    ProcedureValidationType.PilotAction &&
+                string.Equals(
+                    step.CorrectAction,
+                    actionName,
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool IsStepSatisfied(
+        CockpitState state,
+        int stepOrder)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return stepOrder switch
+        {
+            1 =>
+                state.VerticalSpeed >= 300 &&
+                state.Pitch >= 5 &&
+                state.Engines.Count > 0 &&
+                state.Engines.Average(
+                    engine => engine.Power) >= 80,
+
+            _ => false
+        };
     }
 }

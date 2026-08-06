@@ -1114,109 +1114,154 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             transcript);
 
         string? scenarioAction =
-            transcript.ToLowerInvariant() switch
-            {
-                "maintain aircraft control" =>
-                    "Stabilize Aircraft",
+    transcript.ToLowerInvariant() switch
+    {
+        // ============================
+        // Bird Strike
+        // ============================
 
-                "maintain control" =>
-                    "Stabilize Aircraft",
+        "maintain aircraft control" =>
+            "Stabilize Aircraft",
 
-                "keep control" =>
-                    "Stabilize Aircraft",
+        "maintain control" =>
+            "Stabilize Aircraft",
 
-                "fly the aircraft" =>
-                    "Stabilize Aircraft",
+        "keep control" =>
+            "Stabilize Aircraft",
 
-                "stabilize aircraft" =>
-                    "Stabilize Aircraft",
+        "fly the aircraft" =>
+            "Stabilize Aircraft",
 
-                "stabilise aircraft" =>
-                    "Stabilize Aircraft",
+        "stabilize aircraft" =>
+            "Stabilize Aircraft",
 
-                "check engine status" =>
-                    "Check Engine Status",
+        "stabilise aircraft" =>
+            "Stabilize Aircraft",
 
-                "assess engine performance" =>
-                    "Check Engine Status",
+        "check engine status" =>
+            "Check Engine Status",
 
-                "check engine" =>
-                    "Check Engine Status",
+        "assess engine performance" =>
+            "Check Engine Status",
 
-                "reduce throttle" =>
-                    "Reduce Throttle",
+        "check engine" =>
+            "Check Engine Status",
 
-                "reduce engine power" =>
-                    "Reduce Throttle",
+        "reduce throttle" =>
+            "Reduce Throttle",
 
-                "throttle back" =>
-                    "Reduce Throttle",
+        "reduce engine power" =>
+            "Reduce Throttle",
 
-                "declare emergency" =>
-                    "Declare Emergency",
+        "throttle back" =>
+            "Reduce Throttle",
 
-                "prepare landing" =>
-                    "Prepare Landing",
+        "declare emergency" =>
+            "Declare Emergency",
 
-                "prepare for landing" =>
-                    "Prepare Landing",
+        "prepare landing" =>
+            "Prepare Landing",
 
-                "don oxygen masks" =>
-                    "Oxygen Masks",
+        "prepare for landing" =>
+            "Prepare Landing",
 
-                "oxygen masks on" =>
-                    "Oxygen Masks",
+        // ============================
+        // Cabin Depressurization
+        // ============================
 
-                "put on oxygen masks" =>
-                    "Oxygen Masks",
+        "don oxygen masks" =>
+            "Oxygen Masks",
 
-                "crew oxygen masks on" =>
-                    "Oxygen Masks",
+        "oxygen masks on" =>
+            "Oxygen Masks",
 
-                "confirm oxygen flow" =>
-                    "Oxygen Masks",
+        "oxygen mask on" =>
+            "Oxygen Masks",
 
-                "begin emergency descent" =>
-                    "Emergency Descent",
+        "put on oxygen masks" =>
+            "Oxygen Masks",
 
-                "start emergency descent" =>
-                    "Emergency Descent",
+        "put oxygen masks on" =>
+            "Oxygen Masks",
 
-                "initiate emergency descent" =>
-                    "Emergency Descent",
+        "crew oxygen masks on" =>
+            "Oxygen Masks",
 
-                "emergency descent" =>
-                    "Emergency Descent",
+        "confirm oxygen flow" =>
+            "Oxygen Masks",
 
-                "descend immediately" =>
-                    "Emergency Descent",
+        "begin emergency descent" =>
+            "Emergency Descent",
 
-                "set emergency code" =>
-                    "Set Emergency Code",
+        "start emergency descent" =>
+            "Emergency Descent",
 
-                "set transponder seven seven zero zero" =>
-                    "Set Emergency Code",
+        "initiate emergency descent" =>
+            "Emergency Descent",
 
-                "squawk seven seven zero zero" =>
-                    "Set Emergency Code",
+        "emergency descent" =>
+            "Emergency Descent",
 
-                "squawk emergency" =>
-                    "Set Emergency Code",
+        "begin descent" =>
+            "Emergency Descent",
 
-                "level off" =>
-                    "Level Off",
+        "descend immediately" =>
+            "Emergency Descent",
 
-                "level at safe altitude" =>
-                    "Level Off",
+        "descend now" =>
+            "Emergency Descent",
 
-                "level at ten thousand feet" =>
-                    "Level Off",
+        "declare a mayday" =>
+            "Declare Emergency",
 
-                "stop descent" =>
-                    "Level Off",
+        "mayday" =>
+            "Declare Emergency",
 
-                _ => null
-            };
+        "set emergency code" =>
+            "Set Emergency Code",
+
+        "set transponder seven seven zero zero" =>
+            "Set Emergency Code",
+
+        "set transponder to seven seven zero zero" =>
+            "Set Emergency Code",
+
+        "transponder seven seven zero zero" =>
+            "Set Emergency Code",
+
+        "squawk seven seven zero zero" =>
+            "Set Emergency Code",
+
+        "squawk 7700" =>
+            "Set Emergency Code",
+
+        "squawk emergency" =>
+            "Set Emergency Code",
+
+        "level off" =>
+            "Level Off",
+
+        "level at safe altitude" =>
+            "Level Off",
+
+        "level at save altitude" =>
+            "Level Off",
+
+        "level at a safe altitude" =>
+            "Level Off",
+
+        "level at ten thousand feet" =>
+            "Level Off",
+
+        "level at 10000 feet" =>
+            "Level Off",
+
+        "stop descent" =>
+            "Level Off",
+
+        _ => null
+    };
+
 
         if (!_isReady ||
             !emergencyTriggered ||
@@ -1237,10 +1282,12 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         if (scenarioAction is not null)
         {
             var step = procedureSteps.FirstOrDefault(x =>
-                string.Equals(
-                    x.CorrectAction,
-                    scenarioAction,
-                    StringComparison.OrdinalIgnoreCase));
+                !_completedProcedureStepOrders.Contains(
+                x.StepOrder) &&
+            string.Equals(
+                x.CorrectAction,
+                scenarioAction,
+                StringComparison.OrdinalIgnoreCase));
 
             if (step is not null)
             {

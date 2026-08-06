@@ -1161,6 +1161,60 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 "prepare for landing" =>
                     "Prepare Landing",
 
+                "don oxygen masks" =>
+                    "Oxygen Masks",
+
+                "oxygen masks on" =>
+                    "Oxygen Masks",
+
+                "put on oxygen masks" =>
+                    "Oxygen Masks",
+
+                "crew oxygen masks on" =>
+                    "Oxygen Masks",
+
+                "confirm oxygen flow" =>
+                    "Oxygen Masks",
+
+                "begin emergency descent" =>
+                    "Emergency Descent",
+
+                "start emergency descent" =>
+                    "Emergency Descent",
+
+                "initiate emergency descent" =>
+                    "Emergency Descent",
+
+                "emergency descent" =>
+                    "Emergency Descent",
+
+                "descend immediately" =>
+                    "Emergency Descent",
+
+                "set emergency code" =>
+                    "Set Emergency Code",
+
+                "set transponder seven seven zero zero" =>
+                    "Set Emergency Code",
+
+                "squawk seven seven zero zero" =>
+                    "Set Emergency Code",
+
+                "squawk emergency" =>
+                    "Set Emergency Code",
+
+                "level off" =>
+                    "Level Off",
+
+                "level at safe altitude" =>
+                    "Level Off",
+
+                "level at ten thousand feet" =>
+                    "Level Off",
+
+                "stop descent" =>
+                    "Level Off",
+
                 _ => null
             };
 

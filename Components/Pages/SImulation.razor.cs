@@ -95,6 +95,8 @@ public partial class Simulation : IAsyncDisposable
 
     private string? _lastVoiceTranscript;
 
+    private string? _previousVoiceTranscript;
+
     private AiInstructorFeedback? _latestInstructorFeedback;
 
     private IReadOnlyList<EmergencyScenario>
@@ -562,6 +564,9 @@ public partial class Simulation : IAsyncDisposable
         _isCompleting = false;
         _remainingSeconds = selectedScenarioRecord.TimeLimitSeconds;
         _completedProcedureStepOrders.Clear();
+
+        _previousVoiceTranscript = null;
+        _lastVoiceTranscript = null;
 
         cockpitState.DisplayedVerticalSpeed =
             cockpitState.VerticalSpeed;
@@ -1092,32 +1097,72 @@ public partial class Simulation : IAsyncDisposable
         double confidence)
     {
         transcript = transcript.Trim();
+
+        if (string.Equals(
+                transcript,
+                _previousVoiceTranscript,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _previousVoiceTranscript = transcript;
         _lastVoiceTranscript = transcript;
 
-        string? scenarioAction = transcript.ToLowerInvariant() switch
-        {
-            "maintain aircraft control" => "Stabilize Aircraft",
-            "maintain control" => "Stabilize Aircraft",
-            "keep control" => "Stabilize Aircraft",
-            "fly the aircraft" => "Stabilize Aircraft",
-            "stabilize aircraft" => "Stabilize Aircraft",
-            "stabilise aircraft" => "Stabilize Aircraft",
+        Logger.LogInformation(
+            "Voice transcript received: {Transcript}",
+            transcript);
 
-            "check engine status" => "Check Engine Status",
-            "assess engine performance" => "Check Engine Status",
-            "check engine" => "Check Engine Status",
+        string? scenarioAction =
+            transcript.ToLowerInvariant() switch
+            {
+                "maintain aircraft control" =>
+                    "Stabilize Aircraft",
 
-            "reduce throttle" => "Reduce Throttle",
-            "reduce engine power" => "Reduce Throttle",
-            "throttle back" => "Reduce Throttle",
+                "maintain control" =>
+                    "Stabilize Aircraft",
 
-            "declare emergency" => "Declare Emergency",
+                "keep control" =>
+                    "Stabilize Aircraft",
 
-            "prepare landing" => "Prepare Landing",
-            "prepare for landing" => "Prepare Landing",
+                "fly the aircraft" =>
+                    "Stabilize Aircraft",
 
-            _ => null
-        };
+                "stabilize aircraft" =>
+                    "Stabilize Aircraft",
+
+                "stabilise aircraft" =>
+                    "Stabilize Aircraft",
+
+                "check engine status" =>
+                    "Check Engine Status",
+
+                "assess engine performance" =>
+                    "Check Engine Status",
+
+                "check engine" =>
+                    "Check Engine Status",
+
+                "reduce throttle" =>
+                    "Reduce Throttle",
+
+                "reduce engine power" =>
+                    "Reduce Throttle",
+
+                "throttle back" =>
+                    "Reduce Throttle",
+
+                "declare emergency" =>
+                    "Declare Emergency",
+
+                "prepare landing" =>
+                    "Prepare Landing",
+
+                "prepare for landing" =>
+                    "Prepare Landing",
+
+                _ => null
+            };
 
         if (!_isReady ||
             !emergencyTriggered ||

@@ -5,6 +5,7 @@ using AeroResponse.Data.Mongo;
 using AeroResponse.Data.Mongo.Accounts;
 using AeroResponse.Data.Mongo.Memberships;
 using AeroResponse.Data.Mongo.Payments;
+using AeroResponse.Data.Mongo.Referrals;
 using AeroResponse.Hubs;
 using AeroResponse.Repositories;
 using AeroResponse.Services;
@@ -25,7 +26,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents(options =>
+    {
+        options.DetailedErrors = true;
+    });
 
 // =========================================================
 // AUTHENTICATION AND AUTHORIZATION
@@ -151,6 +155,10 @@ builder.Services.AddSingleton<
 builder.Services.AddSingleton<
     MongoMemberTimelineRepository>();
 
+// MongoDB owner referral-code repository.
+builder.Services.AddSingleton<
+    MongoOwnerReferralCodeRepository>();
+
 // =========================================================
 // ASP.NET CORE IDENTITY
 // =========================================================
@@ -242,7 +250,6 @@ builder.Services.AddScoped<
     ICockpitLayoutProvider,
     CockpitLayoutProvider>();
 
-
 builder.Services.AddSingleton<
     SimulationEngine>();
 
@@ -262,16 +269,45 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     AiInstructorService>();
 
+// Creates, rotates and resolves owner invitation codes.
+builder.Services.AddSingleton<
+    OwnerReferralCodeService>();
+
 // =========================================================
 // BUILD APPLICATION
 // =========================================================
 
+// Create required MongoDB indexes.
 var app = builder.Build();
 
 // Apply Entity Framework migrations and seed the
 // initial application data.
 await SeedData.InitializeAsync(
     app.Services);
+
+// Create MongoDB indexes and initialise the existing
+// company-member counters.
+using (var scope = app.Services.CreateScope())
+{
+    var userAccountRepository =
+        scope.ServiceProvider
+            .GetRequiredService<
+                MongoUserAccountRepository>();
+
+    var referralCodeRepository =
+        scope.ServiceProvider
+            .GetRequiredService<
+                MongoOwnerReferralCodeRepository>();
+
+    await userAccountRepository
+        .EnsureIndexesAsync();
+
+    await referralCodeRepository
+        .EnsureIndexesAsync();
+
+    await userAccountRepository
+        .SynchronizeAllOwnerMemberCountsAsync();
+}
 
 // =========================================================
 // HTTP REQUEST PIPELINE

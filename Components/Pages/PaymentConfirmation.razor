@@ -1,0 +1,398 @@
+@page "/payment-confirmation"
+@layout MainLayout
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using AeroResponse.Data.Mongo.Accounts
+@using AeroResponse.Data.Mongo.Memberships
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject MongoUserAccountRepository MongoUserAccounts
+@inject MongoMemberTimelineRepository MemberTimelines
+@inject NavigationManager NavigationManager
+@inject ILogger<PaymentConfirmation> Logger
+
+<PageTitle>Payment Confirmed | AeroResponse</PageTitle>
+
+<section class="confirmation-page">
+    <div class="confirmation-container">
+
+        @if (isLoading)
+        {
+            <div class="confirmation-card confirmation-state"
+                 role="status">
+                Loading your membership details...
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="confirmation-card confirmation-error"
+                 role="alert">
+
+                <div class="confirmation-icon error-icon"
+                     aria-hidden="true">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                </div>
+
+                <h1>Confirmation unavailable</h1>
+
+                <p>@errorMessage</p>
+
+                <a class="primary-action"
+                   href="/membership">
+                    Return to memberships
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="confirmation-card">
+
+                <div class="confirmation-icon success-icon"
+                     aria-hidden="true">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+
+                <p class="confirmation-eyebrow">
+                    Payment confirmed
+                </p>
+
+                <h1>Your membership is active</h1>
+
+                <p class="confirmation-introduction">
+                    Thank you, @displayName. Your AeroResponse
+                    membership has been successfully set up.
+                </p>
+
+                <div class="confirmation-details">
+                    <div>
+                        <span>Membership</span>
+                        <strong>@PlanName</strong>
+                    </div>
+
+                    <div>
+                        <span>Account type</span>
+                        <strong>@AccountTypeLabel</strong>
+                    </div>
+
+                    <div>
+                        <span>Billing</span>
+                        <strong>@BillingLabel</strong>
+                    </div>
+
+                    <div>
+                        <span>Started</span>
+                        <strong>@StartedDateLabel</strong>
+                    </div>
+
+                    <div>
+                        <span>
+                            @(renewsAutomatically
+                                ? "Next renewal"
+                                : "Membership expires")
+                        </span>
+
+                        <strong>@ExpiryDateLabel</strong>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(businessName))
+                    {
+                        <div>
+                            <span>Business</span>
+                            <strong>@businessName</strong>
+                        </div>
+                    }
+                </div>
+
+                <div class="confirmation-notice">
+                    <i class="fa-solid fa-envelope"
+                       aria-hidden="true"></i>
+
+                    <p>
+                        A membership receipt would normally be sent
+                        to <strong>@email</strong>. This demonstration
+                        checkout does not process a real payment.
+                    </p>
+                </div>
+
+                <div class="confirmation-actions">
+                    <a class="primary-action"
+                       href="/user">
+                        View account
+                    </a>
+
+                    <a class="secondary-action"
+                       href="/">
+                        Return home
+                    </a>
+                </div>
+            </div>
+        }
+
+    </div>
+</section>
+
+@code {
+    private bool isLoading = true;
+    private bool renewsAutomatically;
+
+    private string? errorMessage;
+    private string identityUserId = string.Empty;
+    private string displayName = "Member";
+    private string email = string.Empty;
+    private string accountType =
+        MongoUserAccount.DefaultAccountType;
+
+    private string? businessName;
+
+    private MongoMemberTimeline? membership;
+
+    private string PlanName =>
+        membership?.PlanName
+        ?? "Membership";
+
+    private string BillingLabel =>
+        FormatValue(
+            membership?.BillingFrequency);
+
+    private string AccountTypeLabel =>
+        accountType switch
+        {
+            "pilot" =>
+                "Pilot",
+
+            "trainer" =>
+                "Trainer",
+
+            "owner_small" =>
+                "Small Commercial",
+
+            "owner_large" =>
+                "Large Commercial",
+
+            _ =>
+                "Guest"
+        };
+
+    private string StartedDateLabel =>
+        membership is null
+            ? "Not available"
+            : FormatDate(
+                membership.MembershipStartedAtUtc);
+
+    private string ExpiryDateLabel =>
+        membership is null
+            ? "Not available"
+            : FormatDate(
+                membership.MembershipExpiresAtUtc);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var user =
+            authenticationState.User;
+
+        identityUserId =
+            user.FindFirstValue(
+                ClaimTypes.NameIdentifier)
+            ?? string.Empty;
+
+        if (user.Identity?.IsAuthenticated != true ||
+            string.IsNullOrWhiteSpace(identityUserId))
+        {
+            errorMessage =
+                "You must be signed in to view this page.";
+
+            isLoading = false;
+            return;
+        }
+
+        email =
+            user.FindFirstValue(
+                ClaimTypes.Email)
+            ?? user.Identity?.Name
+            ?? string.Empty;
+
+        displayName =
+            GetNameFromEmail(email);
+
+        try
+        {
+            var accountTask =
+                MongoUserAccounts
+                    .FindByIdentityUserIdAsync(
+                        identityUserId);
+
+            var membershipTask =
+                MemberTimelines
+                    .FindByIdentityUserIdAsync(
+                        identityUserId);
+
+            await Task.WhenAll(
+                accountTask,
+                membershipTask);
+
+            var account =
+                await accountTask;
+
+            membership =
+                await membershipTask;
+
+            if (account is not null)
+            {
+                var fullName =
+                    BuildDisplayName(
+                        account.FirstName,
+                        account.Surname);
+
+                if (!string.IsNullOrWhiteSpace(fullName))
+                {
+                    displayName =
+                        fullName;
+                }
+
+                if (!string.IsNullOrWhiteSpace(account.Email))
+                {
+                    email =
+                        account.Email;
+                }
+
+                accountType =
+                    NormaliseAccountType(
+                        account.AccountType);
+
+                businessName =
+                    account.BusinessName?.Trim();
+            }
+
+            if (membership is null)
+            {
+                errorMessage =
+                    "No completed membership was found " +
+                    "for this account.";
+
+                return;
+            }
+
+            /*
+             * Set to true when a saved card exists if you
+             * later inject the saved payment repository.
+             *
+             * For now, monthly and annual memberships are
+             * treated as automatically renewing.
+             */
+            renewsAutomatically = true;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(
+                exception,
+                "Could not load payment confirmation " +
+                "for user {UserId}.",
+                identityUserId);
+
+            errorMessage =
+                "Your membership was created, but its " +
+                "confirmation details could not be loaded.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private static string BuildDisplayName(
+        string? firstName,
+        string? surname)
+    {
+        return string.Join(
+            " ",
+            new[]
+            {
+                firstName?.Trim(),
+                surname?.Trim()
+            }
+            .Where(value =>
+                !string.IsNullOrWhiteSpace(value)));
+    }
+
+    private static string GetNameFromEmail(
+        string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "Member";
+        }
+
+        var atIndex =
+            value.IndexOf(
+                '@',
+                StringComparison.Ordinal);
+
+        return atIndex > 0
+            ? value[..atIndex]
+            : value;
+    }
+
+    private static string NormaliseAccountType(
+        string? value)
+    {
+        return value?
+            .Trim()
+            .ToLowerInvariant() switch
+        {
+            "pilot" =>
+                "pilot",
+
+            "trainer" =>
+                "trainer",
+
+            "owner_small" =>
+                "owner_small",
+
+            "owner_large" =>
+                "owner_large",
+
+            _ =>
+                MongoUserAccount.DefaultAccountType
+        };
+    }
+
+    private static string FormatDate(
+        DateTime utcDate)
+    {
+        return utcDate
+            .ToLocalTime()
+            .ToString("d MMMM yyyy");
+    }
+
+    private static string FormatValue(
+        string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "Not available";
+        }
+
+        var cleaned =
+            value
+                .Trim()
+                .Replace("_", " ")
+                .Replace("-", " ");
+
+        return string.Join(
+            " ",
+            cleaned
+                .Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries)
+                .Select(word =>
+                    char.ToUpperInvariant(word[0]) +
+                    word[1..].ToLowerInvariant()));
+    }
+}

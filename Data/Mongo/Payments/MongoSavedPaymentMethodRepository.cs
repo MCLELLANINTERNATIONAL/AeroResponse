@@ -25,7 +25,8 @@ public sealed class MongoSavedPaymentMethodRepository
             string identityUserId,
             CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(identityUserId))
+        if (string.IsNullOrWhiteSpace(
+            identityUserId))
         {
             return null;
         }
@@ -35,14 +36,16 @@ public sealed class MongoSavedPaymentMethodRepository
                 payment =>
                     payment.IdentityUserId ==
                     identityUserId)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(
+                cancellationToken);
     }
 
     public async Task UpsertAsync(
         MongoSavedPaymentMethod paymentMethod,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(paymentMethod);
+        ArgumentNullException.ThrowIfNull(
+            paymentMethod);
 
         if (string.IsNullOrWhiteSpace(
             paymentMethod.IdentityUserId))
@@ -120,5 +123,37 @@ public sealed class MongoSavedPaymentMethodRepository
                 IsUpsert = true
             },
             cancellationToken);
+    }
+
+    public async Task DeleteByIdentityUserIdAsync(
+        string identityUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(
+            identityUserId))
+        {
+            throw new ArgumentException(
+                "The Identity user ID is required.",
+                nameof(identityUserId));
+        }
+
+        var filter =
+            Builders<MongoSavedPaymentMethod>
+                .Filter
+                .Eq(
+                    payment =>
+                        payment.IdentityUserId,
+                    identityUserId);
+
+        var result =
+            await _collection.DeleteOneAsync(
+                filter,
+                cancellationToken);
+
+        if (result.DeletedCount == 0)
+        {
+            throw new InvalidOperationException(
+                "No saved payment method was found.");
+        }
     }
 }

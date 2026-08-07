@@ -875,4 +875,74 @@ public sealed class MongoUserAccountRepository
             ? int.MaxValue
             : (int)count;
     }
+
+    public async Task DeleteAccountAsync(
+        string identityUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(identityUserId))
+        {
+            return;
+        }
+
+        var account =
+            await FindByIdentityUserIdAsync(
+                identityUserId,
+                cancellationToken);
+
+        if (account is null)
+        {
+            return;
+        }
+
+        // If a pilot or trainer is connected to a company,
+        // free the company's occupied seat.
+        if (!string.IsNullOrWhiteSpace(
+                account.OwnerIdentityUserId) &&
+            CompanyMemberLimits.IsSupportedMemberType(
+                account.AccountType))
+        {
+            await ReleaseCompanySeatAsync(
+                account.OwnerIdentityUserId,
+                account.AccountType,
+                cancellationToken);
+        }
+
+        // If a company owner deletes their account,
+        // disconnect linked members rather than deleting
+        // those members' individual accounts.
+        if (account.AccountType is
+            "owner_small" or "owner_large")
+        {
+            var linkedMembersFilter =
+                Builders<MongoUserAccount>
+                    .Filter
+                    .Eq(
+                        member =>
+                            member.OwnerIdentityUserId,
+                        identityUserId);
+
+            var disconnectUpdate =
+                Builders<MongoUserAccount>
+                    .Update
+                    .Unset(
+                        member =>
+                            member.OwnerIdentityUserId)
+                    .Unset(
+                        member =>
+                            member.ReferralCodeUsed);
+
+            await _accounts.UpdateManyAsync(
+                linkedMembersFilter,
+                disconnectUpdate,
+                cancellationToken:
+                    cancellationToken);
+        }
+
+        await _accounts.DeleteOneAsync(
+            userAccount =>
+                userAccount.IdentityUserId ==
+                identityUserId,
+            cancellationToken);
+    }
 }

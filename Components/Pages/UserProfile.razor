@@ -64,10 +64,57 @@
                     </p>
                 </div>
 
-                <span class="account-type-badge">
-                    @AccountTypeLabel
-                </span>
+                <div class="profile-hero-actions">
+                    <span class="account-type-badge">
+                        @AccountTypeLabel
+                    </span>
+
+                    <button type="button"
+                            class="delete-account-button"
+                            @onclick="RequestAccountDeletion">
+                        Delete account
+                    </button>
+                </div>
             </header>
+
+            @if (confirmAccountDeletion)
+            {
+                <div class="account-delete-overlay"
+                     role="presentation">
+                    <div class="account-delete-modal"
+                         role="dialog"
+                         aria-modal="true"
+                         aria-labelledby="delete-account-title">
+                        <p class="card-kicker">Permanent action</p>
+
+                        <h2 id="delete-account-title">
+                            Delete your account?
+                        </h2>
+
+                        <p>
+                            Are you sure? This permanently deletes your
+                            AeroResponse account and cannot be undone.
+                        </p>
+
+                        <div class="profile-actions">
+                            <form method="post" action="/Account/Delete">
+                                <AntiforgeryToken />
+
+                                <button type="submit"
+                                        class="danger-action">
+                                    Yes, delete my account
+                                </button>
+                            </form>
+
+                            <button type="button"
+                                    class="secondary-action"
+                                    @onclick="CancelAccountDeletion">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
 
             @if (!string.IsNullOrWhiteSpace(successMessage))
             {
@@ -367,73 +414,175 @@
                     }
                 </article>
 
-                @if (savedPaymentMethod is not null)
-                {
-                    <article class="profile-card payment-card">
-                        <div class="card-heading-row">
-                            <div>
-                                <p class="card-kicker">
-                                    Payment method
-                                </p>
+                <article class="profile-card payment-card">
+                    <div class="card-heading-row">
+                        <div>
+                            <p class="card-kicker">
+                                Payment method
+                            </p>
 
-                                <h2>Saved card</h2>
-                            </div>
+                            <h2>
+                                @(savedPaymentMethod is null
+                                    ? "Add a card"
+                                    : "Saved card")
+                            </h2>
                         </div>
 
+                        @if (!isEditingCard)
+                        {
+                            <button type="button"
+                                    class="secondary-action"
+                                    disabled="@isSavingCard"
+                                    @onclick="BeginCardEditingAsync">
+                                @(savedPaymentMethod is null
+                                    ? "Add card"
+                                    : "Change card")
+                            </button>
+                        }
+                    </div>
+
+                    @if (isEditingCard)
+                    {
+                        <EditForm Model="cardEditModel"
+                                  OnValidSubmit="SaveCardAsync">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="validation-summary" />
+
+                            <div class="profile-form-grid card-form-grid">
+                                <div class="form-field form-field-full">
+                                    <label for="card-number">Card number</label>
+                                    <InputText id="card-number"
+                                               class="profile-input"
+                                               inputmode="numeric"
+                                               autocomplete="cc-number"
+                                               placeholder="4242 4242 4242 4242"
+                                               @bind-Value="cardEditModel.CardNumber" />
+                                    <ValidationMessage For="() => cardEditModel.CardNumber"
+                                                       class="field-error" />
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="card-expiry">Expiry date</label>
+                                    <InputText id="card-expiry"
+                                               class="profile-input"
+                                               autocomplete="cc-exp"
+                                               placeholder="MM / YY"
+                                               @bind-Value="cardEditModel.ExpiryDate" />
+                                    <ValidationMessage For="() => cardEditModel.ExpiryDate"
+                                                       class="field-error" />
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="cardholder-name">Cardholder name</label>
+                                    <InputText id="cardholder-name"
+                                               class="profile-input"
+                                               autocomplete="cc-name"
+                                               @bind-Value="cardEditModel.CardholderName" />
+                                    <ValidationMessage For="() => cardEditModel.CardholderName"
+                                                       class="field-error" />
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="billing-country">Country</label>
+                                    <InputText id="billing-country"
+                                               class="profile-input"
+                                               autocomplete="country-name"
+                                               @bind-Value="cardEditModel.Country" />
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="billing-postcode">Postcode / ZIP</label>
+                                    <InputText id="billing-postcode"
+                                               class="profile-input"
+                                               autocomplete="postal-code"
+                                               @bind-Value="cardEditModel.PostalCode" />
+                                </div>
+
+                                <div class="form-field form-field-full">
+                                    <label for="billing-address">Billing address</label>
+                                    <InputText id="billing-address"
+                                               class="profile-input"
+                                               autocomplete="address-line1"
+                                               @bind-Value="cardEditModel.AddressLineOne" />
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="billing-city">City</label>
+                                    <InputText id="billing-city"
+                                               class="profile-input"
+                                               autocomplete="address-level2"
+                                               @bind-Value="cardEditModel.City" />
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="billing-region">County / State / Region</label>
+                                    <InputText id="billing-region"
+                                               class="profile-input"
+                                               autocomplete="address-level1"
+                                               @bind-Value="cardEditModel.Region" />
+                                </div>
+                            </div>
+
+                            <p class="payment-security-note">
+                                Only a payment token and the last four digits are saved.
+                                The full card number is not stored.
+                            </p>
+
+                            <div class="profile-actions">
+                                <button type="submit"
+                                        class="primary-action"
+                                        disabled="@isSavingCard">
+                                    @(isSavingCard ? "Saving..." : "Save card")
+                                </button>
+
+                                <button type="button"
+                                        class="secondary-action"
+                                        disabled="@isSavingCard"
+                                        @onclick="CancelCardEditingAsync">
+                                    Cancel
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                    else if (savedPaymentMethod is not null)
+                    {
                         <dl class="details-list">
                             <div>
                                 <dt>Card</dt>
-
                                 <dd>
-                                    @FormatCardBrand(
-                                        savedPaymentMethod.CardBrand)
-                                    ending in
-                                    @savedPaymentMethod.LastFour
+                                    @FormatCardBrand(savedPaymentMethod.CardBrand)
+                                    ending in @savedPaymentMethod.LastFour
                                 </dd>
                             </div>
 
                             <div>
                                 <dt>Cardholder</dt>
-
-                                <dd>
-                                    @savedPaymentMethod.CardholderName
-                                </dd>
+                                <dd>@savedPaymentMethod.CardholderName</dd>
                             </div>
 
                             <div>
                                 <dt>Card expiry</dt>
-
-                                <dd>
-                                    @FormatCardExpiry(
-                                        savedPaymentMethod.ExpiryDate)
-                                </dd>
+                                <dd>@FormatCardExpiry(savedPaymentMethod.ExpiryDate)</dd>
                             </div>
                         </dl>
 
                         @if (confirmCardDeletion)
                         {
                             <div class="delete-confirmation">
-                                <p>
-                                    Are you sure you want to delete
-                                    your saved card?
-                                </p>
+                                <p>Are you sure you want to delete your saved card?</p>
 
                                 <div class="profile-actions">
                                     <button type="button"
                                             class="danger-action"
                                             disabled="@isDeletingCard"
                                             @onclick="DeleteSavedCardAsync">
-
-                                        @(isDeletingCard
-                                            ? "Deleting..."
-                                            : "Yes, delete card")
+                                        @(isDeletingCard ? "Deleting..." : "Yes, delete card")
                                     </button>
 
                                     <button type="button"
                                             class="secondary-action"
                                             disabled="@isDeletingCard"
                                             @onclick="CancelCardDeletionAsync">
-
                                         Cancel
                                     </button>
                                 </div>
@@ -441,16 +590,24 @@
                         }
                         else
                         {
-                            <button type="button"
-                                    class="danger-action"
-                                    disabled="@isDeletingCard"
-                                    @onclick="RequestCardDeletionAsync">
-
-                                Delete saved card
-                            </button>
+                            <div class="profile-actions">
+                                <button type="button"
+                                        class="danger-action"
+                                        disabled="@isDeletingCard"
+                                        @onclick="RequestCardDeletionAsync">
+                                    Delete saved card
+                                </button>
+                            </div>
                         }
-                    </article>
-                }
+                    }
+                    else
+                    {
+                        <p>
+                            You do not currently have a saved card. Add one here
+                            so it is available for future payments.
+                        </p>
+                    }
+                </article>
 
                 @if (IsOwnerAccount &&
                      ownerReferralCodes is not null)
@@ -672,6 +829,9 @@
     private bool isSaving;
     private bool isDeletingCard;
     private bool confirmCardDeletion;
+    private bool isEditingCard;
+    private bool isSavingCard;
+    private bool confirmAccountDeletion;
 
     private string? errorMessage;
     private string? successMessage;
@@ -728,6 +888,7 @@
     private ApplicationUser? identityUser;
 
     private EditAccountModel editModel = new();
+    private CardEditModel cardEditModel = new();
 
     private bool IsOwnerAccount =>
         accountType is
@@ -1222,6 +1383,145 @@
         }
     }
 
+    private void RequestAccountDeletion()
+    {
+        successMessage = null;
+        actionErrorMessage = null;
+        confirmAccountDeletion = true;
+    }
+
+    private void CancelAccountDeletion()
+    {
+        confirmAccountDeletion = false;
+    }
+
+    private async Task BeginCardEditingAsync()
+    {
+        successMessage = null;
+        actionErrorMessage = null;
+        confirmCardDeletion = false;
+
+        cardEditModel = new CardEditModel
+        {
+            ExpiryDate = savedPaymentMethod?.ExpiryDate ?? string.Empty,
+            CardholderName = savedPaymentMethod?.CardholderName ?? string.Empty,
+            Country = savedPaymentMethod?.Country ?? "United Kingdom",
+            PostalCode = savedPaymentMethod?.PostalCode ?? string.Empty,
+            AddressLineOne = savedPaymentMethod?.AddressLineOne ?? string.Empty,
+            City = savedPaymentMethod?.City ?? string.Empty,
+            Region = savedPaymentMethod?.Region ?? string.Empty
+        };
+
+        // A replacement card number must always be entered in full.
+        cardEditModel.CardNumber = string.Empty;
+        isEditingCard = true;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CancelCardEditingAsync()
+    {
+        isEditingCard = false;
+        cardEditModel = new CardEditModel();
+        actionErrorMessage = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveCardAsync()
+    {
+        if (isSavingCard || string.IsNullOrWhiteSpace(identityUserId))
+        {
+            return;
+        }
+
+        var cardDigits = new string(
+            (cardEditModel.CardNumber ?? string.Empty)
+                .Where(char.IsDigit)
+                .ToArray());
+
+        if (cardDigits.Length < 12 || cardDigits.Length > 19)
+        {
+            actionErrorMessage = "Enter a valid card number.";
+            return;
+        }
+
+        isSavingCard = true;
+        successMessage = null;
+        actionErrorMessage = null;
+
+        try
+        {
+            var method = new MongoSavedPaymentMethod
+            {
+                IdentityUserId = identityUserId,
+                PaymentToken = $"demo_{Guid.NewGuid():N}",
+                CardBrand = DetectCardBrand(cardDigits),
+                LastFour = cardDigits[^4..],
+                ExpiryDate = cardEditModel.ExpiryDate.Trim(),
+                CardholderName = cardEditModel.CardholderName.Trim(),
+                Country = cardEditModel.Country?.Trim() ?? string.Empty,
+                PostalCode = cardEditModel.PostalCode?.Trim() ?? string.Empty,
+                AddressLineOne = cardEditModel.AddressLineOne?.Trim() ?? string.Empty,
+                City = cardEditModel.City?.Trim() ?? string.Empty,
+                Region = cardEditModel.Region?.Trim() ?? string.Empty,
+                UpdatedAtUtc = DateTime.UtcNow
+            };
+
+            await SavedPaymentMethods.UpsertAsync(method);
+
+            savedPaymentMethod = method;
+
+            if (!UsesCompanyMembership)
+            {
+                membershipPaymentMethod = method;
+            }
+
+            isEditingCard = false;
+            cardEditModel = new CardEditModel();
+            successMessage = "Your saved card has been updated.";
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(
+                exception,
+                "Could not save payment method for user {UserId}.",
+                identityUserId);
+
+            actionErrorMessage =
+                "Your card could not be saved. Please try again.";
+        }
+        finally
+        {
+            isSavingCard = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private static string DetectCardBrand(string cardDigits)
+    {
+        if (cardDigits.StartsWith("4"))
+        {
+            return "Visa";
+        }
+
+        if (cardDigits.StartsWith("5"))
+        {
+            return "Mastercard";
+        }
+
+        if (cardDigits.StartsWith("34") || cardDigits.StartsWith("37"))
+        {
+            return "American Express";
+        }
+
+        if (cardDigits.StartsWith("6"))
+        {
+            return "Discover";
+        }
+
+        return "Card";
+    }
+
     private async Task RequestCardDeletionAsync()
     {
         successMessage = null;
@@ -1670,4 +1970,23 @@
         public string Email { get; set; } =
             string.Empty;
     }
+    private sealed class CardEditModel
+    {
+        [Required(ErrorMessage = "Please enter the card number.")]
+        public string CardNumber { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Please enter the expiry date.")]
+        public string ExpiryDate { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Please enter the cardholder name.")]
+        [StringLength(150)]
+        public string CardholderName { get; set; } = string.Empty;
+
+        public string Country { get; set; } = "United Kingdom";
+        public string PostalCode { get; set; } = string.Empty;
+        public string AddressLineOne { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string Region { get; set; } = string.Empty;
+    }
+
 }

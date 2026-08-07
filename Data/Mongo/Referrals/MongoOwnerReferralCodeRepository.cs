@@ -165,4 +165,21 @@ public sealed class MongoOwnerReferralCodeRepository
             },
             cancellationToken);
     }
+
+    public async Task DeleteForOwnerAsync(
+        string ownerIdentityUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(
+            ownerIdentityUserId))
+        {
+            return;
+        }
+
+        await _codes.DeleteManyAsync(
+            code =>
+                code.OwnerIdentityUserId ==
+                ownerIdentityUserId,
+            cancellationToken);
+    }
 }

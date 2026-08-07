@@ -152,3 +152,88 @@ window.aeroReports = {
         }
     }
 };
+
+
+// ============================================================
+// PASSWORD VISIBILITY TOGGLE
+// ============================================================
+//
+// Login/Register are statically rendered, so the password
+// visibility button is handled in browser-side JavaScript.
+//
+// IMPORTANT: these SVGs include their own stroke/fill styling.
+// Blazor CSS isolation adds scope attributes to Razor-rendered
+// elements, but SVGs inserted later with innerHTML do not receive
+// those attributes. Keeping the SVG styling here prevents the
+// replacement icon from becoming a solid black shape.
+//
+// ============================================================
+
+(() => {
+    const eyeSvgStyle = `
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.7"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        width="21"
+        height="21"
+    `;
+
+    // Password hidden: the original outline eye.
+    const hiddenIcon = `
+        <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            ${eyeSvgStyle}>
+            <path d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z"></path>
+            <circle cx="12" cy="12" r="2.5"></circle>
+        </svg>
+    `;
+
+    // Password visible: exactly the same outline eye with a
+    // proportional line through it, using the same currentColor.
+    const visibleIcon = `
+        <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            ${eyeSvgStyle}>
+            <path d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z"></path>
+            <circle cx="12" cy="12" r="2.5"></circle>
+            <line x1="4" y1="4" x2="20" y2="20"></line>
+        </svg>
+    `;
+
+    document.addEventListener("click", (event) => {
+        const toggle = event.target.closest(".password-toggle");
+
+        if (!toggle) {
+            return;
+        }
+
+        const wrapper = toggle.closest(".auth-input-wrapper");
+        const input = wrapper?.querySelector("input.auth-input-password");
+
+        if (!input) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const shouldShow = input.type === "password";
+        input.type = shouldShow ? "text" : "password";
+
+        const isConfirmation = input.id === "Input.ConfirmPassword";
+
+        const label = shouldShow
+            ? (isConfirmation ? "Hide confirmation password" : "Hide password")
+            : (isConfirmation ? "Show confirmation password" : "Show password");
+
+        toggle.setAttribute("aria-label", label);
+        toggle.setAttribute("title", label);
+
+        // Hidden = original eye.
+        // Visible = same eye with same-colour diagonal line.
+        toggle.innerHTML = shouldShow ? visibleIcon : hiddenIcon;
+    });
+})();

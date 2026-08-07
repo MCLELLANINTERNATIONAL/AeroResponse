@@ -2,23 +2,24 @@ using AeroResponse.Models;
 
 namespace AeroResponse.Simulation.Layouts.Aircraft;
 
-public static class Cessna172CockpitLayout
+public static class GulfstreamG700CockpitLayout
 {
     public static CockpitLayoutDefinition Create()
     {
         return new CockpitLayoutDefinition
         {
-            AircraftId = 1,
+            AircraftId = 0,
 
-            Key = "cessna-172-standard",
+            Key = "gulfstream-g700-standard",
 
-            Name = "Cessna 172",
+            Name = "Gulfstream G700",
 
-            Columns = 3,
+            Columns = 4,
 
             Rows = 2,
 
-            Instruments = [
+            Instruments =
+            [
                 new()
                 {
                     Type = InstrumentType.AirspeedIndicator,
@@ -51,45 +52,8 @@ public static class Cessna172CockpitLayout
 
                             RequiresNumericValue = true,
                             MinimumValue = 0,
-                            MaximumValue = 200,
+                            MaximumValue = 600,
                             Unit = "knots"
-                        }
-                    ]
-                },
-
-                new()
-                {
-                    Type = InstrumentType.Altimeter,
-                    GridRow = 1,
-                    GridColumn = 3,
-
-                    ControlId = "flight.altitude",
-                    DisplayName = "Altitude",
-                    IsVoiceControllable = true,
-
-                    VoiceAliases =
-                    [
-                        "altitude",
-                        "altimeter"
-                    ],
-
-                    VoiceCommands =
-                    [
-                        new CockpitControlCommandDefinition
-                        {
-                            Command = "set",
-
-                            VoiceAliases =
-                            [
-                                "set altitude",
-                                "set altimeter",
-                                "select altitude"
-                            ],
-
-                            RequiresNumericValue = true,
-                            MinimumValue = 0,
-                            MaximumValue = 14_000,
-                            Unit = "feet"
                         }
                     ]
                 },
@@ -99,6 +63,7 @@ public static class Cessna172CockpitLayout
                     Type = InstrumentType.ArtificialHorizon,
                     GridRow = 1,
                     GridColumn = 2,
+                    RowSpan = 2,
 
                     ControlId = "flight.attitude",
                     DisplayName = "Aircraft Attitude",
@@ -151,18 +116,10 @@ public static class Cessna172CockpitLayout
 
                 new()
                 {
-                    Type = InstrumentType.TurnCoordinator,
-                    GridRow = 2,
-                    GridColumn = 1,
-
-                    IsVoiceControllable = false
-                },
-
-                new()
-                {
                     Type = InstrumentType.HeadingIndicator,
-                    GridRow = 2,
-                    GridColumn = 2,
+                    GridRow = 1,
+                    GridColumn = 3,
+                    RowSpan = 2,
 
                     ControlId = "flight.heading",
                     DisplayName = "Heading",
@@ -198,9 +155,46 @@ public static class Cessna172CockpitLayout
 
                 new()
                 {
+                    Type = InstrumentType.Altimeter,
+                    GridRow = 1,
+                    GridColumn = 4,
+
+                    ControlId = "flight.altitude",
+                    DisplayName = "Altitude",
+                    IsVoiceControllable = true,
+
+                    VoiceAliases =
+                    [
+                        "altitude",
+                        "altimeter"
+                    ],
+
+                    VoiceCommands =
+                    [
+                        new CockpitControlCommandDefinition
+                        {
+                            Command = "set",
+
+                            VoiceAliases =
+                            [
+                                "set altitude",
+                                "set altimeter",
+                                "select altitude"
+                            ],
+
+                            RequiresNumericValue = true,
+                            MinimumValue = 0,
+                            MaximumValue = 51_000,
+                            Unit = "feet"
+                        }
+                    ]
+                },
+
+                new()
+                {
                     Type = InstrumentType.VerticalSpeedIndicator,
                     GridRow = 2,
-                    GridColumn = 3,
+                    GridColumn = 1,
 
                     ControlId = "flight.vertical-speed",
                     DisplayName = "Vertical Speed",
@@ -228,32 +222,41 @@ public static class Cessna172CockpitLayout
                             ],
 
                             RequiresNumericValue = true,
-                            MinimumValue = -2_000,
-                            MaximumValue = 2_000,
+                            MinimumValue = -6_000,
+                            MaximumValue = 6_000,
                             Unit = "feet per minute"
                         }
                     ]
+                },
+
+                new()
+                {
+                    Type = InstrumentType.TurnCoordinator,
+                    GridRow = 2,
+                    GridColumn = 4,
+
+                    IsVoiceControllable = false
                 }
             ],
 
             Airspeed = new()
             {
                 MinimumSpeed = 0,
-                MaximumSpeed = 200,
+                MaximumSpeed = 600,
 
                 MinAirspeedAngle = -120,
                 MaxAirspeedAngle = 120,
 
-                WhiteArcStart = 40,
-                WhiteArcEnd = 85,
+                WhiteArcStart = 100,
+                WhiteArcEnd = 220,
 
-                GreenArcStart = 48,
-                GreenArcEnd = 129,
+                GreenArcStart = 120,
+                GreenArcEnd = 400,
 
-                YellowArcStart = 129,
-                YellowArcEnd = 163,
+                YellowArcStart = 400,
+                YellowArcEnd = 520,
 
-                NeverExceedSpeed = 163
+                NeverExceedSpeed = 560
             },
 
             ArtificialHorizon = new()
@@ -267,31 +270,31 @@ public static class Cessna172CockpitLayout
 
             VSI = new()
             {
-                MinimumVerticalSpeed = -2000, // Feet Per Minute
-                MaximumVerticalSpeed = 2000,
+                MinimumVerticalSpeed = -6000,
+                MaximumVerticalSpeed = 6000,
 
-                LagSeconds = 6,
+                LagSeconds = 1,
 
                 CalibrationPoints =
                 [
-                    new(-2000, -235), // Where the Numbers sit on the VSI Instrument
-                    new(-1500, -200),
-                    new(-1000, -160),
-                    new(-500, -125),
+                    new(-6000, -235),
+                    new(-4500, -200),
+                    new(-3000, -160),
+                    new(-1500, -125),
                     new(0, -90),
-                    new(500, -55),
-                    new(1000, -20),
-                    new(1500, 20),
-                    new(2000, 55)
+                    new(1500, -55),
+                    new(3000, -20),
+                    new(4500, 20),
+                    new(6000, 55)
                 ]
             },
 
-            EngineCount = 1,
+            EngineCount = 2,
 
             DefaultState = new()
             {
-                CruiseAirspeed = 115,
-                CruiseAltitude = 3000,
+                CruiseAirspeed = 516,
+                CruiseAltitude = 41_000,
                 DefaultHeading = 240,
                 DefaultVerticalSpeed = 0,
                 DefaultPitch = 2,

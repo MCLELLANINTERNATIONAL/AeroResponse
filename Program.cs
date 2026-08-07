@@ -229,6 +229,11 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     PerformanceScoringEngine>();
 
+// Provides dashboards for trainers and company owners.
+// Results are restricted to pilots linked to their company.
+builder.Services.AddScoped<
+    InstructorDashboardService>();
+
 // Provides the system-wide Administration Dashboard.
 // This currently has no role-based access restriction.
 builder.Services.AddScoped<

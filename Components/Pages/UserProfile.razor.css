@@ -45,6 +45,13 @@
 .profile-hero h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.7rem); }
 .profile-email { margin: 0.3rem 0 0; color: #b9d1e7; }
 
+.profile-hero-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
 .account-type-badge {
     padding: 0.55rem 0.85rem;
     border-radius: 999px;
@@ -236,7 +243,14 @@
 @media (max-width: 760px) {
     .profile-page { padding: 1.5rem 1rem 3rem; }
     .profile-hero { grid-template-columns: auto 1fr; }
-    .account-type-badge { grid-column: 1 / -1; justify-self: start; }
+    .profile-hero-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.account-type-badge { grid-column: 1 / -1; justify-self: start; }
     .profile-grid,
     .profile-form-grid { grid-template-columns: 1fr; }
     .form-field-full { grid-column: auto; }
@@ -249,4 +263,71 @@
     .referral-code,
     .company-member-row { align-items: flex-start; flex-direction: column; }
     .company-member-totals { justify-content: flex-start; }
+}
+
+
+.delete-account-button {
+    min-height: 38px;
+    padding: 0.5rem 0.8rem;
+    color: #ffdede;
+    background: rgba(174, 42, 42, 0.18);
+    border: 1px solid rgba(255, 104, 104, 0.68);
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.delete-account-button:hover,
+.delete-account-button:focus-visible {
+    background: rgba(196, 50, 50, 0.42);
+}
+
+.account-delete-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: 1.25rem;
+    background: rgba(1, 12, 24, 0.76);
+    backdrop-filter: blur(5px);
+}
+
+.account-delete-modal {
+    width: min(500px, 100%);
+    padding: 1.6rem;
+    color: #eef7ff;
+    background: #0a2b4b;
+    border: 1px solid rgba(255, 104, 104, 0.55);
+    border-radius: 16px;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.42);
+}
+
+.account-delete-modal h2 {
+    margin: 0 0 0.75rem;
+}
+
+.account-delete-modal p:not(.card-kicker) {
+    color: #cbdceb;
+    line-height: 1.6;
+}
+
+.account-delete-modal form {
+    margin: 0;
+}
+
+.payment-security-note {
+    margin: 1rem 0 0;
+    color: #8eb7d8 !important;
+    font-size: 0.86rem;
+}
+
+@media (max-width: 760px) {
+    .profile-hero-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
 }

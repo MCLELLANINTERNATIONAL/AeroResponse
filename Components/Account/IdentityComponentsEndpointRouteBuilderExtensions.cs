@@ -10,6 +10,10 @@ using Microsoft.Extensions.Primitives;
 using AeroResponse.Components.Account.Pages;
 using AeroResponse.Components.Account.Pages.Manage;
 using AeroResponse.Data;
+using AeroResponse.Data.Mongo.Accounts;
+using AeroResponse.Data.Mongo.Memberships;
+using AeroResponse.Data.Mongo.Payments;
+using AeroResponse.Data.Mongo.Referrals;
 
 namespace Microsoft.AspNetCore.Routing;
 
@@ -48,6 +52,85 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
         {
             await signInManager.SignOutAsync();
             return TypedResults.LocalRedirect($"~/{returnUrl}");
+        });
+
+        accountGroup.MapPost("/Delete", async (
+            ClaimsPrincipal principal,
+            [FromServices] UserManager<ApplicationUser> userManager,
+            [FromServices] SignInManager<ApplicationUser> signInManager,
+            [FromServices] MongoUserAccountRepository mongoUserAccounts,
+            [FromServices] MongoMemberTimelineRepository memberTimelines,
+            [FromServices] MongoSavedPaymentMethodRepository savedPaymentMethods,
+            [FromServices] MongoOwnerReferralCodeRepository referralCodes,
+            [FromServices] ILoggerFactory loggerFactory) =>
+        {
+            var logger =
+                loggerFactory.CreateLogger(
+                    "AeroResponse.AccountDeletion");
+
+            var user =
+                await userManager.GetUserAsync(principal);
+
+            if (user is null)
+            {
+                return Results.Redirect("/Account/Login");
+            }
+
+            var userId =
+                await userManager.GetUserIdAsync(user);
+
+            try
+            {
+                // Remove application-owned data first. These repository
+                // methods are safe when a record does not exist.
+                await savedPaymentMethods
+                    .DeleteIfExistsByIdentityUserIdAsync(userId);
+
+                await memberTimelines
+                    .DeleteByIdentityUserIdAsync(userId);
+
+                await referralCodes
+                    .DeleteForOwnerAsync(userId);
+
+                await mongoUserAccounts
+                    .DeleteAccountAsync(userId);
+
+                var result =
+                    await userManager.DeleteAsync(user);
+
+                if (!result.Succeeded)
+                {
+                    logger.LogError(
+                        "Identity account deletion failed for user {UserId}: {Errors}",
+                        userId,
+                        string.Join(
+                            "; ",
+                            result.Errors.Select(error => error.Description)));
+
+                    return Results.Problem(
+                        "The account could not be deleted. Please try again.",
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+
+                await signInManager.SignOutAsync();
+
+                logger.LogInformation(
+                    "User {UserId} deleted their AeroResponse account.",
+                    userId);
+
+                return Results.Redirect("/");
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(
+                    exception,
+                    "Account deletion failed for user {UserId}.",
+                    userId);
+
+                return Results.Problem(
+                    "The account could not be deleted. Please try again.",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
         });
 
         accountGroup.MapPost("/PasskeyCreationOptions", async (

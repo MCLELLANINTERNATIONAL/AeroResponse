@@ -156,4 +156,20 @@ public sealed class MongoSavedPaymentMethodRepository
                 "No saved payment method was found.");
         }
     }
+
+    public async Task DeleteIfExistsByIdentityUserIdAsync(
+        string identityUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(identityUserId))
+        {
+            return;
+        }
+
+        await _collection.DeleteOneAsync(
+            payment =>
+                payment.IdentityUserId ==
+                identityUserId,
+            cancellationToken);
+    }
 }

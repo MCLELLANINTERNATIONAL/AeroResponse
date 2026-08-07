@@ -102,4 +102,20 @@ public sealed class MongoMemberTimelineRepository
             },
             cancellationToken);
     }
+
+    public async Task DeleteByIdentityUserIdAsync(
+        string identityUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(identityUserId))
+        {
+            return;
+        }
+
+        await _collection.DeleteOneAsync(
+            timeline =>
+                timeline.IdentityUserId ==
+                identityUserId,
+            cancellationToken);
+    }
 }

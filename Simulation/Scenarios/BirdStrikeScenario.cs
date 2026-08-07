@@ -10,7 +10,7 @@ public class BirdStrikeScenario : ISimulationScenario
 
     public string ScenarioType => "Bird Strike";
 
-     public ScenarioStartCondition StartCondition =>
+    public ScenarioStartCondition StartCondition =>
         new()
         {
             MinimumAltitude = 1_500,

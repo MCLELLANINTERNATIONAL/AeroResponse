@@ -1170,7 +1170,121 @@
 
     font-size: 0.76rem;
 }
+/* ======================================================
+   Fuel tank controls
+====================================================== */
 
+.fuel-tank-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+
+    width: 100%;
+    margin-top: 0.75rem;
+}
+
+.fuel-tank-button {
+    min-height: 38px;
+    padding: 0.55rem 0.7rem;
+
+    border: 1px solid rgba(112, 194, 255, 0.45);
+    border-radius: 6px;
+
+    color: #dceeff;
+    background:
+        linear-gradient(
+            180deg,
+            rgba(23, 72, 108, 0.8),
+            rgba(8, 38, 61, 0.9)
+        );
+
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        transform 0.1s ease,
+        box-shadow 0.15s ease;
+}
+
+.fuel-tank-button:hover {
+    border-color: #70c2ff;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(31, 101, 153, 0.9),
+            rgba(10, 53, 84, 0.95)
+        );
+
+    box-shadow:
+        0 0 12px rgba(60, 169, 255, 0.18);
+}
+
+.fuel-tank-button:active {
+    transform: translateY(1px);
+}
+
+.fuel-tank-button:focus-visible {
+    outline: 2px solid #70c2ff;
+    outline-offset: 2px;
+}
+
+
+/* Inspect / monitor */
+
+.fuel-tank-button.inspect {
+    border-color: rgba(73, 185, 240, 0.55);
+    color: #9edcff;
+}
+
+
+/* Isolation is intentionally more visually serious */
+
+.fuel-tank-button.isolate {
+    border-color: rgba(255, 92, 99, 0.6);
+
+    color: #ffd1d3;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(118, 31, 39, 0.85),
+            rgba(66, 15, 22, 0.95)
+        );
+}
+
+.fuel-tank-button.isolate:hover {
+    border-color: #ff686d;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(154, 38, 48, 0.95),
+            rgba(91, 18, 27, 0.98)
+        );
+
+    box-shadow:
+        0 0 14px rgba(255, 76, 84, 0.2);
+}
+
+/* ======================================================
+    Throttle Controls
+====================================================== */
+#throttle-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 0.75rem;
+
+    width: 100%;
+    margin-top: 0.75rem;
+}
 /* ======================================================
     Loading
 ====================================================== */

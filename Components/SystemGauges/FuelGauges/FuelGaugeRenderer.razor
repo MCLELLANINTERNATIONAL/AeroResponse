@@ -3,17 +3,29 @@
 @switch (Aircraft.CockpitLayoutKey)
 {
     case "cessna-172-standard":
-        <Cessna172FuelGauge FuelTanks="@FuelTanks" />
+        <Cessna172FuelGauge
+            FuelTanks="@FuelTanks"
+            OnTankFocused="@OnTankFocused"
+            OnTankIsolationRequested="@OnTankIsolationRequested" />
         break;
 
     default:
-        <GenericFuelGauge FuelTanks="@FuelTanks" />
+        <GenericFuelGauge
+            FuelTanks="@FuelTanks"
+            OnTankFocused="@OnTankFocused"
+            OnTankIsolationRequested="@OnTankIsolationRequested" />
         break;
 }
 
 @code {
     [Parameter, EditorRequired]
     public Aircraft Aircraft { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<FuelState> OnTankFocused { get; set; }
+
+    [Parameter]
+    public EventCallback<FuelState> OnTankIsolationRequested { get; set; }
 
     [Parameter, EditorRequired]
     public IReadOnlyList<FuelState> FuelTanks { get; set; } = [];

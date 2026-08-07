@@ -1,0 +1,59 @@
+.boeing-subtitle {
+    fill: #9daab5;
+
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.alternate-switch {
+    fill: #151d24;
+    stroke: #667580;
+    stroke-width: 2;
+
+    cursor: pointer;
+
+    transition:
+        fill 0.2s ease,
+        stroke 0.2s ease;
+}
+
+.alternate-switch.released {
+    fill: #50370f;
+    stroke: #d89a26;
+}
+
+.switch-lever {
+    stroke: #c8d0d6;
+    stroke-width: 7;
+    stroke-linecap: round;
+
+    transition:
+        stroke 0.2s ease;
+}
+
+.switch-lever.released {
+    stroke: #f2c15d;
+}
+
+.switch-knob {
+    fill: #e0e5e9;
+    stroke: #68747d;
+    stroke-width: 2;
+
+    transition:
+        cy 0.22s ease;
+}
+
+g[role="button"] {
+    cursor: pointer;
+}
+
+g[role="button"]:focus-visible {
+    outline: none;
+}
+
+g[role="button"]:focus-visible .alternate-switch {
+    stroke: #f2c15d;
+    stroke-width: 3;
+}

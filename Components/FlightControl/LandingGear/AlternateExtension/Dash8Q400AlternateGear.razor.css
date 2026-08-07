@@ -1,0 +1,90 @@
+.q400-subtitle {
+    fill: #9ba9b5;
+
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+}
+
+.q400-system-box {
+    fill: #121a21;
+    stroke: #62717d;
+    stroke-width: 2;
+
+    transition:
+        fill 0.2s ease,
+        stroke 0.2s ease;
+}
+
+.q400-system-box.active {
+    fill: #163425;
+    stroke: #48b36d;
+}
+
+.control-label {
+    fill: #d6dfe7;
+
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+}
+
+.control-status {
+    fill: #9ba9b5;
+
+    font-size: 0.5rem;
+    font-weight: 700;
+}
+
+.q400-release {
+    fill: #3c210d;
+    stroke: #c68225;
+    stroke-width: 2;
+
+    transition:
+        fill 0.2s ease,
+        stroke 0.2s ease;
+}
+
+.q400-release.released {
+    fill: #5e171b;
+    stroke: #ef6268;
+}
+
+.release-title {
+    fill: #f1e6cf;
+
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+.release-status {
+    fill: #efc77a;
+
+    font-size: 0.5rem;
+    font-weight: 700;
+}
+
+.q400-release.released + .release-title,
+.q400-release.released ~ .release-status {
+    fill: #ffd2d4;
+}
+
+.q400-control-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+}
+
+.q400-control-grid .alternate-gear-button:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+    .q400-control-grid {
+        grid-template-columns: 1fr;
+    }
+}

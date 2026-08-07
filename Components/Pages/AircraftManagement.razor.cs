@@ -67,22 +67,50 @@ public partial class AircraftManagement : ComponentBase
 
     private sealed class VsiCalibrationPointEditor
     {
-        public double VerticalSpeed { get; set; }
+        public int VerticalSpeed { get; set; }
 
         public double Angle { get; set; }
     }
 
     private sealed class VsiAdvancedEditor
     {
-        public double MinimumVerticalSpeed { get; set; }
+        public int MinimumVerticalSpeed { get; set; }
 
-        public double MaximumVerticalSpeed { get; set; }
+        public int MaximumVerticalSpeed { get; set; }
 
-        public double LagSeconds { get; set; }
+        public int LagSeconds { get; set; }
 
         public List<VsiCalibrationPointEditor>
             CalibrationPoints
         { get; set; } = [];
+    }
+    private VerticalSpeedIndicatorLayout
+        CreateVsiFromAdvancedEditor()
+    {
+        if (advancedVsi is null)
+        {
+            return CreateDefaultVsiLayout();
+        }
+
+        return new VerticalSpeedIndicatorLayout
+        {
+            MinimumVerticalSpeed =
+                advancedVsi.MinimumVerticalSpeed,
+
+            MaximumVerticalSpeed =
+                advancedVsi.MaximumVerticalSpeed,
+
+            LagSeconds =
+                advancedVsi.LagSeconds,
+
+            CalibrationPoints =
+                advancedVsi.CalibrationPoints
+                    .Select(point =>
+                        new VSICalibrationPoint(
+                            point.VerticalSpeed,
+                            point.Angle))
+                    .ToList()
+        };
     }
     private static CockpitLayoutDefinition ConvertToLayoutDefinition(
         CockpitLayoutModel layout)
@@ -437,16 +465,30 @@ public partial class AircraftManagement : ComponentBase
         {
             if (selectedAircraft.Id == 0)
             {
-                selectedAircraft = await AircraftService.CreateAsync(selectedAircraft);
-                selectedAircraftId = selectedAircraft.Id;
-                statusMessage = $"{selectedAircraft.Name} was created.";
+                selectedAircraft =
+                    await AircraftService.CreateAsync(
+                        selectedAircraft);
+
+                selectedAircraftId =
+                    selectedAircraft.Id;
+
+                statusMessage =
+                    $"{selectedAircraft.Name} was created.";
             }
             else
             {
-                await AircraftService.UpdateAsync(selectedAircraft);
-                statusMessage = $"{selectedAircraft.Name} was updated.";
+                await AircraftService.UpdateAsync(
+                    selectedAircraft);
+
+                statusMessage =
+                    $"{selectedAircraft.Name} was updated.";
             }
 
+            // Save the advanced configuration belonging
+            // to the selected cockpit layout.
+            await SaveAdvancedVsiAsync();
+
+            await LoadLayoutsAsync();
             await LoadAircraftAsync();
         }
         catch (Exception exception)
@@ -899,10 +941,20 @@ public partial class AircraftManagement : ComponentBase
                 .ToList(),
             AircraftId = layoutBeingEdited?.AircraftId ?? 0,
             EngineCount = layoutBeingEdited?.EngineCount ?? 1,
-            Airspeed = layoutBeingEdited?.Airspeed ?? CreateDefaultAirspeedLayout(),
-            ArtificialHorizon = layoutBeingEdited?.ArtificialHorizon ?? CreateDefaultArtificialHorizonLayout(),
-            VSI = layoutBeingEdited?.VSI ?? CreateDefaultVsiLayout(),
-            DefaultState = layoutBeingEdited?.DefaultState ?? CreateDefaultAircraftState()
+
+            Airspeed =
+                layoutBeingEdited?.Airspeed
+                ?? CreateDefaultAirspeedLayout(),
+
+            ArtificialHorizon =
+                layoutBeingEdited?.ArtificialHorizon
+                ?? CreateDefaultArtificialHorizonLayout(),
+
+            VSI = CreateVsiFromAdvancedEditor(),
+
+            DefaultState =
+                layoutBeingEdited?.DefaultState
+                ?? CreateDefaultAircraftState()
         };
 
         try
@@ -973,6 +1025,43 @@ public partial class AircraftManagement : ComponentBase
         {
             selectedAircraft.CockpitLayoutKey = savedLayout.Key;
         }
+    }
+    private async Task SaveAdvancedVsiAsync()
+    {
+        if (advancedVsi is null)
+        {
+            return;
+        }
+
+        var availableLayout =
+            availableLayouts.FirstOrDefault(layout =>
+                string.Equals(
+                    layout.Definition.Key,
+                    selectedAircraft.CockpitLayoutKey,
+                    StringComparison.OrdinalIgnoreCase));
+
+        if (availableLayout is null)
+        {
+            return;
+        }
+
+        var updatedLayout =
+            CloneLayoutDefinition(
+                availableLayout.Definition);
+
+        updatedLayout.VSI =
+            CreateVsiFromAdvancedEditor();
+
+        var databaseLayout =
+            ConvertToDatabaseLayout(updatedLayout);
+
+        databaseLayout.IsBuiltIn =
+            availableLayout.IsBuiltIn;
+
+        await CockpitLayoutService.SaveEditedAsync(
+            databaseLayout,
+            availableLayout.DatabaseId,
+            availableLayout.Definition.Key);
     }
 
     private static string CreateLayoutKey(string name)

@@ -113,7 +113,7 @@ public class HydraulicFailureScenario : ISimulationScenario
                     "Prepare for an abnormal landing and reduced braking capability",
                 CorrectAction = "Prepare Landing",
                 ValidationType =
-                    ProcedureValidationType.PilotAction,
+                    ProcedureValidationType.CockpitState,
                 IsSafetyCritical = true
             }
         ];
@@ -137,12 +137,6 @@ public class HydraulicFailureScenario : ISimulationScenario
                 state.AlertMessage =
                     "EMERGENCY DECLARED - " +
                     "ABNORMAL LANDING PROCEDURE REQUIRED";
-                break;
-
-            case "Prepare Landing":
-                state.AlertMessage =
-                    "ABNORMAL LANDING PREPARATION ACTIVE - " +
-                    "EXPECT REDUCED BRAKING AND CONTROL ASSISTANCE";
                 break;
         }
 
@@ -184,6 +178,14 @@ public class HydraulicFailureScenario : ISimulationScenario
                 state.HydraulicPumpOnline &&
                 state.HydraulicPressure >= 2_000 &&
                 !state.HydraulicFault,
+
+            5 =>
+                state.FlightPhase is
+                    "Descent" or
+                    "Approach" or
+                    "Landing" ||
+                (state.Altitude <= 1_500 &&
+                state.Airspeed < 90),
 
             _ => false
         };

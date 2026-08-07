@@ -1,0 +1,19 @@
+.crank-ring {
+    fill: #141b22;
+    stroke: #909ba5;
+    stroke-width: 4;
+}
+
+.crank-handle {
+    stroke: #e8edf2;
+    stroke-width: 8;
+    stroke-linecap: round;
+
+    transition: transform 0.2s ease;
+}
+
+.crank-hub {
+    fill: #c7d0d8;
+    stroke: #6f7b85;
+    stroke-width: 2;
+}

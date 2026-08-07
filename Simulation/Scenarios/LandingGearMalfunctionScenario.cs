@@ -27,6 +27,19 @@ public class LandingGearMalfunctionScenario : ISimulationScenario
     {
         ArgumentNullException.ThrowIfNull(aircraft);
         ArgumentNullException.ThrowIfNull(currentState);
+        var affectedGear =
+            currentState.LandingGears
+                .FirstOrDefault(
+                    gear =>
+                        gear.Position ==
+                        LandingGearPosition.RightMain)
+            ?? currentState.LandingGears.FirstOrDefault();
+
+        if (affectedGear is not null)
+        {
+            affectedGear.Status =
+                LandingGearStatusValue.Unsafe;
+        }
 
         currentState.AlertMessage =
             $"{aircraft.Name}: LANDING GEAR UNSAFE";
@@ -72,10 +85,10 @@ public class LandingGearMalfunctionScenario : ISimulationScenario
                 AircraftType = aircraft.Name,
                 StepOrder = 3,
                 Instruction =
-                    "Attempt the alternate landing gear extension procedure",
+                    "Complete the aircraft alternate landing gear extension procedure",
                 CorrectAction = "Alternate Gear Extension",
                 ValidationType =
-                    ProcedureValidationType.PilotAction,
+                    ProcedureValidationType.CockpitState,
                 IsSafetyCritical = true
             },
 
@@ -172,6 +185,14 @@ public class LandingGearMalfunctionScenario : ISimulationScenario
                 state.Engines.Count > 0 &&
                 state.Engines.Average(
                     engine => engine.Power) >= 80,
+            3 =>
+                state.AlternateGearExtensionActivated &&
+                state.AlternateGearExtensionCompleted &&
+                state.LandingGears.Count > 0 &&
+                state.LandingGears.All(
+                    gear =>
+                        gear.Status ==
+                        LandingGearStatusValue.DownAndLocked),
 
             _ => false
         };

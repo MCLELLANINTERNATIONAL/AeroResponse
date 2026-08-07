@@ -1,0 +1,336 @@
+@using AeroResponse.Models
+@using AeroResponse.Simulation
+
+<AlternateGearPanel>
+
+    <svg viewBox="0 0 380 260"
+         class="alternate-gear-svg"
+         role="img"
+         aria-label="Dash 8 Q400 alternate landing gear extension panel">
+
+        <rect x="10"
+              y="10"
+              width="360"
+              height="240"
+              rx="12"
+              class="panel-face" />
+
+        <text x="190"
+              y="34"
+              text-anchor="middle"
+              class="panel-title">
+            LANDING GEAR ALTERNATE RELEASE
+        </text>
+
+        <text x="190"
+              y="54"
+              text-anchor="middle"
+              class="q400-subtitle">
+            DASH 8 Q400
+        </text>
+
+        <!-- =================================================
+             Alternate release door
+             ================================================= -->
+
+        <rect x="28"
+              y="76"
+              width="145"
+              height="62"
+              rx="8"
+              class="@GetDoorClass()" />
+
+        <text x="100"
+              y="98"
+              text-anchor="middle"
+              class="control-label">
+            ALT RELEASE
+        </text>
+
+        <text x="100"
+              y="116"
+              text-anchor="middle"
+              class="control-label">
+            DOOR
+        </text>
+
+        <text x="100"
+              y="132"
+              text-anchor="middle"
+              class="control-status">
+            @(alternateDoorOpen ? "OPEN" : "CLOSED")
+        </text>
+
+        <!-- =================================================
+             Hydraulic return
+             ================================================= -->
+
+        <rect x="207"
+              y="76"
+              width="145"
+              height="62"
+              rx="8"
+              class="@GetHydraulicClass()" />
+
+        <text x="280"
+              y="98"
+              text-anchor="middle"
+              class="control-label">
+            HYDRAULIC
+        </text>
+
+        <text x="280"
+              y="116"
+              text-anchor="middle"
+              class="control-label">
+            RETURN
+        </text>
+
+        <text x="280"
+              y="132"
+              text-anchor="middle"
+              class="control-status">
+            @(hydraulicReturnConnected
+                ? "CONNECTED"
+                : "NORMAL")
+        </text>
+
+
+        <!-- =================================================
+             Main gear release handle
+             ================================================= -->
+
+        <rect x="28"
+              y="158"
+              width="145"
+              height="54"
+              rx="8"
+              class="@GetReleaseClass(mainReleasePulled)" />
+
+        <text x="100"
+              y="180"
+              text-anchor="middle"
+              class="release-title">
+            MAIN GEAR
+        </text>
+
+        <text x="100"
+              y="198"
+              text-anchor="middle"
+              class="release-status">
+            @(mainReleasePulled
+                ? "RELEASED"
+                : "PULL RELEASE")
+        </text>
+
+
+        <!-- =================================================
+             Nose gear release handle
+             ================================================= -->
+
+        <rect x="207"
+              y="158"
+              width="145"
+              height="54"
+              rx="8"
+              class="@GetReleaseClass(noseReleasePulled)" />
+
+        <text x="280"
+              y="180"
+              text-anchor="middle"
+              class="release-title">
+            NOSE GEAR
+        </text>
+
+        <text x="280"
+              y="198"
+              text-anchor="middle"
+              class="release-status">
+            @(noseReleasePulled
+                ? "RELEASED"
+                : "PULL RELEASE")
+        </text>
+
+
+        <text x="190"
+              y="235"
+              text-anchor="middle"
+              class="panel-status">
+            @StatusText
+        </text>
+
+    </svg>
+
+
+    <div class="q400-control-grid">
+
+        <button type="button"
+                class="alternate-gear-button"
+                disabled="@alternateDoorOpen"
+                @onclick="OpenAlternateDoor">
+            OPEN ALT RELEASE DOOR
+        </button>
+
+        <button type="button"
+                class="alternate-gear-button"
+                disabled="@(!alternateDoorOpen ||
+                            hydraulicReturnConnected)"
+                @onclick="ConnectHydraulicReturn">
+            CONNECT HYDRAULIC RETURN
+        </button>
+
+        <button type="button"
+                class="alternate-gear-button"
+                disabled="@(!hydraulicReturnConnected ||
+                            mainReleasePulled)"
+                @onclick="PullMainGearRelease">
+            PULL MAIN GEAR RELEASE
+        </button>
+
+        <button type="button"
+                class="alternate-gear-button"
+                disabled="@(!mainReleasePulled ||
+                            noseReleasePulled)"
+                @onclick="PullNoseGearRelease">
+            PULL NOSE GEAR RELEASE
+        </button>
+
+    </div>
+
+</AlternateGearPanel>
+
+@code {
+    [Parameter, EditorRequired]
+    public CockpitState State { get; set; } = default!;
+
+    private bool alternateDoorOpen;
+    private bool hydraulicReturnConnected;
+    private bool mainReleasePulled;
+    private bool noseReleasePulled;
+
+    private string StatusText =>
+        State.AlternateGearExtensionCompleted
+            ? "GEAR DOWN AND LOCKED"
+            : noseReleasePulled
+                ? "ALTERNATE EXTENSION IN PROGRESS"
+                : mainReleasePulled
+                    ? "MAIN GEAR RELEASED"
+                    : hydraulicReturnConnected
+                        ? "HYDRAULIC RETURN CONNECTED"
+                        : alternateDoorOpen
+                            ? "ALTERNATE SYSTEM ACCESS OPEN"
+                            : "SYSTEM STOWED";
+
+    private string GetDoorClass() =>
+        alternateDoorOpen
+            ? "q400-system-box active"
+            : "q400-system-box";
+
+    private string GetHydraulicClass() =>
+        hydraulicReturnConnected
+            ? "q400-system-box active"
+            : "q400-system-box";
+
+    private static string GetReleaseClass(
+        bool released) =>
+        released
+            ? "q400-release released"
+            : "q400-release";
+
+    private void OpenAlternateDoor()
+    {
+        if (alternateDoorOpen)
+        {
+            return;
+        }
+
+        State.AlternateGearExtensionActivated = true;
+
+        alternateDoorOpen = true;
+
+        State.AlertMessage =
+            "Q400 ALTERNATE LANDING GEAR RELEASE DOOR OPEN";
+    }
+
+    private void ConnectHydraulicReturn()
+    {
+        if (!alternateDoorOpen ||
+            hydraulicReturnConnected)
+        {
+            return;
+        }
+
+        hydraulicReturnConnected = true;
+
+        State.AlertMessage =
+            "Q400 ALTERNATE HYDRAULIC RETURN CONNECTED";
+    }
+
+    private void PullMainGearRelease()
+    {
+        if (!hydraulicReturnConnected ||
+            mainReleasePulled)
+        {
+            return;
+        }
+
+        mainReleasePulled = true;
+
+        foreach (var gear in State.LandingGears
+                     .Where(gear =>
+                         gear.Position is
+                             LandingGearPosition.LeftMain or
+                             LandingGearPosition.RightMain))
+        {
+            gear.Status =
+                LandingGearStatusValue.Moving;
+        }
+
+        State.AlertMessage =
+            "Q400 MAIN LANDING GEAR RELEASED";
+    }
+
+    private async Task PullNoseGearRelease()
+    {
+        if (!mainReleasePulled ||
+            noseReleasePulled)
+        {
+            return;
+        }
+
+        noseReleasePulled = true;
+
+        foreach (var gear in State.LandingGears
+                     .Where(gear =>
+                         gear.Position ==
+                         LandingGearPosition.Nose))
+        {
+            gear.Status =
+                LandingGearStatusValue.Moving;
+        }
+
+        State.AlertMessage =
+            "Q400 NOSE LANDING GEAR RELEASED";
+
+        await Task.Delay(1500);
+
+        foreach (var gear in State.LandingGears)
+        {
+            gear.Status =
+                LandingGearStatusValue.DownAndLocked;
+        }
+
+        State.AlternateGearExtensionCompleted =
+            State.LandingGears.Count > 0 &&
+            State.LandingGears.All(
+                gear =>
+                    gear.Status ==
+                    LandingGearStatusValue.DownAndLocked);
+
+        if (State.AlternateGearExtensionCompleted)
+        {
+            State.AlertMessage =
+                "Q400 ALTERNATE LANDING GEAR EXTENSION COMPLETE";
+        }
+    }
+}

@@ -1,13 +1,16 @@
 .cockpit-layout {
     display: grid;
-    align-items: start;
-    justify-items: center;
+
+    align-items: stretch;
+    justify-items: stretch;
 
     gap:
-        clamp(2rem, 3vw, 3.25rem)
-        clamp(1.25rem, 2.5vw, 2.75rem);
+        clamp(1.5rem, 2.5vw, 2.75rem)
+        clamp(1rem, 2vw, 2rem);
 
-    width: 100%;
+    width: 75%;
+    height: 75%;
+
     padding:
         clamp(1.5rem, 2.5vw, 2.5rem)
         clamp(1rem, 2vw, 2rem)
@@ -24,53 +27,98 @@
         );
 }
 
+
 /*
-    InstrumentRenderer creates each direct grid item.
-*/
+ * InstrumentRenderer is the actual grid item.
+ * Let it occupy the entire grid area assigned
+ * by GridRow / GridColumn / RowSpan / ColumnSpan.
+ */
 .cockpit-layout > * {
     display: flex;
+
+    align-items: center;
     justify-content: center;
 
     width: 100%;
+    height: 100%;
+
     min-width: 0;
     min-height: 0;
-
-    overflow: visible;
 
     box-sizing: border-box;
 }
 
+
 /*
-    Reach through InstrumentRenderer and InstrumentBase.
-*/
+ * Pass the available grid space through
+ * InstrumentRenderer.
+ */
 .cockpit-layout ::deep .instrument-position {
     display: flex;
+
+    align-items: center;
     justify-content: center;
 
     width: 100%;
+    height: 100%;
+
     min-width: 0;
+    min-height: 0;
 }
 
+
+/*
+ * InstrumentBase fills the available area,
+ * but remains square.
+ *
+ * A two-row or two-column instrument can now
+ * grow substantially larger than a normal
+ * one-cell instrument.
+ */
 .cockpit-layout ::deep .instrument {
-    width: min(100%, 300px);
-    max-width: 300px;
+    width: 100%;
+    height: 100%;
+
+    max-width: 100%;
+    max-height: 100%;
+
     min-width: 0;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
 }
 
+
+/*
+ * Keep round flight instruments square.
+ */
 .cockpit-layout ::deep .instrument-bezel {
-    width: 100%;
+    width: min(100%, 100cqh);
     height: auto;
+
+    max-width: 100%;
+    max-height: 100%;
+
     aspect-ratio: 1 / 1;
 
     border-radius: 50%;
 }
 
+
 .cockpit-layout ::deep .instrument-face,
 .cockpit-layout ::deep .instrument-content {
+    width: 100%;
+    height: 100%;
+
     border-radius: 50%;
 }
 
-.cockpit-layout ::deep svg {
+
+.cockpit-layout ::deep .instrument svg {
     display: block;
 
     width: 100% !important;
@@ -97,69 +145,4 @@
     stroke-linejoin: round;
 
     text-rendering: geometricPrecision;
-}
-
-@media (max-width: 1300px) {
-    .cockpit-layout {
-        gap:
-            2.25rem
-            1rem;
-
-        padding:
-            1.5rem
-            0.75rem
-            2rem;
-    }
-
-    .cockpit-layout ::deep .instrument {
-        width: min(100%, 270px);
-        max-width: 270px;
-    }
-}
-
-@media (max-width: 1100px) {
-    .cockpit-layout {
-        gap:
-            2rem
-            0.75rem;
-    }
-
-    .cockpit-layout ::deep .instrument {
-        width: min(100%, 245px);
-        max-width: 245px;
-    }
-}
-
-@media (max-width: 900px) {
-    .cockpit-layout {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr)) !important;
-
-        grid-template-rows: none !important;
-
-        gap: 2rem 1rem;
-    }
-
-    .cockpit-layout ::deep .instrument {
-        width: min(100%, 285px);
-        max-width: 285px;
-    }
-}
-
-@media (max-width: 560px) {
-    .cockpit-layout {
-        grid-template-columns: 1fr !important;
-
-        gap: 2rem;
-
-        padding:
-            1rem
-            0.75rem
-            2rem;
-    }
-
-    .cockpit-layout ::deep .instrument {
-        width: min(100%, 270px);
-        max-width: 270px;
-    }
 }

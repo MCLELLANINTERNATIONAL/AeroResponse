@@ -418,20 +418,22 @@ Main cockpit
                 EngineCount="@selectedAircraft.EngineCount" />  
             <section class="system-gauges-panel">
                 <div class="system-gauges-grid">
-                    @foreach (var engine in cockpitState.Engines)
-                    {
-                        <div class="engine-status-inspection"
-                            tabindex="0"
-                            @onfocus="() => HandleEngineStatusFocusAsync(engine)">
+                    <div class="engine-gauge-grid">
+                        @foreach (var engine in cockpitState.Engines)
+                        {
+                            <div class="engine-status-inspection"
+                                tabindex="0"
+                                @onfocus="() => HandleEngineStatusFocusAsync(engine)">
 
-                            <Tachometer
-                                Value="@engine.Power"
-                                Minimum="0"
-                                Maximum="100"
-                                Label="@($"Engine {engine.Number} Power")" />
+                                <Tachometer
+                                    Value="@engine.Power"
+                                    Minimum="0"
+                                    Maximum="100"
+                                    Label="@($"Engine {engine.Number} Power")" />
 
-                        </div>
-                    }
+                            </div>
+                        }
+                    </div>
                     <OilGauges OilPressure="@cockpitState.OilPressure" OilTemperature="@cockpitState.OilTemperature" />
                     <div class="fuel-gauges-wrapper">
                         <FuelGaugeRenderer
@@ -468,6 +470,9 @@ Main cockpit
                         BatteryOnline="@cockpitState.BatteryOnline"
                         AlternatorOnline="@cockpitState.AlternatorOnline"
                         Fault="@cockpitState.ElectricalFault" />
+                    <AlternateLandingGearRenderer
+                        Aircraft="@selectedAircraft"
+                        State="@cockpitState" />
                     <!-- Landing Gear -->
                     <div class="switch-grid"
                         tabindex="0"
@@ -481,11 +486,7 @@ Main cockpit
                                     OnClick="HandleUnitClick" />
                             </div>
                         }
-
                     </div>
-                    <AlternateLandingGearRenderer
-                        Aircraft="@selectedAircraft"
-                        State="@cockpitState" />
                 </div>
             </section>
         </div>

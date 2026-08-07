@@ -860,9 +860,20 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         var powerPct = Math.Clamp(averagePower / 100.0, 0, 1);
         var pitchPct = Math.Clamp(cockpitState.Pitch / 15.0, -1, 1);
 
-        var baseTargetSpeed = 20 + (powerPct * 90);
-        var pitchDrag = cockpitState.Pitch * 1.2;
-        var targetAirspeed = Math.Clamp(baseTargetSpeed - pitchDrag, 0, 160);
+        var baseTargetSpeed =
+            GetTargetAirspeed();
+
+        var pitchDrag =
+            Math.Max(
+                0,
+                cockpitState.Pitch) *
+            GetPitchDragFactor();
+
+        var targetAirspeed =
+            Math.Clamp(
+                baseTargetSpeed - pitchDrag,
+                0,
+                cockpitLayout.Airspeed.MaximumSpeed);
 
         var rudderInput = cockpitState.RudderPosition; // -1 to 1
         var brakeDiff = (cockpitState.BrakePressure) / 100.0;
@@ -893,10 +904,12 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             }
         }
 
-        cockpitState.Airspeed = MoveToward(
-            cockpitState.Airspeed,
-            targetAirspeed,
-            25 * elapsedSeconds);
+        cockpitState.Airspeed =
+            MoveToward(
+                cockpitState.Airspeed,
+                targetAirspeed,
+                GetAirspeedResponseRate() *
+                elapsedSeconds);
 
         var vsiTarget =
             (pitchPct * 1200) +
@@ -911,6 +924,29 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         cockpitState.Altitude = Math.Max(
             0,
             cockpitState.Altitude + cockpitState.VerticalSpeed / 60.0 * elapsedSeconds);
+    }
+    private double GetAirspeedResponseRate()
+    {
+        var cruiseSpeed =
+            selectedAircraft.CruiseSpeed;
+
+        return cruiseSpeed switch
+        {
+            <= 150 => 4.0,
+            <= 300 => 6.0,
+            <= 400 => 8.0,
+            _ => 10.0
+        };
+    }
+    private double GetPitchDragFactor()
+    {
+        return selectedAircraft.CruiseSpeed switch
+        {
+            <= 150 => 1.2,
+            <= 300 => 2.0,
+            <= 400 => 2.5,
+            _ => 3.0
+        };
     }
     private void UpdateFuelLeak(
         double elapsedSeconds)
@@ -2325,14 +2361,57 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         cockpitState.AlertMessage =
             "BACKUP HYDRAULIC SYSTEM ACTIVE - PRESSURE RESTORED";
     }
+    private double GetTargetAirspeed()
+    {
+        if (cockpitState.Engines.Count == 0)
+        {
+            return 0;
+        }
+
+        var averagePower =
+            cockpitState.Engines
+                .Average(engine => engine.Power);
+
+        if (averagePower <= 0)
+        {
+            return 0;
+        }
+
+        /*
+        * Our aircraft definitions use roughly 75%
+        * engine power as normal cruise power.
+        *
+        * Therefore:
+        *
+        * 75% throttle -> aircraft cruise speed
+        * 100% throttle -> above cruise speed
+        */
+        var powerRatio =
+            averagePower / 75.0;
+
+        var maximumTarget =
+            selectedAircraft.CruiseSpeed * 1.20;
+
+        return Math.Clamp(
+            selectedAircraft.CruiseSpeed * powerRatio,
+            0,
+            maximumTarget);
+    }
 
     /* ====================================================================================================
      |                                          Debug Controls                                              |
      ===================================================================================================== */
-     private void DebugSetCruiseAltitude()
+    private void DebugSetCruiseAltitude()
     {
-        cockpitState.Altitude = 12_000;
-        cockpitState.Airspeed = 110;
+        var defaults =
+            cockpitLayout.DefaultState;
+
+        cockpitState.Altitude =
+            defaults.CruiseAltitude;
+
+        cockpitState.Airspeed =
+            defaults.CruiseAirspeed;
+
         cockpitState.VerticalSpeed = 0;
         cockpitState.DisplayedVerticalSpeed = 0;
         cockpitState.Pitch = 0;
@@ -2342,7 +2421,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         foreach (var engine in cockpitState.Engines)
         {
             engine.Running = true;
-            engine.Power = 75;
+            engine.Power =
+                defaults.NormalEnginePower;
         }
     }
 }

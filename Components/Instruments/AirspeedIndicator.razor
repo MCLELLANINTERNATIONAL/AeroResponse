@@ -51,45 +51,61 @@
 
         <!-- Tick marks -->
         @for (var speed = Config.Airspeed.MinimumSpeed;
-              speed <= Config.Airspeed.MaximumSpeed;
-              speed += 5)
+            speed <= Config.Airspeed.MaximumSpeed;
+            speed += TickInterval)
         {
             var angle = GetSpeedAngle(speed);
-            var isMajorTick = speed % 20 == 0;
 
-            var outerPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 132, angle);
-            var innerPoint = InstrumentGeometry.GetDialPoint(
-                CenterX,
-                CenterY,
-                isMajorTick ? 111 : 121,
-                angle);
+            var isMajorTick =
+                speed % MajorTickInterval == 0;
+
+            var outerPoint =
+                InstrumentGeometry.GetDialPoint(
+                    CenterX,
+                    CenterY,
+                    132,
+                    angle);
+
+            var innerPoint =
+                InstrumentGeometry.GetDialPoint(
+                    CenterX,
+                    CenterY,
+                    isMajorTick ? 111 : 121,
+                    angle);
 
             <line x1="@InstrumentGeometry.Format(innerPoint.X)"
-                  y1="@InstrumentGeometry.Format(innerPoint.Y)"
-                  x2="@InstrumentGeometry.Format(outerPoint.X)"
-                  y2="@InstrumentGeometry.Format(outerPoint.Y)"
-                  class="@(isMajorTick
-                      ? "dial-tick major-tick"
-                      : "dial-tick minor-tick")" />
+                y1="@InstrumentGeometry.Format(innerPoint.Y)"
+                x2="@InstrumentGeometry.Format(outerPoint.X)"
+                y2="@InstrumentGeometry.Format(outerPoint.Y)"
+                class="@(isMajorTick
+                    ? "dial-tick major-tick"
+                    : "dial-tick minor-tick")" />
         }
 
         <!-- Speed numbers -->
-        @for (var speed = 20;
-              speed <= Config.Airspeed.MaximumSpeed;
-              speed += 20)
+        @for (var speed = NumberInterval;
+            speed <= Config.Airspeed.MaximumSpeed;
+            speed += NumberInterval)
         {
-            var angle = GetSpeedAngle(speed);
-            var numberPoint = InstrumentGeometry.GetDialPoint(CenterX, CenterY, 94, angle);
+            var angle =
+                GetSpeedAngle(speed);
 
-            <svg:text x="@InstrumentGeometry.Format(numberPoint.X)"
-                      y="@InstrumentGeometry.Format(numberPoint.Y)"
-                      class="dial-number"
-                      dominant-baseline="middle"
-                      text-anchor="middle">
+            var numberPoint =
+                InstrumentGeometry.GetDialPoint(
+                    CenterX,
+                    CenterY,
+                    94,
+                    angle);
+
+            <svg:text
+                x="@InstrumentGeometry.Format(numberPoint.X)"
+                y="@InstrumentGeometry.Format(numberPoint.Y)"
+                class="dial-number"
+                dominant-baseline="middle"
+                text-anchor="middle">
                 @speed
             </svg:text>
         }
-
         <!-- Units -->
         <svg:text x="150"
                   y="190"
@@ -136,6 +152,30 @@
 
     private const double CenterX = 150;
     private const double CenterY = 150;
+
+    private int TickInterval =>
+        Config.Airspeed.MaximumSpeed switch
+        {
+            <= 200 => 5,
+            <= 400 => 10,
+            _ => 20
+        };
+
+    private int MajorTickInterval =>
+        Config.Airspeed.MaximumSpeed switch
+        {
+            <= 200 => 20,
+            <= 400 => 50,
+            _ => 100
+        };
+
+    private int NumberInterval =>
+        Config.Airspeed.MaximumSpeed switch
+        {
+            <= 200 => 20,
+            <= 400 => 50,
+            _ => 100
+        };
 
     private AirspeedReading Reading =>
         AirspeedIndicatorMath.GetReading((int)Math.Round(Airspeed), Config);

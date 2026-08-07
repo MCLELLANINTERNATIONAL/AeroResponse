@@ -3,8 +3,7 @@ using AeroResponse.Simulation.Layouts;
 
 namespace AeroResponse.Simulation.Scenarios;
 
-public class CabinDepressurizationScenario
-    : ISimulationScenario
+public class CabinDepressurizationScenario : ISimulationScenario
 {
     public int ScenarioId => 2;
 
@@ -140,7 +139,12 @@ public class CabinDepressurizationScenario
     {
         ArgumentNullException.ThrowIfNull(state);
 
-        switch (actionName)
+        if (string.IsNullOrWhiteSpace(actionName))
+        {
+            return state;
+        }
+
+        switch (actionName.Trim())
         {
             case "Oxygen Masks":
                 state.AlertMessage =
@@ -150,6 +154,7 @@ public class CabinDepressurizationScenario
 
             case "Emergency Descent":
                 state.VerticalSpeed = -5_000;
+                state.DisplayedVerticalSpeed = -5_000;
                 state.Pitch = -10;
 
                 state.AlertMessage =
@@ -175,6 +180,7 @@ public class CabinDepressurizationScenario
 
             case "Level Off":
                 state.VerticalSpeed = 0;
+                state.DisplayedVerticalSpeed = 0;
                 state.Pitch = 0;
 
                 state.AlertMessage =
@@ -192,14 +198,21 @@ public class CabinDepressurizationScenario
     {
         ArgumentNullException.ThrowIfNull(aircraft);
 
+        if (string.IsNullOrWhiteSpace(actionName))
+        {
+            return false;
+        }
+
         return GetProcedureSteps(
                 aircraft,
-                scenarioId: 0)
+                scenarioId: ScenarioId)
             .Any(step =>
                 step.StepOrder == expectedStep &&
+                step.ValidationType ==
+                    ProcedureValidationType.PilotAction &&
                 string.Equals(
                     step.CorrectAction,
-                    actionName,
+                    actionName.Trim(),
                     StringComparison.OrdinalIgnoreCase));
     }
 

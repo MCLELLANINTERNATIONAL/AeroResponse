@@ -1610,46 +1610,121 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
         if (scenarioAction is not null)
         {
-            var step = procedureSteps.FirstOrDefault(x =>
-                !_completedProcedureStepOrders.Contains(
-                x.StepOrder) &&
-            string.Equals(
-                x.CorrectAction,
-                scenarioAction,
-                StringComparison.OrdinalIgnoreCase));
+            var nextStep =
+                procedureSteps
+                    .OrderBy(step => step.StepOrder)
+                    .FirstOrDefault(step =>
+                        !_completedProcedureStepOrders.Contains(
+                            step.StepOrder));
 
-            if (step is not null)
+            if (nextStep is null)
             {
-                cockpitState =
-                    SimulationSession.SubmitPilotAction(
-                        scenarioAction,
-                        step.StepOrder);
+                return;
+            }
 
-                _completedProcedureStepOrders.Add(
-                    step.StepOrder);
-
-                var scenarioResult =
-                    CockpitCommandResult.Success(
-                        scenarioAction,
-                        $"{step.Instruction} completed.",
-                        scenarioAction);
-
+            // Voice commands must follow the gold-standard checklist sequence.
+            if (!string.Equals(
+                    nextStep.CorrectAction,
+                    scenarioAction,
+                    StringComparison.OrdinalIgnoreCase))
+            {
                 _latestInstructorFeedback =
-                    AiInstructor.EvaluateAction(
-                        scenarioResult,
-                        procedureSteps,
-                        SimulationSession.PilotActions,
-                        _remainingSeconds);
+                    new AiInstructorFeedback
+                    {
+                        Severity = "Warning",
+                        Message =
+                            $"'{transcript}' is recognised, but it is not " +
+                            "the next required procedure action.",
+                        RecommendedAction =
+                            nextStep.Instruction
+                    };
 
                 _voiceStatus =
-                    $"Completed: {step.Instruction}";
+                    $"Next required action: {nextStep.Instruction}";
 
                 await JSRuntime.InvokeVoidAsync(
                     "aeroVoice.speak",
                     _latestInstructorFeedback.Message);
 
                 await InvokeAsync(StateHasChanged);
+                return;
+            }
 
+            // Pilot-action steps are recorded through the normal simulation service.
+            if (nextStep.ValidationType ==
+                ProcedureValidationType.PilotAction)
+            {
+                await HandlePilotActionAsync(
+                    scenarioAction);
+
+                if (_latestInstructorFeedback is not null)
+                {
+                    await JSRuntime.InvokeVoidAsync(
+                        "aeroVoice.speak",
+                        _latestInstructorFeedback.Message);
+                }
+
+                _voiceStatus =
+                    $"Voice command recognised: {nextStep.Instruction}";
+
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            // State-based steps must change the aircraft and then be validated
+            // by the scenario's IsStepSatisfied implementation.
+            if (nextStep.ValidationType ==
+                ProcedureValidationType.CockpitState)
+            {
+                cockpitState =
+                    selectedRuntimeScenario.ApplyPilotAction(
+                        cockpitState,
+                        scenarioAction);
+
+                cockpitState.DisplayedVerticalSpeed =
+                    cockpitState.VerticalSpeed;
+
+                await EvaluateCockpitStateProcedureStepAsync();
+
+                var completed =
+                    _completedProcedureStepOrders.Contains(
+                        nextStep.StepOrder);
+
+                if (completed)
+                {
+                    _latestInstructorFeedback =
+                        new AiInstructorFeedback
+                        {
+                            Severity = "Success",
+                            Message =
+                                $"Correct. {nextStep.Instruction} completed."
+                        };
+
+                    _voiceStatus =
+                        $"Completed: {nextStep.Instruction}";
+                }
+                else
+                {
+                    _latestInstructorFeedback =
+                        new AiInstructorFeedback
+                        {
+                            Severity = "Information",
+                            Message =
+                                "Command recognised. Complete the aircraft " +
+                                $"state required for: {nextStep.Instruction}",
+                            RecommendedAction =
+                                nextStep.Instruction
+                        };
+
+                    _voiceStatus =
+                        $"In progress: {nextStep.Instruction}";
+                }
+
+                await JSRuntime.InvokeVoidAsync(
+                    "aeroVoice.speak",
+                    _latestInstructorFeedback.Message);
+
+                await InvokeAsync(StateHasChanged);
                 return;
             }
         }
@@ -2026,14 +2101,27 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                     !_completedProcedureStepOrders.Contains(
                         step.StepOrder));
 
-        if (nextStep is not null &&
-            string.Equals(
-                nextStep.CorrectAction,
-                "Transmit Emergency",
-                StringComparison.OrdinalIgnoreCase))
+        if (nextStep is not null)
         {
-            await HandlePilotActionAsync(
-                "Transmit Emergency");
+            if (string.Equals(
+                    nextStep.CorrectAction,
+                    "Transmit Emergency",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                await HandlePilotActionAsync(
+                    "Transmit Emergency");
+            }
+            else if (string.Equals(
+                        nextStep.CorrectAction,
+                        "Declare Emergency",
+                        StringComparison.OrdinalIgnoreCase))
+            {
+                cockpitState.CommunicationStatus =
+                    "MAYDAY - CABIN DEPRESSURIZATION";
+
+                await HandlePilotActionAsync(
+                    "Declare Emergency");
+            }
         }
 
         await Task.Delay(750);
@@ -2079,9 +2167,9 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             "Declare Emergency");
     }
     /* ====================================================================================================
-     |                                          Debug Controls                                              |
+                                            Debug Controls                                              |
      ===================================================================================================== */
-     private void DebugSetCruiseAltitude()
+    private void DebugSetCruiseAltitude()
     {
         cockpitState.Altitude = 12_000;
         cockpitState.Airspeed = 110;

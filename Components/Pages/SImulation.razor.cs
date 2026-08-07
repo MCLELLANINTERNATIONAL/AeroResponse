@@ -76,6 +76,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
     private bool isOnGround = false;
     private bool _showEmergencyModal;
 
+
     private EmergencyScenario
         selectedScenarioRecord = default!;
 
@@ -137,8 +138,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
     private bool _isScenarioMenuOpen;
 
-    private string _currentPilotUserId =
-        string.Empty;
+    private string _currentPilotUserId = "test-pilot";
 
     private string _currentPilotName =
         "Pilot";
@@ -212,8 +212,25 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         _currentPilotUserId =
             principal.FindFirstValue(
                 ClaimTypes.NameIdentifier)
+            ?? principal.FindFirstValue(
+                ClaimTypes.Email)
+            ?? principal.Identity?.Name
             ?? string.Empty;
 
+        // Debug Until Authentication
+        _currentPilotUserId =
+            principal.FindFirstValue(
+                ClaimTypes.NameIdentifier)
+            ?? "debug-pilot";
+
+            
+        if (string.IsNullOrWhiteSpace(
+            _currentPilotUserId))
+        {
+            throw new InvalidOperationException(
+                "Authenticated user does not have a usable identifier.");
+        }
+        
         var firstName =
             principal.FindFirstValue(
                 ClaimTypes.GivenName);
@@ -3583,7 +3600,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             cockpitLayout.DefaultState;
 
         cockpitState.Altitude =
-            defaults.CruiseAltitude;
+            12000;
 
         cockpitState.Airspeed =
             defaults.CruiseAirspeed;

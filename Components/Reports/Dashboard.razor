@@ -551,7 +551,21 @@ LIVE DASHBOARD STATUS
 }
 
 @code {
-    private const string UserId = "test-pilot";
+    // =========================================================
+    // DEVELOPMENT USER
+    // =========================================================
+
+    /*
+     * TODO:
+     * Replace this with the authenticated user's ID
+     * once authentication is completed.
+     */
+    private const string UserId = "debug-pilot";
+
+
+    // =========================================================
+    // DASHBOARD STATE
+    // =========================================================
 
     private PerformanceDashboardVm? _dashboard;
 
@@ -560,25 +574,51 @@ LIVE DASHBOARD STATUS
     private FeedbackTab _activeFeedbackTab =
         FeedbackTab.Instructor;
 
+
+    // =========================================================
+    // INITIALIZATION
+    // =========================================================
+
     protected override async Task OnInitializedAsync()
     {
-        PerformanceFeed.ReportSaved += OnReportSaved;
+        PerformanceFeed.ReportSaved +=
+            OnReportSaved;
+
         await LoadAsync();
     }
 
-    private async void OnReportSaved(string userId)
+
+    // =========================================================
+    // LIVE REPORT UPDATES
+    // =========================================================
+
+    private async void OnReportSaved(
+        string userId)
     {
-        if (userId != UserId)
+        /*
+         * Ignore reports belonging to another pilot.
+         */
+        if (!string.Equals(
+                userId,
+                UserId,
+                StringComparison.Ordinal))
         {
             return;
         }
 
-        await InvokeAsync(async () =>
-        {
-            await LoadAsync();
-            StateHasChanged();
-        });
+        await InvokeAsync(
+            async () =>
+            {
+                await LoadAsync();
+
+                StateHasChanged();
+            });
     }
+
+
+    // =========================================================
+    // DASHBOARD LOADING
+    // =========================================================
 
     private async Task LoadAsync()
     {
@@ -587,7 +627,9 @@ LIVE DASHBOARD STATUS
             _loading = true;
 
             _dashboard =
-                await DashboardService.GetDashboardAsync(UserId);
+                await DashboardService
+                    .GetDashboardAsync(
+                        UserId);
         }
         finally
         {
@@ -595,10 +637,21 @@ LIVE DASHBOARD STATUS
         }
     }
 
+
+    // =========================================================
+    // RANK
+    // =========================================================
+
     private int RankPercent =>
         Math.Max(
             1,
-            100 - (_dashboard?.Latest?.OverallScore ?? 0));
+            100 -
+            (_dashboard?.Latest?.OverallScore ?? 0));
+
+
+    // =========================================================
+    // INFORMATION ROW
+    // =========================================================
 
     private static MarkupString InfoRow(
         string icon,
@@ -615,54 +668,80 @@ LIVE DASHBOARD STATUS
             """);
     }
 
-    private static string Duration(SimulationReport report)
+
+    // =========================================================
+    // SIMULATION DURATION
+    // =========================================================
+
+    private static string Duration(
+        SimulationReport report)
     {
         var duration =
-            report.CompletedAt - report.StartedAt;
+            report.CompletedAt -
+            report.StartedAt;
 
         if (duration < TimeSpan.Zero)
         {
             return "00:00";
         }
 
-        return duration.ToString(@"mm\:ss");
+        return duration.ToString(
+            @"mm\:ss");
     }
 
-    private IReadOnlyList<(double X, double Y)> ChartPoints
+
+    // =========================================================
+    // CHART DATA
+    // =========================================================
+
+    private IReadOnlyList<(double X, double Y)>
+        ChartPoints
     {
         get
         {
-            var reports = _dashboard?.ChartReports;
+            var reports =
+                _dashboard?.ChartReports;
 
-            if (reports is null || reports.Count == 0)
+            if (reports is null ||
+                reports.Count == 0)
             {
-                return Array.Empty<(double X, double Y)>();
+                return Array.Empty<
+                    (double X, double Y)>();
             }
 
             return reports
-                .Select((item, index) =>
-                {
-                    var denominator =
-                        Math.Max(1, reports.Count - 1);
+                .Select(
+                    (item, index) =>
+                    {
+                        var denominator =
+                            Math.Max(
+                                1,
+                                reports.Count - 1);
 
-                    var x =
-                        45 +
-                        index *
-                        (555.0 / denominator);
+                        var x =
+                            45 +
+                            index *
+                            (555.0 / denominator);
 
-                    var score =
-                        Math.Clamp(item.OverallScore, 0, 100);
+                        var score =
+                            Math.Clamp(
+                                item.OverallScore,
+                                0,
+                                100);
 
-                    var y =
-                        217 -
-                        score *
-                        1.8;
+                        var y =
+                            217 -
+                            score *
+                            1.8;
 
-                    return (X: x, Y: y);
-                })
+                        return (
+                            X: x,
+                            Y: y);
+                    })
                 .ToList();
         }
     }
+
 
     private string ScorePoints =>
         string.Join(
@@ -670,6 +749,7 @@ LIVE DASHBOARD STATUS
             ChartPoints.Select(
                 point =>
                     $"{point.X:F1},{point.Y:F1}"));
+
 
     private string AveragePoints =>
         string.Join(
@@ -688,78 +768,116 @@ LIVE DASHBOARD STATUS
                         averageScore *
                         1.8;
 
-                    return $"{point.X:F1},{y:F1}";
+                    return
+                        $"{point.X:F1},{y:F1}";
                 }));
 
-    private static string Signed(int number)
+
+    // =========================================================
+    // NUMBER FORMATTING
+    // =========================================================
+
+    private static string Signed(
+        int number)
     {
         return number >= 0
             ? $"+{number}"
             : number.ToString();
     }
 
-    private static IEnumerable<string> ImprovementItems(
-        SimulationReport report)
+
+    // =========================================================
+    // INSTRUCTOR IMPROVEMENT ITEMS
+    // =========================================================
+
+    private static IEnumerable<string>
+        ImprovementItems(
+            SimulationReport report)
     {
-        var hasImprovementItem = false;
+        var hasImprovementItem =
+            false;
+
 
         if (report.ReactionTimeSeconds > 10)
         {
-            hasImprovementItem = true;
+            hasImprovementItem =
+                true;
 
             yield return
                 $"Improve time to identify the primary failure " +
                 $"({report.ReactionTimeSeconds - 10}s slower than target).";
         }
 
+
         if (report.CommunicationScore < 90)
         {
-            hasImprovementItem = true;
+            hasImprovementItem =
+                true;
 
             yield return
                 "Consider declaring the emergency and requesting " +
                 "assistance earlier.";
         }
 
+
         if (report.ChecklistAccuracyScore < 95)
         {
-            hasImprovementItem = true;
+            hasImprovementItem =
+                true;
 
             yield return
                 "Maintain checklist discipline when workload increases.";
         }
 
+
         if (report.SafetyCriticalErrors > 0)
         {
-            hasImprovementItem = true;
+            hasImprovementItem =
+                true;
 
             yield return
                 "Review safety-critical actions before the next attempt.";
         }
 
+
         if (!hasImprovementItem)
         {
             yield return
-                "Continue maintaining the same high standard in future scenarios.";
+                "Continue maintaining the same high standard " +
+                "in future scenarios.";
         }
     }
+
+
+    // =========================================================
+    // FEEDBACK TABS
+    // =========================================================
 
     private void SelectFeedbackTab(
         FeedbackTab tab)
     {
-        _activeFeedbackTab = tab;
+        _activeFeedbackTab =
+            tab;
     }
+
 
     private string GetFeedbackTabClass(
         FeedbackTab tab)
     {
-        return _activeFeedbackTab == tab
-            ? "feedback-tab-button active"
-            : "feedback-tab-button";
+        return _activeFeedbackTab ==
+            tab
+                ? "feedback-tab-button active"
+                : "feedback-tab-button";
     }
 
-    private static string GetInstructorHeading(
-        SimulationReport report)
+
+    // =========================================================
+    // INSTRUCTOR FEEDBACK
+    // =========================================================
+
+    private static string
+        GetInstructorHeading(
+            SimulationReport report)
     {
         if (report.ActionsTaken == 0)
         {
@@ -768,7 +886,8 @@ LIVE DASHBOARD STATUS
 
         if (!report.Passed)
         {
-            return "Further Practice Required";
+            return
+                "Further Practice Required";
         }
 
         return report.OverallScore >= 85
@@ -776,78 +895,112 @@ LIVE DASHBOARD STATUS
             : "Good Attempt";
     }
 
-    private static string GetInstructorFeedbackClass(
-        SimulationReport report)
+
+    private static string
+        GetInstructorFeedbackClass(
+            SimulationReport report)
     {
         if (report.ActionsTaken == 0 ||
             !report.Passed)
         {
-            return "feedback-good feedback-review";
+            return
+                "feedback-good feedback-review";
         }
 
         return "feedback-good";
     }
 
+
+    // =========================================================
+    // AI IMPROVEMENT ITEMS
+    // =========================================================
+
     private static IEnumerable<string>
         AiImprovementItems(
             SimulationReport report)
     {
-        var hasRecommendation = false;
+        var hasRecommendation =
+            false;
+
 
         if (report.ActionsTaken == 0)
         {
-            hasRecommendation = true;
+            hasRecommendation =
+                true;
 
             yield return
-                "Begin the response immediately after the emergency warning appears.";
+                "Begin the response immediately after " +
+                "the emergency warning appears.";
         }
+
 
         if (report.ProcedureAccuracyScore < 85)
         {
-            hasRecommendation = true;
+            hasRecommendation =
+                true;
 
             yield return
-                "Review the gold-standard procedure and practise the exact action sequence.";
+                "Review the gold-standard procedure and " +
+                "practise the exact action sequence.";
         }
+
 
         if (report.TimeManagementScore < 80)
         {
-            hasRecommendation = true;
+            hasRecommendation =
+                true;
 
             yield return
-                "Reduce the delay between the warning and the first cockpit action.";
+                "Reduce the delay between the warning " +
+                "and the first cockpit action.";
         }
+
 
         if (report.DecisionMakingScore < 80)
         {
-            hasRecommendation = true;
+            hasRecommendation =
+                true;
 
             yield return
-                "Prioritise safety-critical actions before secondary tasks.";
+                "Prioritise safety-critical actions " +
+                "before secondary tasks.";
         }
+
 
         if (report.CommunicationScore < 90)
         {
-            hasRecommendation = true;
+            hasRecommendation =
+                true;
 
             yield return
-                "Declare the emergency and communicate intentions earlier.";
+                "Declare the emergency and communicate " +
+                "intentions earlier.";
         }
+
 
         if (report.SafetyCriticalErrors > 0)
         {
-            hasRecommendation = true;
+            hasRecommendation =
+                true;
 
             yield return
-                "Repeat the safety-critical memory actions before attempting the scenario again.";
+                "Repeat the safety-critical memory actions " +
+                "before attempting the scenario again.";
         }
+
 
         if (!hasRecommendation)
         {
             yield return
-                "Maintain the current standard and practise at a higher difficulty level.";
+                "Maintain the current standard and practise " +
+                "at a higher difficulty level.";
         }
     }
+
+
+    // =========================================================
+    // PDF DOWNLOAD
+    // =========================================================
 
     private async Task DownloadReportAsync()
     {
@@ -856,21 +1009,28 @@ LIVE DASHBOARD STATUS
             return;
         }
 
-        var report = _dashboard.Latest;
+        var report =
+            _dashboard.Latest;
 
         var pilotName =
-            MakeFileNameSafe(report.PilotName);
+            MakeFileNameSafe(
+                report.PilotName);
 
         var scenarioName =
-            MakeFileNameSafe(report.ScenarioName);
+            MakeFileNameSafe(
+                report.ScenarioName);
 
         var completedDate =
             report.CompletedAt
                 .ToLocalTime()
-                .ToString("yyyy-MM-dd");
+                .ToString(
+                    "yyyy-MM-dd");
 
         var fileName =
-            $"AeroResponse-{pilotName}-{scenarioName}-{completedDate}.pdf";
+            $"AeroResponse-" +
+            $"{pilotName}-" +
+            $"{scenarioName}-" +
+            $"{completedDate}.pdf";
 
         await JS.InvokeVoidAsync(
             "aeroReports.downloadPdf",
@@ -878,9 +1038,12 @@ LIVE DASHBOARD STATUS
             fileName);
     }
 
-    private static string MakeFileNameSafe(string value)
+
+    private static string MakeFileNameSafe(
+        string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        if (string.IsNullOrWhiteSpace(
+            value))
         {
             return "Report";
         }
@@ -895,9 +1058,16 @@ LIVE DASHBOARD STATUS
         }
 
         return value
-            .Replace(' ', '-')
+            .Replace(
+                ' ',
+                '-')
             .Trim('-');
     }
+
+
+    // =========================================================
+    // FEEDBACK TAB ENUM
+    // =========================================================
 
     private enum FeedbackTab
     {
@@ -905,8 +1075,14 @@ LIVE DASHBOARD STATUS
         Ai
     }
 
+
+    // =========================================================
+    // CLEANUP
+    // =========================================================
+
     public void Dispose()
     {
-        PerformanceFeed.ReportSaved -= OnReportSaved;
+        PerformanceFeed.ReportSaved -=
+            OnReportSaved;
     }
 }

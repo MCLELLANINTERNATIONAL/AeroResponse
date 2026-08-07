@@ -394,17 +394,27 @@ public sealed class SimulationService(
     private void Enrich(
         SimulationReport report)
     {
+        report.UserId =
+            _currentRun!.UserId;
+
         report.PilotName =
             _pilotName;
 
         report.AircraftName =
-            _currentRun!.AircraftName;
+            _currentRun.AircraftName;
 
         report.ScenarioName =
             _currentRun.ScenarioName;
 
         report.Difficulty =
             _difficulty;
+
+        report.StartedAt =
+            _currentRun.StartedAt;
+
+        report.CompletedAt =
+            _currentRun.CompletedAt
+            ?? DateTime.UtcNow;
     }
 
     private void EnsureEmergencyTriggered()

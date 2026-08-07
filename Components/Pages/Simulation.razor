@@ -39,10 +39,10 @@ else if (!_isReady)
 }
 else
 {
+/* ==================================================
+Emergency Modal
+================================================== */
     <div class="simulation-page-shell">
-        @* ==================================================
-        Emergency Modal
-        ================================================== *@
         @if (_showEmergencyModal)
         {
             <div class="emergency-modal-layer"
@@ -152,9 +152,7 @@ else
                         Begin Emergency Procedure
 
                     </button>
-
                 </section>
-
             </div>
         }
 
@@ -163,711 +161,706 @@ else
         ================================================== *@
 
         <aside class="simulation-selector-rail"
-        aria-label="Simulation setup">
+            aria-label="Simulation setup">
 
-        <div class="selector-rail-heading">
-            <span class="scenario-eyebrow">
-                Training setup
-            </span>
+            <div class="selector-rail-heading">
+                <span class="scenario-eyebrow">
+                    Training setup
+                </span>
 
-            <h2>Simulation</h2>
+                <h2>Simulation</h2>
 
-            <p>
-                Change the aircraft or emergency
-                without leaving the cockpit.
-            </p>
-        </div>
-
-        <section class="selector-group">
-            <div class="selector-group-label">
-                Current aircraft
+                <p>
+                    Change the aircraft or emergency
+                    without leaving the cockpit.
+                </p>
             </div>
 
-            <div class="selector-dropdown">
-                <button type="button"
-                class="current-selection-button"
-                aria-expanded="@_isAircraftMenuOpen"
-                aria-controls="aircraft-selector-menu"
-                @onclick="ToggleAircraftMenu">
+            <section class="selector-group">
+                <div class="selector-group-label">
+                    Current aircraft
+                </div>
 
-                <span class="selection-icon"
-                aria-hidden="true">
-                ✈
-            </span>
+                <div class="selector-dropdown">
+                    <button type="button"
+                        class="current-selection-button"
+                        aria-expanded="@_isAircraftMenuOpen"
+                        aria-controls="aircraft-selector-menu"
+                        @onclick="ToggleAircraftMenu">
 
-            <span class="selection-details">
-                <strong>
-                    @selectedAircraft.Name
-                </strong>
+                        <span class="selection-icon" aria-hidden="true">
+                            ✈
+                        </span>
 
-                <small>
-                    @selectedAircraft.EngineCount
-                    @(selectedAircraft.EngineCount == 1
-                    ? "engine"
-                    : "engines")
-                </small>
-            </span>
+                        <span class="selection-details">
+                            <strong>
+                                @selectedAircraft.Name
+                            </strong>
 
-            <span class="dropdown-chevron
-            @(_isAircraftMenuOpen ? "open" : "")"
-            aria-hidden="true">
-            ▾
-        </span>
-    </button>
+                            <small>
+                                @selectedAircraft.EngineCount
+                                @(selectedAircraft.EngineCount == 1
+                                ? "engine"
+                                : "engines")
+                            </small>
+                        </span>
 
-    @if (_isAircraftMenuOpen)
-    {
-        <div id="aircraft-selector-menu"
-        class="selector-dropdown-menu"
-        role="menu"
-        aria-label="Aircraft options">
+                        <span class="dropdown-chevron
+                            @(_isAircraftMenuOpen ? "open" : "")"
+                            aria-hidden="true">
+                            ▾
+                        </span>
+                    </button>
 
-        @foreach (var aircraft in _aircraftOptions)
-        {
-            var isSelected =
-            aircraft.Id ==
-            selectedAircraft.Id;
+                    @if (_isAircraftMenuOpen)
+                    {
+                        <div id="aircraft-selector-menu"
+                            class="selector-dropdown-menu"
+                            role="menu"
+                            aria-label="Aircraft options">
 
-            <button type="button"
-            class="selector-dropdown-option
-            @(isSelected ? "selected" : "")"
-            role="menuitem"
-            @onclick="() =>
-            ChangeAircraftAsync(aircraft)">
-
-            <span>
-                <strong>
-                    @aircraft.Name
-                </strong>
-
-                <small>
-                    @aircraft.EngineCount
-                    @(aircraft.EngineCount == 1
-                    ? "engine"
-                    : "engines")
-                </small>
-            </span>
-
-            @if (isSelected)
-            {
-                <span class="active-label">
-                    Active
-                </span>
-            }
-        </button>
-    }
-</div>
-}
-</div>
-</section>
-
-<section class="selector-group">
-    <div class="selector-group-label">
-        Current scenario
-    </div>
-
-    <div class="selector-dropdown">
-        <button type="button"
-        class="current-selection-button emergency-selection-button"
-        aria-expanded="@_isScenarioMenuOpen"
-        aria-controls="scenario-selector-menu"
-        @onclick="ToggleScenarioMenu">
-
-        <span class="selection-icon"
-        aria-hidden="true">
-        ⚠
-    </span>
-
-    <span class="selection-details">
-        <strong>
-            @selectedScenarioRecord.Title
-        </strong>
-
-        <small>
-            @selectedScenarioRecord.Difficulty
-        </small>
-    </span>
-
-    <span class="dropdown-chevron
-    @(_isScenarioMenuOpen ? "open" : "")"
-    aria-hidden="true">
-    ▾
-</span>
-</button>
-
-@if (_isScenarioMenuOpen)
-{
-    <div id="scenario-selector-menu"
-    class="selector-dropdown-menu"
-    role="menu"
-    aria-label="Scenario options">
-
-    @foreach (var scenario in _scenarioRecords)
-    {
-        var isSelected =
-        scenario.Id ==
-        selectedScenarioRecord.Id;
-
-        <button type="button"
-        class="selector-dropdown-option
-        @(isSelected ? "selected" : "")"
-        role="menuitem"
-        @onclick="() =>
-        ChangeScenarioAsync(scenario)">
-
-        <span>
-            <strong>
-                @scenario.Title
-            </strong>
-
-            <small>
-                @scenario.Difficulty
-            </small>
-        </span>
-
-        @if (isSelected)
-        {
-            <span class="active-label">
-                Active
-            </span>
-        }
-    </button>
-}
-</div>
-}
-</div>
-</section>
-</aside>
-
-@* ==================================================
-Database-driven top status bar
-================================================== *@
-
-<section class="emergency-status-bar"
-aria-label="Current emergency status">
-
-<div class="emergency-summary">
-    <div class="emergency-title-row">
-        <span class="emergency-badge">
-            <span aria-hidden="true">⚠</span>
-            Emergency
-        </span>
-
-        <h1>
-            @selectedScenarioRecord.Title
-        </h1>
-    </div>
-
-    <p>
-        @selectedScenarioRecord.TriggerCondition
-    </p>
-</div>
-
-<div class="flight-status-items">
-    <div class="flight-status-item">
-        <span>Altitude</span>
-
-        <strong>
-            @cockpitState.Altitude.ToString("N0") ft
-        </strong>
-    </div>
-
-    <div class="flight-status-item">
-        <span>Airspeed</span>
-
-        <strong>
-            @cockpitState.Airspeed.ToString("N0") kts
-        </strong>
-    </div>
-
-    <div class="flight-status-item">
-        <span>Heading</span>
-
-        <strong>
-            @FormatHeading(cockpitState.Heading)°
-        </strong>
-    </div>
-
-    <div class="flight-status-item difficulty-item">
-        <span>Difficulty</span>
-
-        <strong>
-            @selectedScenarioRecord.Difficulty
-        </strong>
-    </div>
-</div>
-
-<div class="emergency-objective">
-    <span>Objective</span>
-
-    <p>
-        @GetObjectiveText()
-    </p>
-</div>
-</section>
-
-@* ==================================================
-Main cockpit
-================================================== *@
-
-<main class="simulation-main-panel">
-    <div class="simulation-content-card">
-        <div id="instrument-panel">
-            <CockpitLayout Layout="@cockpitLayout"
-                State="@cockpitState"
-                EngineCount="@selectedAircraft.EngineCount" />  
-            <section class="system-gauges-panel">
-                <div class="system-gauges-grid">
-                    <div class="engine-gauge-grid">
-                        @foreach (var engine in cockpitState.Engines)
+                        @foreach (var aircraft in _aircraftOptions)
                         {
-                            <div class="engine-status-inspection"
-                                tabindex="0"
-                                @onfocus="() => HandleEngineStatusFocusAsync(engine)">
+                            var isSelected =
+                                aircraft.Id ==
+                                selectedAircraft.Id;
 
-                                <Tachometer
-                                    Value="@engine.Power"
-                                    Minimum="0"
-                                    Maximum="100"
-                                    Label="@($"Engine {engine.Number} Power")" />
+                            <button type="button"
+                                    class="selector-dropdown-option
+                                    @(isSelected ? "selected" : "")"
+                                    role="menuitem"
+                                    @onclick="() =>
+                                        ChangeAircraftAsync(aircraft)">
 
-                            </div>
+                                <span>
+                                    <strong>
+                                        @aircraft.Name
+                                    </strong>
+
+                                    <small>
+                                        @aircraft.EngineCount
+                                        @(aircraft.EngineCount == 1
+                                            ? "engine"
+                                            : "engines")
+                                    </small>
+                                </span>
+
+                                @if (isSelected)
+                                {
+                                    <span class="active-label">
+                                        Active
+                                    </span>
+                                }
+
+                            </button>
                         }
+
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <section class="selector-group">
+                <div class="selector-group-label">
+                    Current scenario
+                </div>
+
+                <div class="selector-dropdown">
+                    <button type="button"
+                        class="current-selection-button emergency-selection-button"
+                        aria-expanded="@_isScenarioMenuOpen"
+                        aria-controls="scenario-selector-menu"
+                        @onclick="ToggleScenarioMenu">
+
+                        <span class="selection-icon" aria-hidden="true">
+                            ⚠
+                        </span>
+
+                        <span class="selection-details">
+                            <strong>
+                                @selectedScenarioRecord.Title
+                            </strong>
+
+                            <small>
+                                @selectedScenarioRecord.Difficulty
+                            </small>
+                        </span>
+
+                        <span class="dropdown-chevron
+                            @(_isScenarioMenuOpen ? "open" : "")"
+                            aria-hidden="true">
+                            ▾
+                        </span>
+                    </button>
+
+                    @if (_isScenarioMenuOpen)
+                    {
+                        <div id="scenario-selector-menu"
+                            class="selector-dropdown-menu"
+                            role="menu"
+                            aria-label="Scenario options">
+
+                        @foreach (var scenario in _scenarioRecords)
+                        {
+                            var isSelected =
+                                scenario.Id ==
+                                selectedScenarioRecord.Id;
+
+                            <button type="button"
+                                class="selector-dropdown-option
+                                @(isSelected ? "selected" : "")"
+                                role="menuitem"
+                                @onclick="() =>
+                                ChangeScenarioAsync(scenario)">
+
+                            <span>
+                                <strong>
+                                    @scenario.Title
+                                </strong>
+
+                                <small>
+                                    @scenario.Difficulty
+                                </small>
+                            </span>
+
+                            @if (isSelected)
+                            {
+                                <span class="active-label">
+                                    Active
+                                </span>
+                            }
+                            </button>
+                        }
+                        </div>
+                    }
                     </div>
-                    <OilGauges OilPressure="@cockpitState.OilPressure" OilTemperature="@cockpitState.OilTemperature" />
-                    <div class="fuel-gauges-wrapper">
-                        <FuelGaugeRenderer
+            </section>
+            <button type="button"
+                class="btn @(simulationStarted ? "btn-danger" : "btn-primary")"
+                @onclick="ToggleFlightSimulation">
+                @(simulationStarted
+                    ? "Stop Simulation"
+                    : "Start Simulation")
+            </button>
+        </aside>
+
+/* ==================================================
+Database-driven top status bar
+================================================== */
+
+        <section class="emergency-status-bar"
+            aria-label="Current emergency status">
+
+            <div class="emergency-summary">
+                <div class="emergency-title-row">
+                    <span class="emergency-badge">
+                        <span aria-hidden="true">⚠</span>
+                        Emergency
+                    </span>
+
+                    <h1>
+                        @selectedScenarioRecord.Title
+                    </h1>
+                </div>
+
+                <p>
+                    @selectedScenarioRecord.TriggerCondition
+                </p>
+            </div>
+
+            <div class="flight-status-items">
+                <div class="flight-status-item">
+                    <span>Altitude</span>
+
+                    <strong>
+                        @cockpitState.Altitude.ToString("N0") ft
+                    </strong>
+                </div>
+
+                <div class="flight-status-item">
+                    <span>Airspeed</span>
+
+                    <strong>
+                        @cockpitState.Airspeed.ToString("N0") kts
+                    </strong>
+                </div>
+
+                <div class="flight-status-item">
+                    <span>Heading</span>
+
+                    <strong>
+                        @FormatHeading(cockpitState.Heading)°
+                    </strong>
+                </div>
+
+                <div class="flight-status-item difficulty-item">
+                    <span>Difficulty</span>
+
+                    <strong>
+                        @selectedScenarioRecord.Difficulty
+                    </strong>
+                </div>
+            </div>
+
+            <div class="emergency-objective">
+                <span>Objective</span>
+
+                <p>
+                    @GetObjectiveText()
+                </p>
+            </div>
+        </section>
+
+    /* ==================================================
+       Main cockpit
+    ================================================== */
+
+    <main class="simulation-main-panel">
+        <div class="simulation-content-card">
+            <div id="instrument-panel">
+                <CockpitLayout Layout="@cockpitLayout"
+                    State="@cockpitState"
+                    EngineCount="@selectedAircraft.EngineCount" />  
+                <section class="system-gauges-panel">
+                    <div class="system-gauges-grid">
+                        <div class="engine-gauge-grid">
+                            @foreach (var engine in cockpitState.Engines)
+                            {
+                                <div class="engine-status-inspection"
+                                    tabindex="0"
+                                    data-control-id="@($"engine.{engine.Number}")"
+                                    @onfocus="() => HandleEngineStatusFocusAsync(engine)">
+
+                                    <Tachometer
+                                        Value="@engine.Power"
+                                        Minimum="0"
+                                        Maximum="100"
+                                        Label="@($"Engine {engine.Number} Power")" />
+
+                                </div>
+                            }
+                        </div>
+                        <OilGauges OilPressure="@cockpitState.OilPressure" OilTemperature="@cockpitState.OilTemperature" />
+                        <div class="fuel-gauges-wrapper">
+                            <FuelGaugeRenderer
+                                Aircraft="@selectedAircraft"
+                                FuelTanks="@cockpitState.FuelTanks" />
+                            @if (selectedAircraft.Name == "Cessna 172"){
+                                @foreach (var tank in cockpitState.FuelTanks)
+                                {
+                                    <button type="button"
+                                            class="fuel-tank-button isolate"
+                                            @onclick="() => HandleFuelTankIsolationAsync(tank)">
+                                        ISOLATE TANK @tank.Number
+                                    </button>
+                                }
+                            }
+                        </div>
+                        <div class="hydraulicSystemsWrapper"
+                            tabindex="0"
+                            @onfocus="() => HandleHydraulicStatusFocusAsync()">
+                            <HydraulicSystem
+                                Pressure="@cockpitState.HydraulicPressure"
+                                PumpOnline="@cockpitState.HydraulicPumpOnline"
+                                Fault="@cockpitState.HydraulicFault" />
+                            <button type="button"
+                                    class="btn btn-outline-warning"
+                                    @onclick="ActivateBackupHydraulicSystem">
+                                Activate Backup Hydraulic System
+                            </button>
+                        </div>
+                        <ElectricalSystem
+                            BusVoltage="@cockpitState.BusVoltage"
+                            BatteryVoltage="@cockpitState.BatteryVoltage"
+                            LoadAmps="@cockpitState.ElectricalLoadAmps"
+                            BatteryOnline="@cockpitState.BatteryOnline"
+                            AlternatorOnline="@cockpitState.AlternatorOnline"
+                            Fault="@cockpitState.ElectricalFault" />
+                        <AlternateLandingGearRenderer
                             Aircraft="@selectedAircraft"
-                            FuelTanks="@cockpitState.FuelTanks" />
-                        @if (selectedAircraft.Name == "Cessna 172"){
-                            @foreach (var tank in cockpitState.FuelTanks)
+                            State="@cockpitState" />
+                        <!-- Landing Gear -->
+                        <div class="switch-grid"
+                            tabindex="0"
+                            @onfocus="HandleLandingGearStatusFocusAsync">
+
+                            @foreach (var unit in cockpitState.LandingGears)
+                            {
+                                <div class="switch-slot" @key="unit.Number">
+                                    <LandingGearStatus
+                                        Unit="@unit"
+                                        OnClick="HandleUnitClick" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <section class="flight-controls-panel">
+                <h2>Flight Controls</h2>
+
+                <div class="flight-controls-grid">
+
+                    <!-- THROTTLE -->
+                    <div class="control-card">
+                        <div id="throttle-controls">
+                            @foreach (var engine in cockpitState.Engines)
+                            {
+                                if (cockpitState.Engines.Count > 1)
+                                {
+                                    <h3>Engine @engine.Number</h3>
+                                }
+
+                                <ThrottleControl
+                                    Power="@engine.Power"
+                                    PowerChanged="value => HandleThrottleChanged(engine, value)" />
+                            }
+                        </div>
+                    </div>
+
+                    <!-- YOKE -->
+                    <div class="control-card">
+                        <YokeControl
+                            Pitch="@cockpitState.Pitch"
+                            PitchChanged="value => cockpitState.Pitch = value"
+                            Bank="@cockpitState.Bank"
+                            BankChanged="value => cockpitState.Bank = value" />
+
+                    <!-- Scenario Specific Pilot Options that Don't translate well to cockpit state -->
+                        <div class="pilot-actions-panel"> 
+                            @if (procedureSteps.Any(
+                                    step => step.CorrectAction == "Oxygen Masks"))
+                                {
+                                    <div class="debug-controls">
+                                        <button type="button"
+                                                class="btn btn-warning"
+                                                @onclick="DebugSetCruiseAltitude">
+                                            DEBUG: Jump to 12,000 ft
+                                        </button>
+                                    </div>
+                                    <button type="button"
+                                            class="btn btn-outline-primary"
+                                            @onclick='() => HandlePilotActionAsync("Oxygen Masks")'>
+                                        Oxygen Masks
+                                    </button>
+                                }
+                            @if (procedureSteps.Any(
+                                step => string.Equals(
+                                    step.CorrectAction,
+                                    "Activate Backup Power",
+                                    StringComparison.OrdinalIgnoreCase)))
                             {
                                 <button type="button"
-                                        class="fuel-tank-button isolate"
-                                        @onclick="() => HandleFuelTankIsolationAsync(tank)">
-                                    ISOLATE TANK @tank.Number
+                                        class="btn btn-outline-primary"
+                                        @onclick='() => HandlePilotActionAsync("Activate Backup Power")'>
+
+                                    Activate Backup Power
+
                                 </button>
                             }
-                        }
-                    </div>
-                    <div class="hydraulicSystemsWrapper"
-                        tabindex="0"
-                        @onfocus="() => HandleHydraulicStatusFocusAsync()">
-                        <HydraulicSystem
-                            Pressure="@cockpitState.HydraulicPressure"
-                            PumpOnline="@cockpitState.HydraulicPumpOnline"
-                            Fault="@cockpitState.HydraulicFault" />
-                        <button type="button"
-                                class="btn btn-outline-warning"
-                                @onclick="ActivateBackupHydraulicSystem">
-                            Activate Backup Hydraulic System
-                        </button>
-                    </div>
-                    <ElectricalSystem
-                        BusVoltage="@cockpitState.BusVoltage"
-                        BatteryVoltage="@cockpitState.BatteryVoltage"
-                        LoadAmps="@cockpitState.ElectricalLoadAmps"
-                        BatteryOnline="@cockpitState.BatteryOnline"
-                        AlternatorOnline="@cockpitState.AlternatorOnline"
-                        Fault="@cockpitState.ElectricalFault" />
-                    <AlternateLandingGearRenderer
-                        Aircraft="@selectedAircraft"
-                        State="@cockpitState" />
-                    <!-- Landing Gear -->
-                    <div class="switch-grid"
-                        tabindex="0"
-                        @onfocus="HandleLandingGearStatusFocusAsync">
+                            @if (procedureSteps.Any(
+                                step => string.Equals(
+                                    step.CorrectAction,
+                                    "Reduce Electrical Load",
+                                    StringComparison.OrdinalIgnoreCase)))
+                            {
+                                <button type="button"
+                                        class="btn btn-outline-primary"
+                                        @onclick='() => HandlePilotActionAsync("Reduce Electrical Load")'>
 
-                        @foreach (var unit in cockpitState.LandingGears)
-                        {
-                            <div class="switch-slot" @key="unit.Number">
-                                <LandingGearStatus
-                                    Unit="@unit"
-                                    OnClick="HandleUnitClick" />
-                            </div>
-                        }
+                                    Shed Non-Essential Load
+
+                                </button>
+                            }
+                            @if (procedureSteps.Any(
+                                step =>
+                                    step.CorrectAction.StartsWith(
+                                        "Activate Fire Suppression Engine",
+                                        StringComparison.OrdinalIgnoreCase)))
+                            {
+                                <button type="button"
+                                        class="btn btn-danger"
+                                        @onclick="ActivateFireSuppression">
+
+                                    Activate Engine Fire Suppression
+
+                                </button>
+                            }
+                        </div>
                     </div>
+                    <div class="communications-grid">
+                        <CommunicationPanel
+                            RadioPowered="@cockpitState.RadioPowered"
+                            RadioFrequency="@cockpitState.RadioFrequency"
+                            RadioTransmitting="@cockpitState.RadioTransmitting"
+
+                            SatellitePowered="@cockpitState.SatellitePhonePowered"
+                            SatelliteConnected="@cockpitState.SatellitePhoneConnected"
+                            SatelliteSignalStrength="@cockpitState.SatelliteSignalStrength"
+
+                            RadioPowerChanged="HandleRadioPower"
+                            GuardFrequencySelected="HandleGuardFrequency"
+                            RadioTransmitRequested="HandleRadioTransmitAsync"
+
+                            SatellitePowerChanged="HandleSatellitePower"
+                            SatelliteConnectionChanged="HandleSatelliteConnection"
+                            SatelliteEmergencyRequested="HandleSatelliteEmergency" />
+                    </div>
+                    <!-- EMERGENCY -->
+                    <div class="control-card" id="emergency-feedback">
+
+                        <FireDetection
+                            Status="@GetFireStatus()"
+                            Label="@GetFireLabel()" />
+
+                        <button type="button"
+                                class="btn btn-danger fire-suppression-control"
+                                @onclick="ActivateCabinFireSuppression">
+                            Activate Cabin Fire Suppression
+                        </button>
+
+                        <!-- FUEL CONTROL -->
+                        
+                        <div class="fuel-control-grid">
+                            @foreach (var engine in cockpitState.Engines)
+                            {
+                                <FuelControlSwitch
+                                    Engine="@engine"
+                                    OnChanged="HandleFuelControlChanged" />
+                            }
+                        </div>
+                        
+                    </div>
+                    <!-- RUDDER -->
+                    <div class="rudder-card">
+                        <RudderControl
+                            RudderPosition="@cockpitState.RudderPosition"
+                            RudderPositionChanged="value => cockpitState.RudderPosition = value"
+                            Brakes="@cockpitState.Brakes" />
+                    </div>
+
                 </div>
             </section>
         </div>
+    </main>
 
-        <section class="flight-controls-panel">
-            <h2>Flight Controls</h2>
+    /* ==================================================
+    Database-driven emergency panel
+    ================================================== */
 
-            <div class="flight-controls-grid">
+    <aside class="emergency-checklist-panel"
+    aria-label="Emergency checklist">
+        <VoiceInstructorPanel
+            IsSupported="_voiceSupported"
+            IsListening="_voiceListening"
+            StatusMessage="@_voiceStatus"
+            LastTranscript="@_lastVoiceTranscript"
+            Feedback="_latestInstructorFeedback"
+            ToggleListening="ToggleVoiceControlAsync" />
 
-                <!-- THROTTLE -->
-                <div class="control-card">
-                    <div id="throttle-controls">
-                        @foreach (var engine in cockpitState.Engines)
-                        {
-                            if (cockpitState.Engines.Count > 1)
-                            {
-                                <h3>Engine @engine.Number</h3>
-                            }
+        <section class="emergency-panel-card assessment-status-card">
+            <span class="emergency-panel-eyebrow">
+                Performance assessment
+            </span>
 
-                            <ThrottleControl
-                                Power="@engine.Power"
-                                PowerChanged="value => HandleThrottleChanged(engine, value)" />
-                        }
-                    </div>
-                </div>
-
-                <!-- YOKE -->
-                <div class="control-card">
-                    <YokeControl
-                        Pitch="@cockpitState.Pitch"
-                        PitchChanged="value => cockpitState.Pitch = value"
-                        Bank="@cockpitState.Bank"
-                        BankChanged="value => cockpitState.Bank = value" />
-
-                <!-- Scenario Specific Pilot Options that Don't translate well to cockpit state -->
-                    <div class="pilot-actions-panel"> 
-                        @if (procedureSteps.Any(
-                                step => step.CorrectAction == "Oxygen Masks"))
-                            {
-                                <div class="debug-controls">
-                                    <button type="button"
-                                            class="btn btn-warning"
-                                            @onclick="DebugSetCruiseAltitude">
-                                        DEBUG: Jump to 12,000 ft
-                                    </button>
-                                </div>
-                                <button type="button"
-                                        class="btn btn-outline-primary"
-                                        @onclick='() => HandlePilotActionAsync("Oxygen Masks")'>
-                                    Oxygen Masks
-                                </button>
-                            }
-                        @if (procedureSteps.Any(
-                            step => string.Equals(
-                                step.CorrectAction,
-                                "Activate Backup Power",
-                                StringComparison.OrdinalIgnoreCase)))
-                        {
-                            <button type="button"
-                                    class="btn btn-outline-primary"
-                                    @onclick='() => HandlePilotActionAsync("Activate Backup Power")'>
-
-                                Activate Backup Power
-
-                            </button>
-                        }
-                        @if (procedureSteps.Any(
-                            step => string.Equals(
-                                step.CorrectAction,
-                                "Reduce Electrical Load",
-                                StringComparison.OrdinalIgnoreCase)))
-                        {
-                            <button type="button"
-                                    class="btn btn-outline-primary"
-                                    @onclick='() => HandlePilotActionAsync("Reduce Electrical Load")'>
-
-                                Shed Non-Essential Load
-
-                            </button>
-                        }
-                        @if (procedureSteps.Any(
-                            step =>
-                                step.CorrectAction.StartsWith(
-                                    "Activate Fire Suppression Engine",
-                                    StringComparison.OrdinalIgnoreCase)))
-                        {
-                            <button type="button"
-                                    class="btn btn-danger"
-                                    @onclick="ActivateFireSuppression">
-
-                                Activate Engine Fire Suppression
-
-                            </button>
-                        }
-                    </div>
-                </div>
-                <div class="communications-grid">
-                    <CommunicationPanel
-                        RadioPowered="@cockpitState.RadioPowered"
-                        RadioFrequency="@cockpitState.RadioFrequency"
-                        RadioTransmitting="@cockpitState.RadioTransmitting"
-
-                        SatellitePowered="@cockpitState.SatellitePhonePowered"
-                        SatelliteConnected="@cockpitState.SatellitePhoneConnected"
-                        SatelliteSignalStrength="@cockpitState.SatelliteSignalStrength"
-
-                        RadioPowerChanged="HandleRadioPower"
-                        GuardFrequencySelected="HandleGuardFrequency"
-                        RadioTransmitRequested="HandleRadioTransmitAsync"
-
-                        SatellitePowerChanged="HandleSatellitePower"
-                        SatelliteConnectionChanged="HandleSatelliteConnection"
-                        SatelliteEmergencyRequested="HandleSatelliteEmergency" />
-                </div>
-                <!-- EMERGENCY -->
-                <div class="control-card" id="emergency-feedback">
-
-                    <FireDetection
-                        Status="@GetFireStatus()"
-                        Label="@GetFireLabel()" />
-
-                    <button type="button"
-                            class="btn btn-danger fire-suppression-control"
-                            @onclick="ActivateCabinFireSuppression">
-                        Activate Cabin Fire Suppression
-                    </button>
-
-                    <!-- FUEL CONTROL -->
-                    
-                    <div class="fuel-control-grid">
-                        @foreach (var engine in cockpitState.Engines)
-                        {
-                            <FuelControlSwitch
-                                Engine="@engine"
-                                OnChanged="HandleFuelControlChanged" />
-                        }
-                    </div>
-                    
-                </div>
-                <!-- RUDDER -->
-                <div class="rudder-card">
-                    <RudderControl
-                        RudderPosition="@cockpitState.RudderPosition"
-                        RudderPositionChanged="value => cockpitState.RudderPosition = value"
-                        Brakes="@cockpitState.Brakes" />
-                </div>
-
-            </div>
-        </section>
-    </div>
-</main>
-
-@* ==================================================
-Database-driven emergency panel
-================================================== *@
-
-<aside class="emergency-checklist-panel"
-aria-label="Emergency checklist">
-
-<section class="emergency-panel-card active-emergency-card">
-    <span class="emergency-panel-eyebrow">
-        @(emergencyTriggered
-        ? "Active emergency"
-        : "Emergency pending")
-    </span>
-    <span class="emergency-panel-eyebrow" id="flight-phase">
-        Flight phase: @cockpitState.FlightPhase
-    </span>
-    <div class="active-emergency-heading">
-        <span class="active-emergency-icon"
-        aria-hidden="true">
-        @(emergencyTriggered ? "⚠" : "⏱")
-    </span>
-
-    <h2>
-        @selectedScenarioRecord.Title
-    </h2>
-</div>
-
-<strong class="affected-system-label">
-    @selectedScenarioRecord.EmergencyType
-</strong>
-
-@if (emergencyTriggered)
-{
-    <p>
-        @selectedScenarioRecord.Description
-    </p>
-}
-else
-{
-    <p>
-        @GetTriggerStatusText()
-    </p>
-}
-
-@if (!string.IsNullOrWhiteSpace(
-selectedScenarioRecord.TriggerCondition))
-{
-    <p>
-        @selectedScenarioRecord.TriggerCondition
-    </p>
-}
-
-@if (selectedScenarioRecord.TriggerType == "Manual" &&
-!emergencyTriggered)
-{
-    <div class="manual-trigger-section">
-
-        <button type="button"
-        class="btn btn-danger"
-        @onclick="ActivateEmergencyManually">
-
-        🚨 Activate Emergency
-
-    </button>
-
-    <small>
-        This scenario is configured for manual instructor activation.
-    </small>
-
-</div>
-}
-</section>
-
-<section class="emergency-panel-card checklist-progress-card">
-    <span class="emergency-panel-eyebrow">
-        Checklist progress
-    </span>
-
-    <div class="checklist-progress-row">
-        <div class="checklist-progress-track"
-        role="progressbar"
-        aria-label="Emergency checklist progress"
-        aria-valuemin="0"
-        aria-valuemax="@procedureSteps.Count"
-        aria-valuenow="@CompletedStepCount">
-
-        <span class="checklist-progress-fill"
-        style="@GetChecklistProgressStyle()">
-    </span>
-</div>
-
-<strong>
-    @CompletedStepCount /
-    @procedureSteps.Count
-</strong>
-</div>
-</section>
-
-<section class="emergency-panel-card checklist-card">
-    <span class="emergency-panel-eyebrow">
-        Checklist
-    </span>
-
-    <h2>
-        @selectedScenarioRecord.Title
-    </h2>
-
-    @if (procedureSteps.Count == 0)
-    {
-        <p class="empty-checklist-message">
-            No procedure has been stored for this scenario.
-        </p>
-    }
-    else
-    {
-        <ol class="emergency-checklist">
-            @foreach (var step in procedureSteps
-            .OrderBy(item => item.StepOrder))
+            @if (!emergencyTriggered)
             {
-                var isCompleted =
-                IsProcedureStepCompleted(step);
-
-                <li class="checklist-step
-                @(isCompleted ? "completed" : null)
-                @(step.IsSafetyCritical ? "safety-critical" : null)">
-                    <label>
-                        <input type="checkbox"
-                            checked="@isCompleted"
-                            disabled />
-
-                        <span class="custom-check-box"
-                        aria-hidden="true">
-                        </span>
-
-                        <span class="checklist-step-content">
-                            <span class="checklist-step-number">
-                                @step.StepOrder.
-                            </span>
-
-                            <span class="checklist-step-text">
-                                @step.Instruction
-                            </span>
-
-                            @if (step.IsSafetyCritical)
-                            {
-                                <small>
-                                    Critical
-                                </small>
-                            }
-                        </span>
-                    </label>
-                </li>
+                <p>
+                    The assessment timer begins when the emergency is triggered.
+                </p>
             }
-        </ol>
-        if (selectedScenarioRecord.ProcedureSteps.Any(step => step.CorrectAction == "Check Engine Status"))
-        {
-            <button type="button"
-                    class="btn btn-outline-primary"
-                    @onclick='() => HandlePilotActionAsync("Check Engine Status")'>
+            else if (_completedReport is null)
+            {
+                <div class="assessment-time-row">
+                    <span>Time remaining</span>
+                    <strong class="@(_remainingSeconds <= 15 ? "assessment-time-warning" : null)">
+                        @FormatAssessmentTime(_remainingSeconds)
+                    </strong>
+                </div>
 
-                Check Engine Status
+                <p>
+                    Complete the actions in the correct sequence before the configured
+                    time limit expires.
+                </p>
 
-            </button>
-        }
-}
-</section>
+                <button type="button"
+                    class="btn btn-primary assessment-complete-button"
+                    disabled="@_isCompleting"
+                    @onclick="CompleteAssessmentAsync">
+                    @(_isCompleting ? "Saving assessment..." : "Complete Assessment")
+                </button>
+            }
+            else
+            {
+                <div class="assessment-result @(_completedReport.Passed ? "passed" : "failed")">
+                    <strong>@(_completedReport.Passed ? "Scenario Passed" : "Scenario Failed")</strong>
+                    <span>Overall score: @_completedReport.OverallScore%</span>
+                    <small>@_completedReport.Outcome</small>
+                </div>
 
-<VoiceInstructorPanel
-    IsSupported="_voiceSupported"
-    IsListening="_voiceListening"
-    StatusMessage="@_voiceStatus"
-    LastTranscript="@_lastVoiceTranscript"
-    Feedback="_latestInstructorFeedback"
-    ToggleListening="ToggleVoiceControlAsync" />
+                <a class="btn btn-outline-primary assessment-report-link"
+                href="/reports">
+                    View Performance Report
+                </a>
+            }
+        </section>
+        <section class="emergency-panel-card active-emergency-card">
+            <span class="emergency-panel-eyebrow">
+                @(emergencyTriggered
+                ? "Active emergency"
+                : "Emergency pending")
+            </span>
+            <span class="emergency-panel-eyebrow" id="flight-phase">
+                Flight phase: @cockpitState.FlightPhase
+            </span>
+            <div class="active-emergency-heading">
+                <span class="active-emergency-icon"
+                aria-hidden="true">
+                @(emergencyTriggered ? "⚠" : "⏱")
+            </span>
 
-<section class="emergency-panel-card assessment-status-card">
-    <span class="emergency-panel-eyebrow">
-        Performance assessment
-    </span>
-
-    @if (!emergencyTriggered)
-    {
-        <p>
-            The assessment timer begins when the emergency is triggered.
-        </p>
-    }
-    else if (_completedReport is null)
-    {
-        <div class="assessment-time-row">
-            <span>Time remaining</span>
-            <strong class="@(_remainingSeconds <= 15 ? "assessment-time-warning" : null)">
-                @FormatAssessmentTime(_remainingSeconds)
-            </strong>
+            <h2>
+                @selectedScenarioRecord.Title
+            </h2>
         </div>
 
-        <p>
-            Complete the actions in the correct sequence before the configured
-            time limit expires.
-        </p>
-
-        <button type="button"
-        class="btn btn-primary assessment-complete-button"
-        disabled="@_isCompleting"
-        @onclick="CompleteAssessmentAsync">
-        @(_isCompleting ? "Saving assessment..." : "Complete Assessment")
-    </button>
-}
-else
-{
-    <div class="assessment-result @(_completedReport.Passed ? "passed" : "failed")">
-        <strong>
-            @(_completedReport.Passed ? "Scenario Passed" : "Scenario Failed")
+        <strong class="affected-system-label">
+            @selectedScenarioRecord.EmergencyType
         </strong>
 
-        <span>
-            Overall score: @_completedReport.OverallScore%
-        </span>
+        @if (emergencyTriggered)
+        {
+            <p>
+                @selectedScenarioRecord.Description
+            </p>
+        }
+        else
+        {
+            <p>
+                @GetTriggerStatusText()
+            </p>
+        }
 
-        <small>
-            @_completedReport.Outcome
-        </small>
-    </div>
+        @if (!string.IsNullOrWhiteSpace(
+        selectedScenarioRecord.TriggerCondition))
+        {
+            <p>
+                @selectedScenarioRecord.TriggerCondition
+            </p>
+        }
 
-    <a class="btn btn-outline-primary assessment-report-link"
-    href="/reports">
-    View Performance Report
-</a>
-}
-</section>
-</aside>
+        @if (selectedScenarioRecord.TriggerType == "Manual" &&
+        !emergencyTriggered)
+        {
+            <div class="manual-trigger-section">
+
+                <button type="button"
+                class="btn btn-danger"
+                @onclick="ActivateEmergencyManually">
+
+                🚨 Activate Emergency
+
+            </button>
+
+            <small>
+                This scenario is configured for manual instructor activation.
+            </small>
+
+        </div>
+        }
+        </section>
+
+        <section class="emergency-panel-card checklist-progress-card">
+            <span class="emergency-panel-eyebrow">
+                Checklist progress
+            </span>
+
+            <div class="checklist-progress-row">
+                <div class="checklist-progress-track"
+                role="progressbar"
+                aria-label="Emergency checklist progress"
+                aria-valuemin="0"
+                aria-valuemax="@procedureSteps.Count"
+                aria-valuenow="@CompletedStepCount">
+
+                    <span class="checklist-progress-fill"
+                    style="@GetChecklistProgressStyle()">
+                    </span>
+                </div>
+                <strong>
+                    @CompletedStepCount /
+                    @procedureSteps.Count
+                </strong>
+            </div>
+        </section>
+
+        <section class="emergency-panel-card checklist-card">
+            <span class="emergency-panel-eyebrow">
+                Checklist
+            </span>
+
+            <h2>@selectedScenarioRecord.Title</h2>
+
+            @if (procedureSteps.Count == 0)
+            {
+                <p class="empty-checklist-message">
+                    No procedure has been stored for this scenario.
+                </p>
+            }
+            else
+            {
+                <ol class="emergency-checklist">
+                    @foreach (var step in procedureSteps
+                    .OrderBy(item => item.StepOrder))
+                    {
+                        var isCompleted =
+                        IsProcedureStepCompleted(step);
+
+                        <li class="checklist-step
+                        @(isCompleted ? "completed" : null)
+                        @(step.IsSafetyCritical ? "safety-critical" : null)">
+                            <label>
+                                <input type="checkbox"
+                                    checked="@isCompleted"
+                                    disabled />
+
+                                <span class="custom-check-box"
+                                aria-hidden="true">
+                                </span>
+
+                                <span class="checklist-step-content">
+                                    <span class="checklist-step-number">
+                                        @step.StepOrder.
+                                    </span>
+
+                                    <span class="checklist-step-text">
+                                        @step.Instruction
+                                    </span>
+
+                                    @if (step.IsSafetyCritical)
+                                    {
+                                        <small>
+                                            Critical
+                                        </small>
+                                    }
+                                </span>
+                            </label>
+                        </li>
+                    }
+                </ol>
+                if (selectedScenarioRecord.ProcedureSteps.Any(step => step.CorrectAction == "Check Engine Status"))
+                {
+                    <button type="button"
+                            class="btn btn-outline-primary"
+                            @onclick='() => HandlePilotActionAsync("Check Engine Status")'>
+
+                        Check Engine Status
+
+                    </button>
+                }
+            }
+        </section>
+    </aside>
 </div>
 }

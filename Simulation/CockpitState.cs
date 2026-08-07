@@ -63,6 +63,7 @@ public class CockpitState
 
     public bool SatellitePhonePowered { get; set; }
     public bool SatellitePhoneConnected { get; set; }
+    public bool SatelliteEmergencyRequested { get; set; }
 
     public string? CommunicationStatus { get; set; }
 

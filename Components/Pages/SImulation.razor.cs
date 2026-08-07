@@ -72,7 +72,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
        ==================================================================================================== */
 
     private CockpitState cockpitState = new();
-
+    private bool simulationStarted = false;
     private bool isOnGround = false;
     private bool _showEmergencyModal;
 
@@ -557,6 +557,45 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                                     Simulation Specific                                            |
      ====================================================================================================== */
 
+    private void ToggleFlightSimulation()
+    {
+        if (simulationStarted)
+        {
+            StopFlightSimulation();
+        }
+        else
+        {
+            StartFlightSimulation();
+        }
+    }
+
+    private void StartFlightSimulation()
+    {
+        if (simulationStarted)
+        {
+            return;
+        }
+
+        simulationStarted = true;
+        simulationStartedAt = DateTime.UtcNow;
+
+        cockpitState.AlertMessage =
+            "SIMULATION ACTIVE";
+    }
+
+    private void StopFlightSimulation()
+    {
+        if (!simulationStarted)
+        {
+            return;
+        }
+
+        simulationStarted = false;
+
+        cockpitState.AlertMessage =
+            "SIMULATION PAUSED";
+    }
+
     private void UpdateSimulationUrl()
     {
         var targetUrl = $"/simulation/{Uri.EscapeDataString(selectedAircraft.Id.ToString())}/{Uri.EscapeDataString(selectedScenarioRecord.EmergencyType)}";
@@ -571,6 +610,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
     private Task InitializeSimulationStateAsync()
     {
+        simulationStarted = false;
+
         simulationStartedAt = DateTime.UtcNow;
         emergencyTriggered = false;
         manualTriggerRequested = false;
@@ -1231,10 +1272,14 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         try
         {
             while (_simulationTimer is not null &&
-                await _simulationTimer
-                    .WaitForNextTickAsync(
-                        cancellationToken))
+                await _simulationTimer.WaitForNextTickAsync(
+                    cancellationToken))
             {
+                if (!simulationStarted)
+                {
+                    continue;
+                }
+
                 cockpitState.DisplayedVerticalSpeed =
                     VSIMath.ApplyLag(
                         cockpitState.DisplayedVerticalSpeed,
@@ -1242,18 +1287,21 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                         elapsedSeconds,
                         cockpitLayout.VSI.LagSeconds);
 
-                UpdatePerformance(elapsedSeconds);
+                UpdatePerformance(
+                    elapsedSeconds);
+
                 UpdateFlightPhase();
 
                 EvaluateEmergencyTrigger();
 
                 if (emergencyTriggered)
                 {
-                    UpdateFuelLeak(elapsedSeconds);
+                    UpdateFuelLeak(
+                        elapsedSeconds);
 
                     await EvaluateCockpitStateProcedureStepAsync();
                 }
-                
+
                 if (emergencyTriggered &&
                     _completedReport is null &&
                     selectedScenarioRecord.TimeLimitSeconds > 0)
@@ -1539,7 +1587,14 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         string transcript,
         double confidence)
     {
-        transcript = transcript.Trim();
+        transcript =
+            transcript.Trim();
+
+        if (string.IsNullOrWhiteSpace(
+                transcript))
+        {
+            return;
+        }
 
         if (string.Equals(
                 transcript,
@@ -1549,336 +1604,92 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             return;
         }
 
-        _previousVoiceTranscript = transcript;
-        _lastVoiceTranscript = transcript;
+        _previousVoiceTranscript =
+            transcript;
+
+        _lastVoiceTranscript =
+            transcript;
 
         Logger.LogInformation(
             "Voice transcript received: {Transcript}",
             transcript);
 
-        string? scenarioAction =
-    transcript.ToLowerInvariant() switch
-    {
-        // ============================
-        // Bird Strike
-        // ============================
 
-        "maintain aircraft control" =>
-            "Stabilize Aircraft",
+        // =========================================================
+        // SIMULATION LIFECYCLE
+        // =========================================================
 
-        "maintain control" =>
-            "Stabilize Aircraft",
+        if (string.Equals(
+                transcript,
+                "start simulation",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            StartFlightSimulation();
 
-        "keep control" =>
-            "Stabilize Aircraft",
+            _voiceStatus =
+                "Simulation started.";
 
-        "fly the aircraft" =>
-            "Stabilize Aircraft",
+            await InvokeAsync(
+                StateHasChanged);
 
-        "stabilize aircraft" =>
-            "Stabilize Aircraft",
-
-        "stabilise aircraft" =>
-            "Stabilize Aircraft",
-
-        "check engine status" =>
-            "Check Engine Status",
-
-        "assess engine performance" =>
-            "Check Engine Status",
-
-        "check engine" =>
-            "Check Engine Status",
-
-        "reduce throttle" =>
-            "Reduce Throttle",
-
-        "reduce engine power" =>
-            "Reduce Throttle",
-
-        "throttle back" =>
-            "Reduce Throttle",
-
-        "declare emergency" =>
-            "Declare Emergency",
-
-        "prepare landing" =>
-            "Prepare Landing",
-
-        "prepare for landing" =>
-            "Prepare Landing",
-
-        // ============================
-        // Cabin Depressurization
-        // ============================
-
-        "don oxygen masks" =>
-            "Oxygen Masks",
-
-        "oxygen masks on" =>
-            "Oxygen Masks",
-
-        "oxygen mask on" =>
-            "Oxygen Masks",
-
-        "put on oxygen masks" =>
-            "Oxygen Masks",
-
-        "put oxygen masks on" =>
-            "Oxygen Masks",
-
-        "crew oxygen masks on" =>
-            "Oxygen Masks",
-
-        "confirm oxygen flow" =>
-            "Oxygen Masks",
-
-        "begin emergency descent" =>
-            "Emergency Descent",
-
-        "start emergency descent" =>
-            "Emergency Descent",
-
-        "initiate emergency descent" =>
-            "Emergency Descent",
-
-        "emergency descent" =>
-            "Emergency Descent",
-
-        "begin descent" =>
-            "Emergency Descent",
-
-        "descend immediately" =>
-            "Emergency Descent",
-
-        "descend now" =>
-            "Emergency Descent",
-
-        "declare a mayday" =>
-            "Declare Emergency",
-
-        "mayday" =>
-            "Declare Emergency",
-
-        "set emergency code" =>
-            "Set Emergency Code",
-
-        "set transponder seven seven zero zero" =>
-            "Set Emergency Code",
-
-        "set transponder to seven seven zero zero" =>
-            "Set Emergency Code",
-
-        "transponder seven seven zero zero" =>
-            "Set Emergency Code",
-
-        "squawk seven seven zero zero" =>
-            "Set Emergency Code",
-
-        "squawk 7700" =>
-            "Set Emergency Code",
-
-        "squawk emergency" =>
-            "Set Emergency Code",
-
-        "level off" =>
-            "Level Off",
-
-        "level at safe altitude" =>
-            "Level Off",
-
-        "level at save altitude" =>
-            "Level Off",
-
-        "level at a safe altitude" =>
-            "Level Off",
-
-        "level at ten thousand feet" =>
-            "Level Off",
-
-        "level at 10000 feet" =>
-            "Level Off",
-
-        "stop descent" =>
-            "Level Off",
-
-        _ => null
-    };
+            return;
+        }
 
 
         if (!_isReady ||
-            !emergencyTriggered ||
             _completedReport is not null)
         {
-            _latestInstructorFeedback =
-                new AiInstructorFeedback
-                {
-                    Severity = "Information",
-                    Message =
-                        "The emergency assessment must be active before " +
-                        "commands can be processed."
-                };
+            _voiceStatus =
+                "Simulator unavailable.";
 
-            await InvokeAsync(StateHasChanged);
             return;
         }
 
-        if (scenarioAction is not null)
+
+        if (!simulationStarted)
         {
-            var step = procedureSteps.FirstOrDefault(x =>
-                !_completedProcedureStepOrders.Contains(
-                x.StepOrder) &&
-            string.Equals(
-                x.CorrectAction,
-                scenarioAction,
-                StringComparison.OrdinalIgnoreCase));
+            _voiceStatus =
+                "Start the simulation before operating controls.";
 
-            if (step is not null)
-            {
-                cockpitState =
-                    SimulationSession.SubmitPilotAction(
-                        scenarioAction,
-                        step.StepOrder);
-
-                _completedProcedureStepOrders.Add(
-                    step.StepOrder);
-
-                var scenarioResult =
-                    CockpitCommandResult.Success(
-                        scenarioAction,
-                        $"{step.Instruction} completed.",
-                        scenarioAction);
-
-                _latestInstructorFeedback =
-                    AiInstructor.EvaluateAction(
-                        scenarioResult,
-                        procedureSteps,
-                        SimulationSession.PilotActions,
-                        _remainingSeconds);
-
-                _voiceStatus =
-                    $"Completed: {step.Instruction}";
-
-                await JSRuntime.InvokeVoidAsync(
-                    "aeroVoice.speak",
-                    _latestInstructorFeedback.Message);
-
-                await InvokeAsync(StateHasChanged);
-
-                return;
-            }
-        }
-
-        var request =
-            CockpitCommands.Parse(
-                transcript,
-                cockpitLayout);
-
-        if (request is null)
-        {
-            _latestInstructorFeedback =
-                new AiInstructorFeedback
-                {
-                    Severity = "Warning",
-                    Message =
-                        $"Incorrect. '{transcript}' is not part of the current " +
-                        "gold-standard checklist. Please try another option.",
-                    RecommendedAction =
-                        "Use the instrument name, action and value."
-                };
-
-            await JSRuntime.InvokeVoidAsync(
-                "aeroVoice.speak",
-                _latestInstructorFeedback.Message);
-
-            await InvokeAsync(StateHasChanged);
             return;
         }
+
+
+        // =========================================================
+        // COCKPIT CONTROL
+        // =========================================================
 
         var result =
-            CockpitCommands.Execute(
-                request,
-                cockpitLayout,
-                cockpitState);
-
-        if (result.Succeeded)
-        {
-            var matchedStep =
-                procedureSteps.FirstOrDefault(
-                    step =>
-                        step.ValidationType ==
-                            ProcedureValidationType.PilotAction &&
-                        step.CorrectAction.Equals(
-                            result.ActionName,
-                            StringComparison.OrdinalIgnoreCase));
-
-            var selectedOrder =
-                matchedStep?.StepOrder ??
-                Math.Max(
-                    1,
-                    CompletedStepCount + 1);
-
-            var nextExpectedStep =
-                procedureSteps
-                    .OrderBy(step => step.StepOrder)
-                    .FirstOrDefault(step =>
-                        !_completedProcedureStepOrders.Contains(
-                            step.StepOrder));
-            
-            if (nextExpectedStep is not null &&
-                nextExpectedStep.ValidationType ==
-                    ProcedureValidationType.CockpitState)
-            {
-                _latestInstructorFeedback =
-                    new AiInstructorFeedback
-                    {
-                        Severity = "Information",
-                        Message =
-                            $"Complete the current procedure step first: " +
-                            $"{nextExpectedStep.Instruction}"
-                    };
-
-                return;
-            }
-
-            cockpitState =
-                SimulationSession.RecordPilotAction(
-                    result.ActionName,
-                    selectedOrder,
-                    cockpitState);
-
-            var recordedAction =
-                SimulationSession.PilotActions.LastOrDefault();
-
-            if (recordedAction is
-                {
-                    WasCorrect: true,
-                    WasInCorrectOrder: true,
-                    ExpectedStepOrder: not null
-                })
-            {
-                _completedProcedureStepOrders.Add(
-                    recordedAction.ExpectedStepOrder.Value);
-            }
-        }
-
-        _latestInstructorFeedback =
-            AiInstructor.EvaluateAction(
-                result,
-                procedureSteps,
-                SimulationSession.PilotActions,
-                _remainingSeconds);
+            await ExecuteVoiceCockpitCommandAsync(
+                transcript);
 
         _voiceStatus =
             result.SpokenFeedback;
 
-        await JSRuntime.InvokeVoidAsync(
-            "aeroVoice.speak",
-            _latestInstructorFeedback.Message);
+        _latestInstructorFeedback =
+            new AiInstructorFeedback
+            {
+                Severity =
+                    result.Succeeded
+                        ? "Success"
+                        : "Warning",
 
-        await InvokeAsync(StateHasChanged);
+                Message =
+                    result.SpokenFeedback
+            };
+
+
+        if (!string.IsNullOrWhiteSpace(
+                result.SpokenFeedback))
+        {
+            await JSRuntime.InvokeVoidAsync(
+                "aeroVoice.speak",
+                result.SpokenFeedback);
+        }
+
+        await InvokeAsync(
+            StateHasChanged);
     }
-
     [JSInvokable]
     public async Task VoiceRecognitionError(
         string error)
@@ -1957,27 +1768,58 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                                         Instrument Management                                           |
      ===================================================================================================== */
 
-    private async Task HandleUnitClick(LandingGearState unit)
+    private void SetPitch(
+        double pitch)
     {
-        var wasUp = unit.Status == LandingGearStatusValue.UpAndLocked;
+        cockpitState.Pitch =
+            Math.Clamp(
+                pitch,
+                cockpitLayout.ArtificialHorizon.MinimumPitch,
+                cockpitLayout.ArtificialHorizon.MaximumPitch);
+    }
+    private void ChangePitch(
+        double delta)
+    {
+        SetPitch(
+            cockpitState.Pitch + delta);
+    }
+    private void SetBank(
+        double bank)
+    {
+        cockpitState.Bank =
+            Math.Clamp(
+                bank,
+                cockpitLayout.ArtificialHorizon.MinimumBank,
+                cockpitLayout.ArtificialHorizon.MaximumBank);
+    }
+    private void ChangeBank(
+        double delta)
+    {
+        SetBank(
+            cockpitState.Bank + delta);
+    }
+    private void SetRudderPosition(
+        double position)
+    {
+        cockpitState.RudderPosition =
+            Math.Clamp(
+                position,
+                -1,
+                1);
+    }
+    private async Task HandleUnitClick(
+        LandingGearState unit)
+    {
+        var shouldGoDown =
+            unit.Status ==
+            LandingGearStatusValue.UpAndLocked;
 
-        unit.Status = LandingGearStatusValue.Moving;
-        await InvokeAsync(StateHasChanged);
+        await SetLandingGearPositionAsync(
+            unit,
+            shouldGoDown);
 
-        await Task.Delay(1500);
-
-        if (selectedScenarioRecord.EmergencyType == "Landing Gear Malfunction")
-        {
-            unit.Status = LandingGearStatusValue.Unsafe;
-        }
-        else
-        {
-            unit.Status = wasUp
-                ? LandingGearStatusValue.DownAndLocked
-                : LandingGearStatusValue.UpAndLocked;
-        }
-
-        await InvokeAsync(StateHasChanged);
+        await InvokeAsync(
+            StateHasChanged);
     }
 
     private EngineState? GetAffectedEngine()
@@ -2053,23 +1895,16 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
     }
     private async Task ActivateFireSuppression()
     {
-        var engine = GetAffectedEngine();
+        var engine =
+            GetAffectedEngine();
+
         if (engine is null)
-            return;
-
-        engine.FireSuppressionActivated = true;
-        await InvokeAsync(StateHasChanged);
-
-        await Task.Delay(1500);
-
-        if (selectedScenarioRecord.EmergencyType == "Engine Fire")
         {
-            var fireStillActive = engine.EngineFire || engine.OnFire;
-            engine.EngineFire = fireStillActive;
-            engine.OnFire = fireStillActive;
+            return;
         }
 
-        await InvokeAsync(StateHasChanged);
+        await ActivateEngineFireSuppressionAsync(
+            engine);
     }
     private void ActivateCabinFireSuppression()
     {
@@ -2124,11 +1959,58 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             engine.Running = true;
         }
     }
-    private void HandleThrottleChanged(
+    private void SetFuelCutoff(
+        EngineState engine,
+        bool cutoff)
+    {
+        engine.FuelCutoff =
+            cutoff;
+
+        if (cutoff)
+        {
+            engine.Power = 0;
+            engine.Running = false;
+        }
+        else
+        {
+            engine.Running =
+                engine.Power > 0;
+        }
+    }
+    private bool SetFuelCutoff( // Voice Control
+        int engineNumber,
+        bool cutoff)
+    {
+        var engine =
+            cockpitState.Engines
+                .FirstOrDefault(
+                    engine =>
+                        engine.Number ==
+                        engineNumber);
+
+        if (engine is null)
+        {
+            return false;
+        }
+
+        SetFuelCutoff(
+            engine,
+            cutoff);
+
+        return true;
+    }
+    private void SetEnginePower(
         EngineState engine,
         double power)
     {
-        engine.Power = power;
+        power =
+            Math.Clamp(
+                power,
+                0,
+                100);
+
+        engine.Power =
+            power;
 
         if (power > 0 &&
             !engine.FuelCutoff)
@@ -2141,32 +2023,184 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             engine.Power = 0;
         }
     }
+    private bool SetEnginePower( // Voice Friendly Version
+        int engineNumber,
+        double power)
+    {
+        var engine =
+            cockpitState.Engines
+                .FirstOrDefault(
+                    engine =>
+                        engine.Number ==
+                        engineNumber);
+
+        if (engine is null)
+        {
+            return false;
+        }
+
+        SetEnginePower(
+            engine,
+            power);
+
+        return true;
+    }
+    private void SetAllEnginePower(
+        double power)
+    {
+        foreach (var engine in cockpitState.Engines)
+        {
+            SetEnginePower(
+                engine,
+                power);
+        }
+    }
+    private void SetRadioPower(
+        bool powered)
+    {
+        cockpitState.RadioPowered =
+            powered;
+
+        if (!powered)
+        {
+            cockpitState.RadioTransmitting =
+                false;
+        }
+    }
+    private void SetSatellitePower(
+        bool powered)
+    {
+        cockpitState.SatellitePhonePowered =
+            powered;
+
+        if (!powered)
+        {
+            cockpitState.SatellitePhoneConnected =
+                false;
+        }
+    }
+    private void SetSatelliteConnection(
+        bool connected)
+    {
+        if (!cockpitState.SatellitePhonePowered)
+        {
+            return;
+        }
+
+        cockpitState.SatellitePhoneConnected =
+            connected;
+    }
+    private async void SatelliteEmergencyRequested(
+        bool connected)
+    {
+        if (!cockpitState.SatellitePhonePowered)
+        {
+            return;
+        }
+        if (!cockpitState.SatellitePhoneConnected)
+        {
+            return;
+        }
+                if (!cockpitState.SatellitePhoneConnected)
+        {
+            return;
+        }
+
+        cockpitState.CommunicationStatus =
+            "Emergency message transmitted by satellite.";
+
+        await HandlePilotActionAsync(
+            "Declare Emergency");
+    }
+    private async Task SetLandingGearPositionAsync(
+        LandingGearState unit,
+        bool down)
+    {
+        unit.Status =
+            LandingGearStatusValue.Moving;
+
+        await InvokeAsync(
+            StateHasChanged);
+
+        await Task.Delay(
+            1500);
+
+        if (selectedScenarioRecord.EmergencyType ==
+            "Landing Gear Malfunction" &&
+            down)
+        {
+            unit.Status =
+                LandingGearStatusValue.Unsafe;
+
+            return;
+        }
+
+        unit.Status =
+            down
+                ? LandingGearStatusValue.DownAndLocked
+                : LandingGearStatusValue.UpAndLocked;
+    }
+    private async Task SetAllLandingGearAsync(
+        bool down)
+    {
+        foreach (var unit in cockpitState.LandingGears)
+        {
+            await SetLandingGearPositionAsync(
+                unit,
+                down);
+        }
+    }
+    private void HandleSatelliteConnection()
+    {
+        SetSatelliteConnection(
+            !cockpitState.SatellitePhoneConnected);
+    }
+    private void HandleRadioPower()
+    {
+        SetRadioPower(
+            !cockpitState.RadioPowered);
+    }
+    private void HandleSatellitePower()
+    {
+        SetSatellitePower(
+            !cockpitState.SatellitePhonePowered);
+    }
+    private void HandleThrottleChanged( // Temp Wrapper until Razor Update
+        EngineState engine,
+        double power)
+    {
+        SetEnginePower(
+            engine,
+            power);
+    }
+    
     private void HandleFuelControlChanged(
         EngineState engine)
     {
-        engine.FuelCutoff =
-            !engine.FuelCutoff;
-
-        if (engine.FuelCutoff)
-        {
-            engine.Power = 0;
-            engine.Running = false;
-        }
-        else
-        {
-            engine.Running = true;
-        }
+        SetFuelCutoff(
+            engine,
+            !engine.FuelCutoff);
     }
-
-    private void HandleRadioPower()
+    private async Task<bool>
+        ActivateEngineFireSuppressionAsync(
+            int engineNumber)
     {
-        cockpitState.RadioPowered =
-            !cockpitState.RadioPowered;
+        var engine =
+            cockpitState.Engines
+                .FirstOrDefault(
+                    engine =>
+                        engine.Number ==
+                        engineNumber);
 
-        if (!cockpitState.RadioPowered)
+        if (engine is null)
         {
-            cockpitState.RadioTransmitting = false;
+            return false;
         }
+
+        await ActivateEngineFireSuppressionAsync(
+            engine);
+
+        return true;
     }
     private void HandleGuardFrequency()
     {
@@ -2177,8 +2211,6 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
         cockpitState.RadioFrequency = 121.5;
     }
-
-
     private async Task HandleRadioTransmitAsync()
     {
         if (!cockpitState.RadioPowered)
@@ -2213,29 +2245,6 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
     }
 
 
-    private void HandleSatellitePower()
-    {
-        cockpitState.SatellitePhonePowered =
-            !cockpitState.SatellitePhonePowered;
-
-        if (!cockpitState.SatellitePhonePowered)
-        {
-            cockpitState.SatellitePhoneConnected = false;
-        }
-    }
-
-    private void HandleSatelliteConnection()
-    {
-        if (!cockpitState.SatellitePhonePowered)
-        {
-            return;
-        }
-
-        cockpitState.SatellitePhoneConnected =
-            !cockpitState.SatellitePhoneConnected;
-    }
-
-
     private async Task HandleSatelliteEmergency()
     {
         if (!cockpitState.SatellitePhoneConnected)
@@ -2249,6 +2258,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         await HandlePilotActionAsync(
             "Declare Emergency");
     }
+
     private async Task HandleFuelTankFocusedAsync(
         FuelState tank)
     {
@@ -2352,6 +2362,35 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 $"Isolate Fuel Tank {tank.Number}");
         }
     }
+    private async Task ActivateEngineFireSuppressionAsync(
+        EngineState engine)
+    {
+        engine.FireSuppressionActivated =
+            true;
+
+        await InvokeAsync(
+            StateHasChanged);
+
+        await Task.Delay(
+            1500);
+
+        if (selectedScenarioRecord.EmergencyType ==
+            "Engine Fire")
+        {
+            var fireStillActive =
+                engine.EngineFire ||
+                engine.OnFire;
+
+            engine.EngineFire =
+                fireStillActive;
+
+            engine.OnFire =
+                fireStillActive;
+        }
+
+        await InvokeAsync(
+            StateHasChanged);
+    }
     private void ActivateBackupHydraulicSystem()
     {
         cockpitState.HydraulicPumpOnline = true;
@@ -2397,6 +2436,1117 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             0,
             maximumTarget);
     }
+
+    /* ====================================================================================================
+    |                                      AI Voice Commands                                              |
+    ==================================================================================================== */
+
+    private static string NormalizeVoiceCommand(
+        string transcript)
+    {
+        var normalized =
+            transcript
+                .Trim()
+                .ToLowerInvariant();
+
+        var replacements =
+            new Dictionary<string, string>
+            {
+                // Common numeric values
+                ["one hundred"] = "100",
+                ["ninety five"] = "95",
+                ["ninety"] = "90",
+                ["eighty five"] = "85",
+                ["eighty"] = "80",
+                ["seventy five"] = "75",
+                ["seventy"] = "70",
+                ["sixty five"] = "65",
+                ["sixty"] = "60",
+                ["fifty five"] = "55",
+                ["fifty"] = "50",
+                ["forty five"] = "45",
+                ["forty"] = "40",
+                ["thirty five"] = "35",
+                ["thirty"] = "30",
+                ["twenty five"] = "25",
+                ["twenty"] = "20",
+                ["fifteen"] = "15",
+                ["ten"] = "10",
+
+                // Engine numbers
+                ["engine one"] = "engine 1",
+                ["engine two"] = "engine 2",
+                ["engine three"] = "engine 3",
+                ["engine four"] = "engine 4",
+
+                // Remaining small values
+                ["five"] = "5",
+                ["four"] = "4",
+                ["three"] = "3",
+                ["two"] = "2",
+                ["one"] = "1",
+
+                // Unit normalization
+                ["degrees"] = "degree",
+                ["percentage"] = "percent"
+            };
+
+        foreach (var replacement in replacements)
+        {
+            normalized =
+                normalized.Replace(
+                    replacement.Key,
+                    replacement.Value,
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+        return normalized;
+    }
+
+
+    private static bool ContainsAny(
+        string text,
+        params string[] values)
+    {
+        return values.Any(
+            value =>
+                text.Contains(
+                    value,
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+
+    private static int? ExtractEngineNumber(
+        string command)
+    {
+        var match =
+            System.Text.RegularExpressions.Regex.Match(
+                command,
+                @"\bengine\s+(\d+)\b",
+                System.Text.RegularExpressions.RegexOptions
+                    .IgnoreCase);
+
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        return int.TryParse(
+            match.Groups[1].Value,
+            out var engineNumber)
+                ? engineNumber
+                : null;
+    }
+
+
+    private static double? ExtractCommandValue(
+        string command)
+    {
+        /*
+        * Use the LAST number in the command.
+        *
+        * Example:
+        * "engine 1 power 100"
+        *
+        * Engine number = 1
+        * Command value = 100
+        */
+        var matches =
+            System.Text.RegularExpressions.Regex.Matches(
+                command,
+                @"-?\d+(?:\.\d+)?");
+
+        if (matches.Count == 0)
+        {
+            return null;
+        }
+
+        var valueText =
+            matches[^1].Value;
+
+        return double.TryParse(
+            valueText,
+            System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var value)
+                ? value
+                : null;
+    }
+
+
+    private static double GetSignedEnginePowerChange(
+        string command,
+        double amount)
+    {
+        amount =
+            Math.Abs(
+                amount);
+
+        if (ContainsAny(
+                command,
+                "decrease",
+                "reduce",
+                "lower",
+                "drop"))
+        {
+            return -amount;
+        }
+
+        return amount;
+    }
+
+
+    private async Task<CockpitCommandResult>
+        ExecuteVoiceCockpitCommandAsync(
+            string transcript)
+    {
+        var command =
+            NormalizeVoiceCommand(
+                transcript);
+
+        var engineNumber =
+            ExtractEngineNumber(
+                command);
+
+        var value =
+            ExtractCommandValue(
+                command);
+        // =========================================================
+        // ENGINE READING FOCUS
+        // =========================================================
+
+        if (command.Contains("focus") &&
+            command.Contains("engine"))
+        {
+            if (!engineNumber.HasValue)
+            {
+                return CockpitCommandResult.Failure(
+                    "Specify which engine to focus.");
+            }
+
+            var engine =
+                cockpitState.Engines.FirstOrDefault(
+                    engine =>
+                        engine.Number ==
+                        engineNumber.Value);
+
+            if (engine is null)
+            {
+                return CockpitCommandResult.Failure(
+                    $"Engine {engineNumber.Value} does not exist " +
+                    "on this aircraft.");
+            }
+
+            await HandleEngineStatusFocusAsync(
+                engine);
+
+            return CockpitCommandResult.Success(
+                "Focus Engine Reading",
+                $"Engine {engine.Number} selected for inspection.",
+                $"engine.{engine.Number}");
+        }
+
+        // =========================================================
+        // ENGINE POWER / THROTTLE
+        // =========================================================
+
+        var isThrottleCommand =
+            command.Contains("throttle");
+
+        var isEngineCommand =
+            command.Contains("engine") &&
+            !command.Contains("fuel") &&
+            !command.Contains("fire");
+
+        if (isThrottleCommand ||
+            isEngineCommand)
+        {
+            Logger.LogInformation(
+                "VOICE ENGINE COMMAND: " +
+                "Transcript='{Transcript}', " +
+                "Normalized='{Command}', " +
+                "Engine={EngineNumber}, " +
+                "Value={Value}",
+                transcript,
+                command,
+                engineNumber,
+                value);
+
+            if (!value.HasValue)
+            {
+                return CockpitCommandResult.Failure(
+                    "Engine power command requires a numeric value.");
+            }
+
+            var requestedPower =
+                Math.Clamp(
+                    Math.Abs(value.Value),
+                    0,
+                    100);
+
+
+            // ---------------------------------------------------------
+            // ALL ENGINES
+            // ---------------------------------------------------------
+
+            if (ContainsAny(
+                    command,
+                    "all engines",
+                    "all engine",
+                    "all throttles"))
+            {
+                /*
+                * Relative:
+                *
+                * "Increase all engines by 10 percent"
+                * "Reduce all throttles by 20 percent"
+                */
+                if (command.Contains("by"))
+                {
+                    var delta =
+                        GetSignedEnginePowerChange(
+                            command,
+                            requestedPower);
+
+                    foreach (var engine in cockpitState.Engines)
+                    {
+                        SetEnginePower(
+                            engine,
+                            engine.Power + delta);
+                    }
+
+                    return CockpitCommandResult.Success(
+                        "Change All Engine Power",
+                        $"All engine power changed by " +
+                        $"{requestedPower:0} percent.",
+                        "engines.power");
+                }
+
+
+                /*
+                * Absolute:
+                *
+                * "Set all engines to 100 percent"
+                * "Increase all engines to 100 percent"
+                * "All throttles 100 percent"
+                */
+                SetAllEnginePower(
+                    requestedPower);
+
+                return CockpitCommandResult.Success(
+                    "Set All Engine Power",
+                    $"All engines set to " +
+                    $"{requestedPower:0} percent.",
+                    "engines.power");
+            }
+
+
+            // ---------------------------------------------------------
+            // INDIVIDUAL ENGINE
+            // ---------------------------------------------------------
+
+            if (!engineNumber.HasValue)
+            {
+                /*
+                * If this is a single-engine aircraft,
+                * "set throttle to 100" is unambiguous.
+                */
+                if (cockpitState.Engines.Count == 1)
+                {
+                    var onlyEngine =
+                        cockpitState.Engines[0];
+
+                    if (command.Contains("by"))
+                    {
+                        var delta =
+                            GetSignedEnginePowerChange(
+                                command,
+                                requestedPower);
+
+                        SetEnginePower(
+                            onlyEngine,
+                            onlyEngine.Power + delta);
+                    }
+                    else
+                    {
+                        SetEnginePower(
+                            onlyEngine,
+                            requestedPower);
+                    }
+
+                    return CockpitCommandResult.Success(
+                        "Set Engine Power",
+                        $"Engine {onlyEngine.Number} power set to " +
+                        $"{onlyEngine.Power:0} percent.",
+                        $"engine.{onlyEngine.Number}.power");
+                }
+
+                return CockpitCommandResult.Failure(
+                    "Specify which engine to control.");
+            }
+
+
+            var selectedEngine =
+                cockpitState.Engines
+                    .FirstOrDefault(
+                        engine =>
+                            engine.Number ==
+                            engineNumber.Value);
+
+            if (selectedEngine is null)
+            {
+                return CockpitCommandResult.Failure(
+                    $"Engine {engineNumber.Value} does not exist " +
+                    $"on this aircraft.");
+            }
+
+
+            /*
+            * Relative:
+            *
+            * "Increase engine 1 power by 10 percent"
+            * "Reduce engine 2 power by 20 percent"
+            */
+            if (command.Contains("by"))
+            {
+                var delta =
+                    GetSignedEnginePowerChange(
+                        command,
+                        requestedPower);
+
+                SetEnginePower(
+                    selectedEngine,
+                    selectedEngine.Power + delta);
+
+                return CockpitCommandResult.Success(
+                    "Change Engine Power",
+                    $"Engine {selectedEngine.Number} power set to " +
+                    $"{selectedEngine.Power:0} percent.",
+                    $"engine.{selectedEngine.Number}.power");
+            }
+
+
+            /*
+            * Absolute:
+            *
+            * "Set engine 1 power to 100 percent"
+            * "Increase engine 1 power to 100 percent"
+            * "Engine 1 power 100"
+            * "Throttle engine 1 to 100"
+            */
+            SetEnginePower(
+                selectedEngine,
+                requestedPower);
+
+            return CockpitCommandResult.Success(
+                "Set Engine Power",
+                $"Engine {selectedEngine.Number} power set to " +
+                $"{selectedEngine.Power:0} percent.",
+                $"engine.{selectedEngine.Number}.power");
+        }
+
+
+        // =========================================================
+        // PITCH
+        // =========================================================
+
+        if (command.Contains("pitch"))
+        {
+            if (!value.HasValue)
+            {
+                return CockpitCommandResult.Failure(
+                    "Pitch command requires a degree value.");
+            }
+
+            var degrees =
+                Math.Abs(
+                    value.Value);
+
+            if (ContainsAny(
+                    command,
+                    "increase",
+                    "raise",
+                    "pitch up"))
+            {
+                if (command.Contains("to"))
+                {
+                    SetPitch(
+                        degrees);
+
+                    return CockpitCommandResult.Success(
+                        "Set Pitch",
+                        $"Pitch set to {cockpitState.Pitch:0} degrees.",
+                        "flight.attitude");
+                }
+
+                ChangePitch(
+                    degrees);
+
+                return CockpitCommandResult.Success(
+                    "Increase Pitch",
+                    $"Pitch increased to " +
+                    $"{cockpitState.Pitch:0} degrees.",
+                    "flight.attitude");
+            }
+
+            if (ContainsAny(
+                    command,
+                    "decrease",
+                    "lower",
+                    "pitch down"))
+            {
+                if (command.Contains("to"))
+                {
+                    SetPitch(
+                        -degrees);
+
+                    return CockpitCommandResult.Success(
+                        "Set Pitch",
+                        $"Pitch set to {cockpitState.Pitch:0} degrees.",
+                        "flight.attitude");
+                }
+
+                ChangePitch(
+                    -degrees);
+
+                return CockpitCommandResult.Success(
+                    "Decrease Pitch",
+                    $"Pitch decreased to " +
+                    $"{cockpitState.Pitch:0} degrees.",
+                    "flight.attitude");
+            }
+
+            SetPitch(
+                value.Value);
+
+            return CockpitCommandResult.Success(
+                "Set Pitch",
+                $"Pitch set to {cockpitState.Pitch:0} degrees.",
+                "flight.attitude");
+        }
+
+
+        // =========================================================
+        // BANK
+        // =========================================================
+
+        if (command.Contains("bank"))
+        {
+            if (!value.HasValue)
+            {
+                return CockpitCommandResult.Failure(
+                    "Bank command requires a degree value.");
+            }
+
+            var degrees =
+                Math.Abs(
+                    value.Value);
+
+            if (command.Contains("left"))
+            {
+                if (command.Contains("by"))
+                {
+                    ChangeBank(
+                        -degrees);
+                }
+                else
+                {
+                    SetBank(
+                        -degrees);
+                }
+
+                return CockpitCommandResult.Success(
+                    "Bank Left",
+                    $"Bank set to " +
+                    $"{Math.Abs(cockpitState.Bank):0} degrees left.",
+                    "flight.attitude");
+            }
+
+            if (command.Contains("right"))
+            {
+                if (command.Contains("by"))
+                {
+                    ChangeBank(
+                        degrees);
+                }
+                else
+                {
+                    SetBank(
+                        degrees);
+                }
+
+                return CockpitCommandResult.Success(
+                    "Bank Right",
+                    $"Bank set to " +
+                    $"{Math.Abs(cockpitState.Bank):0} degrees right.",
+                    "flight.attitude");
+            }
+
+            SetBank(
+                value.Value);
+
+            return CockpitCommandResult.Success(
+                "Set Bank",
+                $"Bank set to {cockpitState.Bank:0} degrees.",
+                "flight.attitude");
+        }
+
+
+        // =========================================================
+        // RUDDER
+        // =========================================================
+
+        if (command.Contains("rudder"))
+        {
+            if (ContainsAny(
+                    command,
+                    "center",
+                    "centre",
+                    "neutral"))
+            {
+                SetRudderPosition(
+                    0);
+
+                return CockpitCommandResult.Success(
+                    "Center Rudder",
+                    "Rudder centered.",
+                    "flight.rudder");
+            }
+
+            if (!value.HasValue)
+            {
+                return CockpitCommandResult.Failure(
+                    "Rudder command requires a percentage value.");
+            }
+
+            var normalizedPosition =
+                Math.Clamp(
+                    Math.Abs(value.Value) / 100.0,
+                    0,
+                    1);
+
+            if (command.Contains("left"))
+            {
+                SetRudderPosition(
+                    -normalizedPosition);
+
+                return CockpitCommandResult.Success(
+                    "Rudder Left",
+                    $"Rudder set to " +
+                    $"{Math.Abs(value.Value):0} percent left.",
+                    "flight.rudder");
+            }
+
+            if (command.Contains("right"))
+            {
+                SetRudderPosition(
+                    normalizedPosition);
+
+                return CockpitCommandResult.Success(
+                    "Rudder Right",
+                    $"Rudder set to " +
+                    $"{Math.Abs(value.Value):0} percent right.",
+                    "flight.rudder");
+            }
+
+            return CockpitCommandResult.Failure(
+                "Specify rudder left, right, or center.");
+        }
+
+
+        // =========================================================
+        // FUEL CUTOFF
+        // =========================================================
+
+        if (command.Contains("fuel") &&
+            command.Contains("engine"))
+        {
+            if (!engineNumber.HasValue)
+            {
+                return CockpitCommandResult.Failure(
+                    "Specify an engine number for fuel control.");
+            }
+
+            if (ContainsAny(
+                    command,
+                    "cut off",
+                    "cutoff",
+                    "shut off",
+                    "fuel off"))
+            {
+                if (!SetFuelCutoff(
+                        engineNumber.Value,
+                        true))
+                {
+                    return CockpitCommandResult.Failure(
+                        $"Engine {engineNumber.Value} does not exist.");
+                }
+
+                return CockpitCommandResult.Success(
+                    "Fuel Cutoff",
+                    $"Fuel cut off to engine " +
+                    $"{engineNumber.Value}.",
+                    $"engine.{engineNumber.Value}.fuel");
+            }
+
+            if (ContainsAny(
+                    command,
+                    "restore",
+                    "fuel on",
+                    "open fuel",
+                    "restore fuel"))
+            {
+                if (!SetFuelCutoff(
+                        engineNumber.Value,
+                        false))
+                {
+                    return CockpitCommandResult.Failure(
+                        $"Engine {engineNumber.Value} does not exist.");
+                }
+
+                return CockpitCommandResult.Success(
+                    "Restore Fuel",
+                    $"Fuel restored to engine " +
+                    $"{engineNumber.Value}.",
+                    $"engine.{engineNumber.Value}.fuel");
+            }
+        }
+
+
+        // =========================================================
+        // LANDING GEAR
+        // =========================================================
+
+        if (ContainsAny(
+                command,
+                "landing gear",
+                "gear"))
+        {
+            if (ContainsAny(
+                    command,
+                    "down",
+                    "lower",
+                    "extend"))
+            {
+                await SetAllLandingGearAsync(
+                    true);
+
+                return CockpitCommandResult.Success(
+                    "Gear Down",
+                    "Landing gear lowered.",
+                    "flight.landing-gear");
+            }
+
+            if (ContainsAny(
+                    command,
+                    "up",
+                    "raise",
+                    "retract"))
+            {
+                await SetAllLandingGearAsync(
+                    false);
+
+                return CockpitCommandResult.Success(
+                    "Gear Up",
+                    "Landing gear retracted.",
+                    "flight.landing-gear");
+            }
+        }
+
+
+        // =========================================================
+        // RADIO
+        // =========================================================
+
+        if (command.Contains("radio"))
+        {
+            if (ContainsAny(
+                    command,
+                    "turn on",
+                    "power on",
+                    "radio on"))
+            {
+                SetRadioPower(
+                    true);
+
+                return CockpitCommandResult.Success(
+                    "Radio Power On",
+                    "Radio powered on.",
+                    "communication.radio");
+            }
+
+            if (ContainsAny(
+                    command,
+                    "turn off",
+                    "power off",
+                    "radio off"))
+            {
+                SetRadioPower(
+                    false);
+
+                return CockpitCommandResult.Success(
+                    "Radio Power Off",
+                    "Radio powered off.",
+                    "communication.radio");
+            }
+
+            if (ContainsAny(
+                    command,
+                    "guard frequency",
+                    "guard",
+                    "121.5"))
+            {
+                if (!cockpitState.RadioPowered)
+                {
+                    return CockpitCommandResult.Failure(
+                        "Radio must be powered on before selecting guard.");
+                }
+
+                HandleGuardFrequency();
+
+                return CockpitCommandResult.Success(
+                    "Select Guard Frequency",
+                    "Radio set to guard frequency 121.5.",
+                    "communication.radio.frequency");
+            }
+        }
+
+
+        // =========================================================
+        // SATELLITE PHONE
+        // =========================================================
+
+        if (ContainsAny(
+                command,
+                "satellite",
+                "sat phone"))
+        {
+            if (ContainsAny(
+                    command,
+                    "power on",
+                    "turn on"))
+            {
+                SetSatellitePower(
+                    true);
+
+                return CockpitCommandResult.Success(
+                    "Satellite Power On",
+                    "Satellite phone powered on.",
+                    "communication.satellite");
+            }
+
+            if (ContainsAny(
+                    command,
+                    "power off",
+                    "turn off"))
+            {
+                SetSatellitePower(
+                    false);
+
+                return CockpitCommandResult.Success(
+                    "Satellite Power Off",
+                    "Satellite phone powered off.",
+                    "communication.satellite");
+            }
+
+            /*
+            * Check disconnect before connect because
+            * "disconnect" contains "connect".
+            */
+            if (command.Contains("disconnect"))
+            {
+                SetSatelliteConnection(
+                    false);
+
+                return CockpitCommandResult.Success(
+                    "Disconnect Satellite",
+                    "Satellite connection disconnected.",
+                    "communication.satellite.connection");
+            }
+
+            if (command.Contains("connect"))
+            {
+                if (!cockpitState.SatellitePhonePowered)
+                {
+                    return CockpitCommandResult.Failure(
+                        "Satellite phone must be powered on first.");
+                }
+
+                SetSatelliteConnection(
+                    true);
+
+                return CockpitCommandResult.Success(
+                    "Connect Satellite",
+                    "Satellite connection established.",
+                    "communication.satellite.connection");
+            }
+
+            if (command.Contains("emergency"))
+            {
+                if (!cockpitState.SatellitePhonePowered)
+                {
+                    return CockpitCommandResult.Failure(
+                        "Satellite phone must be powered on first.");
+                }
+
+                if (!cockpitState.SatellitePhoneConnected)
+                {
+                    return CockpitCommandResult.Failure(
+                        "Satellite phone must be connected first.");
+                }
+
+                /*
+                * Keep using your existing communication behavior.
+                */
+                await HandleSatelliteEmergency();
+
+                return CockpitCommandResult.Success(
+                    "Satellite Emergency",
+                    "Satellite emergency message transmitted.",
+                    "communication.satellite.emergency");
+            }
+        }
+
+        // =========================================================
+        // BACKUP ELECTRICAL POWER
+        // =========================================================
+
+        if (ContainsAny(
+                command,
+                "activate backup power",
+                "backup power",
+                "emergency power",
+                "switch to backup power"))
+        {
+            await HandlePilotActionAsync(
+                "Activate Backup Power");
+
+            return CockpitCommandResult.Success(
+                "Activate Backup Power",
+                "Backup electrical power activated.",
+                "electrical.backup-power");
+        }
+
+
+        // =========================================================
+        // SHED NON-ESSENTIAL ELECTRICAL LOAD
+        // =========================================================
+
+        if (ContainsAny(
+                command,
+                "reduce electrical load",
+                "shed electrical load",
+                "shed non-essential load",
+                "shed non essential load",
+                "reduce power load",
+                "disconnect non-essential systems",
+                "disconnect non essential systems"))
+        {
+            await HandlePilotActionAsync(
+                "Reduce Electrical Load");
+
+            return CockpitCommandResult.Success(
+                "Reduce Electrical Load",
+                "Non-essential electrical load shed.",
+                "electrical.load");
+        }
+
+
+        // =========================================================
+        // ENGINE FIRE SUPPRESSION
+        // =========================================================
+
+        if (command.Contains("fire") &&
+            ContainsAny(
+                command,
+                "suppress",
+                "suppression",
+                "extinguish"))
+        {
+            /*
+            * If an engine number was spoken, target that
+            * specific engine.
+            *
+            * "Activate fire suppression engine 2"
+            */
+            if (engineNumber.HasValue)
+            {
+                var succeeded =
+                    await ActivateEngineFireSuppressionAsync(
+                        engineNumber.Value);
+
+                if (!succeeded)
+                {
+                    return CockpitCommandResult.Failure(
+                        $"Engine {engineNumber.Value} does not exist.");
+                }
+
+                return CockpitCommandResult.Success(
+                    "Activate Engine Fire Suppression",
+                    $"Fire suppression activated for " +
+                    $"engine {engineNumber.Value}.",
+                    $"engine.{engineNumber.Value}.fire-suppression");
+            }
+
+            /*
+            * No engine was specified:
+            *
+            * "Activate engine fire suppression"
+            *
+            * Behave exactly like the physical button,
+            * which uses GetAffectedEngine().
+            */
+            await ActivateFireSuppression();
+
+            var affectedEngine =
+                GetAffectedEngine();
+
+            return CockpitCommandResult.Success(
+                "Activate Engine Fire Suppression",
+                affectedEngine is null
+                    ? "Engine fire suppression activated."
+                    : $"Fire suppression activated for " +
+                    $"engine {affectedEngine.Number}.",
+                affectedEngine is null
+                    ? "engine.fire-suppression"
+                    : $"engine.{affectedEngine.Number}.fire-suppression");
+        }
+
+        // =========================================================
+        // UNKNOWN COMMAND
+        // =========================================================
+
+        return CockpitCommandResult.Failure(
+            $"Cockpit command '{transcript}' was not recognized.");
+    }
+
+    /* ===================================================================================================
+     |                                     Focus Commands and Helpers                                      |
+     ==================================================================================================== */
+     private async Task<bool> FocusCockpitInstrumentAsync(
+        InstrumentDefinition instrument)
+    {
+        if (string.IsNullOrWhiteSpace(
+                instrument.ControlId))
+        {
+            return false;
+        }
+
+        return await JSRuntime.InvokeAsync<bool>(
+            "aeroFocus.focusControl",
+            instrument.ControlId);
+    }
+    private async Task<bool> FocusCockpitControlAsync(
+            string controlId)
+    {
+        if (string.IsNullOrWhiteSpace(
+                controlId))
+        {
+            return false;
+        }
+
+        return await JSRuntime.InvokeAsync<bool>(
+            "aeroFocus.focusControl",
+            controlId);
+    }
+     private InstrumentDefinition? FindInstrumentForVoiceFocus(
+            string command)
+    {
+        var normalized =
+            NormalizeVoiceCommand(
+                command);
+
+        /*
+        * Strip the focus language so we're left
+        * primarily with the instrument name.
+        */
+        var target =
+            normalized
+                .Replace(
+                    "set focus to",
+                    string.Empty,
+                    StringComparison.OrdinalIgnoreCase)
+                .Replace(
+                    "set focus on",
+                    string.Empty,
+                    StringComparison.OrdinalIgnoreCase)
+                .Replace(
+                    "focus on",
+                    string.Empty,
+                    StringComparison.OrdinalIgnoreCase)
+                .Replace(
+                    "focus",
+                    string.Empty,
+                    StringComparison.OrdinalIgnoreCase)
+                .Trim();
+
+        if (string.IsNullOrWhiteSpace(target))
+        {
+            return null;
+        }
+
+        foreach (var instrument in
+                cockpitLayout.Instruments)
+        {
+            /*
+            * Display name:
+            *
+            * "Vertical Speed"
+            * "Altitude"
+            * "Aircraft Attitude"
+            */
+            if (!string.IsNullOrWhiteSpace(
+                    instrument.DisplayName) &&
+                target.Contains(
+                    instrument.DisplayName.ToLowerInvariant(),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return instrument;
+            }
+
+            /*
+            * Control ID:
+            *
+            * flight.airspeed
+            * flight.altitude
+            * flight.heading
+            */
+            if (!string.IsNullOrWhiteSpace(
+                    instrument.ControlId))
+            {
+                var controlName =
+                    instrument.ControlId
+                        .Split('.')
+                        .Last()
+                        .Replace("-", " ");
+
+                if (target.Contains(
+                        controlName,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return instrument;
+                }
+            }
+
+            /*
+            * Voice aliases defined by the
+            * aircraft cockpit layout.
+            */
+            foreach (var alias in
+                    instrument.VoiceAliases)
+            {
+                if (target.Contains(
+                        alias,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return instrument;
+                }
+            }
+        }
+
+        return null;
+    }
+
 
     /* ====================================================================================================
      |                                          Debug Controls                                              |

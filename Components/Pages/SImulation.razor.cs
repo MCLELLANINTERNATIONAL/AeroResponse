@@ -223,7 +223,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 ClaimTypes.NameIdentifier)
             ?? "debug-pilot";
 
-            
+
         if (string.IsNullOrWhiteSpace(
             _currentPilotUserId))
         {
@@ -1125,7 +1125,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                                         Emergency Trigger                                             |
      ===================================================================================================== */
 
-    private void EvaluateEmergencyTrigger(
+    private async void EvaluateEmergencyTrigger(
         string? pilotAction = null)
     {
         if (emergencyTriggered ||
@@ -1163,7 +1163,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         {
             return;
         }
-
+        await JSRuntime.InvokeVoidAsync(
+            "aeroEmergencyAudio.playWarning");
         _emergencyModalHasBeenShown = true;
         _showEmergencyModal = true;
     }
@@ -2280,6 +2281,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         {
             await HandlePilotActionAsync(
                 "Transmit Emergency");
+            await HandlePilotActionAsync("Set Emergency Code");
         }
 
         await Task.Delay(750);
@@ -3454,7 +3456,36 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                     ? "engine.fire-suppression"
                     : $"engine.{affectedEngine.Number}.fire-suppression");
         }
-
+        
+        // =========================================================
+        // OXYGEN MASKS & SENDING RADIO CODES
+        // =========================================================
+        if (command.Contains("oxygen mask") &&
+            ContainsAny(
+            command,
+            "oxygen",
+            "masks",
+            "mask"))
+        {
+            await HandlePilotActionAsync("Oxygen Masks");
+        }
+        if (command.Contains("transmit code") &&
+            ContainsAny(
+                command,
+                "radio",
+                "transit",
+                "code"))
+        {
+            if(cockpitState.RadioTransmitting)
+            {
+                await HandlePilotActionAsync("Set Emergency Code");
+            }
+            else
+            {
+                return CockpitCommandResult.Failure(
+                    $"Radio Must be turned on to transmit emergency code.");
+            }
+        }
         // =========================================================
         // UNKNOWN COMMAND
         // =========================================================

@@ -300,35 +300,42 @@ Emergency Modal
                             role="menu"
                             aria-label="Scenario options">
 
-                        @foreach (var scenario in _scenarioRecords)
+                        @foreach (var scenario in _scenarioRecords.Where(
+                            scenario =>
+                                selectedAircraft.LandingGearConfig.Kind !=
+                                    LandingGearKind.FixedTricycle ||
+                                !string.Equals(
+                                    scenario.EmergencyType,
+                                    "Landing Gear Malfunction",
+                                    StringComparison.OrdinalIgnoreCase)))
                         {
                             var isSelected =
                                 scenario.Id ==
                                 selectedScenarioRecord.Id;
 
                             <button type="button"
-                                class="selector-dropdown-option
-                                @(isSelected ? "selected" : "")"
-                                role="menuitem"
-                                @onclick="() =>
-                                ChangeScenarioAsync(scenario)">
+                                    class="selector-dropdown-option
+                                    @(isSelected ? "selected" : "")"
+                                    role="menuitem"
+                                    @onclick="() =>
+                                        ChangeScenarioAsync(scenario)">
 
-                            <span>
-                                <strong>
-                                    @scenario.Title
-                                </strong>
+                                <span>
+                                    <strong>
+                                        @scenario.Title
+                                    </strong>
 
-                                <small>
-                                    @scenario.Difficulty
-                                </small>
-                            </span>
-
-                            @if (isSelected)
-                            {
-                                <span class="active-label">
-                                    Active
+                                    <small>
+                                        @scenario.Difficulty
+                                    </small>
                                 </span>
-                            }
+
+                                @if (isSelected)
+                                {
+                                    <span class="active-label">
+                                        Active
+                                    </span>
+                                }
                             </button>
                         }
                         </div>
@@ -435,7 +442,9 @@ Database-driven top status bar
                                         Value="@engine.Power"
                                         Minimum="0"
                                         Maximum="100"
-                                        Label="@($"Engine {engine.Number} Power")" />
+                                        Label="@(cockpitState.Engines.Count == 1
+                                            ? "Engine Power"
+                                            : $"Engine {engine.Number} Power")" />
 
                                 </div>
                             }
@@ -480,19 +489,27 @@ Database-driven top status bar
                             Aircraft="@selectedAircraft"
                             State="@cockpitState" />
                         <!-- Landing Gear -->
-                        <div class="switch-grid"
-                            tabindex="0"
-                            @onfocus="HandleLandingGearStatusFocusAsync">
+                        @if (selectedAircraft.LandingGearConfig.Kind
+                            != LandingGearKind.FixedTricycle)
+                        {
+                            <div class="switch-grid"
+                                tabindex="0"
+                                @onfocus="HandleLandingGearStatusFocusAsync">
 
-                            @foreach (var unit in cockpitState.LandingGears)
-                            {
-                                <div class="switch-slot" @key="unit.Number">
-                                    <LandingGearStatus
-                                        Unit="@unit"
-                                        OnClick="HandleUnitClick" />
-                                </div>
-                            }
-                        </div>
+                                @foreach (var unit in cockpitState.LandingGears)
+                                {
+                                    <div class="switch-slot"
+                                        @key="unit.Number">
+
+                                        <LandingGearStatus
+                                            Unit="@unit"
+                                            OnClick="HandleUnitClick" />
+
+                                    </div>
+                                }
+
+                            </div>
+                        }
                     </div>
                 </section>
             </div>
@@ -650,7 +667,7 @@ Database-driven top status bar
     ================================================== */
 
     <aside class="emergency-checklist-panel"
-    aria-label="Emergency checklist">
+        aria-label="Emergency checklist">
         <VoiceInstructorPanel
             IsSupported="_voiceSupported"
             IsListening="_voiceListening"

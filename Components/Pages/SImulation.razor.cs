@@ -1391,10 +1391,36 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         {
             _isCompleting = true;
 
+            Logger.LogInformation(
+                "Completing simulation. UserId={UserId}, Aircraft={Aircraft}, Scenario={Scenario}",
+                _currentPilotUserId,
+                selectedAircraft.Name,
+                selectedScenarioRecord.EmergencyType);
+
             _completedReport =
                 await SimulationSession
                     .CompleteAndSaveSimulationAsync(
                         completionReason);
+
+            Logger.LogInformation(
+                "Simulation report saved. ReportId={ReportId}, UserId={UserId}",
+                _completedReport.Id,
+                _completedReport.UserId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "Failed to complete and save simulation report.");
+
+            _latestInstructorFeedback =
+                new AiInstructorFeedback
+                {
+                    Severity = "Warning",
+                    Message =
+                        $"The simulation completed, but the report could not be saved: " +
+                        $"{ex.Message}"
+                };
         }
         finally
         {

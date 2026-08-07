@@ -679,6 +679,18 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 Quantity = 26.5
             })
             .ToList();
+        
+        var landingGears =
+            selectedAircraft.LandingGearConfig.Units
+                .OrderBy(unit => unit.Order)
+                .Select(unit => new LandingGearState
+                {
+                    Number = unit.Number,
+                    Label = unit.Label,
+                    Position = unit.Position,
+                    Status = unit.Status
+                })
+                .ToList();
 
         return new CockpitState
         {
@@ -697,10 +709,14 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             Engines = engines,
             Brakes = brakes,
             FuelTanks = fuelTanks,
+            LandingGears = landingGears,
 
             FuelPercentage = defaults.FuelPercentage,
 
             AlertMessage = "Systems Normal",
+
+            AlternateGearExtensionActivated = false,
+            AlternateGearExtensionCompleted = false,
 
             HydraulicPressure = 3000,
             HydraulicPumpOnline = true,
@@ -1145,6 +1161,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
                 if (emergencyTriggered)
                 {
+                    UpdateFuelLeak(elapsedSeconds);
+
                     await EvaluateCockpitStateProcedureStepAsync();
                 }
                 
@@ -1388,6 +1406,15 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                     step.StepOrder))
             ?.Instruction;
     }
+    private ScenarioProcedureStep?
+    GetNextIncompleteProcedureStep()
+    {
+        return procedureSteps
+            .OrderBy(step => step.StepOrder)
+            .FirstOrDefault(step =>
+                !_completedProcedureStepOrders.Contains(
+                    step.StepOrder));
+}
 
 
     private async Task ToggleVoiceControlAsync()
@@ -1741,7 +1768,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                                         Instrument Management                                           |
      ===================================================================================================== */
 
-    private async Task HandleUnitClick(LandingGearUnit unit)
+    private async Task HandleUnitClick(LandingGearState unit)
     {
         var wasUp = unit.Status == LandingGearStatusValue.UpAndLocked;
 
@@ -1797,6 +1824,44 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         await HandlePilotActionAsync(
             "Check Engine Status");
     }
+    private async Task HandleHydraulicStatusFocusAsync()
+    {
+        if (!emergencyTriggered)
+        {
+            return;
+        }
+
+        var nextStep =
+            GetNextIncompleteProcedureStep();
+
+        if (nextStep is null ||
+            !string.Equals(
+                nextStep.CorrectAction,
+                "Identify Hydraulic Failure",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        await HandlePilotActionAsync(
+            "Identify Hydraulic Failure");
+    }
+    private async Task HandleLandingGearStatusFocusAsync()
+    {
+        if (!emergencyTriggered)
+        {
+            return;
+        }
+
+        var expectedStep = GetNextIncompleteProcedureStep();
+
+        if (expectedStep?.CorrectAction != "Check Gear Status")
+        {
+            return;
+        }
+
+        await HandlePilotActionAsync("Check Gear Status");
+    }
     private async Task ActivateFireSuppression()
     {
         var engine = GetAffectedEngine();
@@ -1816,6 +1881,23 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         }
 
         await InvokeAsync(StateHasChanged);
+    }
+    private void ActivateCabinFireSuppression()
+    {
+        cockpitState.FireSuppressionActivated = true;
+
+        if (cockpitState.FireDetected)
+        {
+            cockpitState.FireDetected = false;
+
+            cockpitState.AlertMessage =
+                "FIRE SUPPRESSION ACTIVE - FIRE CONDITION SUPPRESSED";
+        }
+        else
+        {
+            cockpitState.AlertMessage =
+                "FIRE SUPPRESSION ACTIVATED - NO ACTIVE FIRE DETECTED";
+        }
     }
     private static double MoveToward(double current, double target, double maxDelta)
     {
@@ -1871,13 +1953,14 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         }
     }
     private void HandleFuelControlChanged(
-    EngineState engine)
+        EngineState engine)
     {
         engine.FuelCutoff =
             !engine.FuelCutoff;
 
         if (engine.FuelCutoff)
         {
+            engine.Power = 0;
             engine.Running = false;
         }
         else
@@ -1977,6 +2060,119 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         await HandlePilotActionAsync(
             "Declare Emergency");
     }
+    private async Task HandleFuelTankFocusedAsync(
+        FuelState tank)
+    {
+        if (!emergencyTriggered)
+        {
+            return;
+        }
+
+        var nextStep =
+            GetNextIncompleteProcedureStep();
+
+        if (nextStep is null)
+        {
+            return;
+        }
+
+        // Step 1: simply inspecting either fuel gauge
+        // counts as monitoring fuel quantity.
+        if (string.Equals(
+                nextStep.CorrectAction,
+                "Monitor Fuel",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            await HandlePilotActionAsync(
+                "Monitor Fuel");
+
+            return;
+        }
+
+        // Step 2: pilot must inspect the actual leaking tank.
+        if (tank.Number ==
+                cockpitState.LeakingFuelTankNumber &&
+            string.Equals(
+                nextStep.CorrectAction,
+                $"Identify Fuel Leak Tank {tank.Number}",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            await HandlePilotActionAsync(
+                $"Identify Fuel Leak Tank {tank.Number}");
+        }
+    }
+    private async Task HandleFuelTankIsolationAsync(
+        FuelState tank)
+    {
+        if (!emergencyTriggered)
+        {
+            return;
+        }
+
+        if (tank.Number != cockpitState.LeakingFuelTankNumber)
+        {
+            _latestInstructorFeedback =
+                new AiInstructorFeedback
+                {
+                    Severity = "Warning",
+                    Message =
+                        $"Tank {tank.Number} is not the leaking fuel source."
+                };
+
+            return;
+        }
+
+        var nextStep =
+            GetNextIncompleteProcedureStep();
+
+        // If the pilot immediately isolates the correct tank,
+        // that demonstrates they monitored the fuel system.
+        if (string.Equals(
+                nextStep?.CorrectAction,
+                "Monitor Fuel",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            await HandlePilotActionAsync(
+                "Monitor Fuel");
+
+            nextStep =
+                GetNextIncompleteProcedureStep();
+        }
+
+        // Correctly choosing the leaking tank also proves
+        // that the pilot identified the leaking source.
+        if (string.Equals(
+                nextStep?.CorrectAction,
+                $"Identify Fuel Leak Tank {tank.Number}",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            await HandlePilotActionAsync(
+                $"Identify Fuel Leak Tank {tank.Number}");
+
+            nextStep =
+                GetNextIncompleteProcedureStep();
+        }
+
+        // Finally record the actual isolation.
+        if (string.Equals(
+                nextStep?.CorrectAction,
+                $"Isolate Fuel Tank {tank.Number}",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            await HandlePilotActionAsync(
+                $"Isolate Fuel Tank {tank.Number}");
+        }
+    }
+    private void ActivateBackupHydraulicSystem()
+    {
+        cockpitState.HydraulicPumpOnline = true;
+        cockpitState.HydraulicPressure = 2200;
+        cockpitState.HydraulicFault = false;
+
+        cockpitState.AlertMessage =
+            "BACKUP HYDRAULIC SYSTEM ACTIVE - PRESSURE RESTORED";
+    }
+
     /* ====================================================================================================
      |                                          Debug Controls                                              |
      ===================================================================================================== */

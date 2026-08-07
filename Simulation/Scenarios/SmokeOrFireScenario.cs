@@ -25,6 +25,8 @@ public class SmokeOrFireScenario : ISimulationScenario
         ArgumentNullException.ThrowIfNull(aircraft);
         ArgumentNullException.ThrowIfNull(currentState);
 
+        currentState.FireDetected = true;
+
         currentState.AlertMessage =
             $"{aircraft.Name}: SMOKE OR FIRE WARNING - " +
             "CABIN/COCKPIT SOURCE UNKNOWN";
@@ -71,7 +73,7 @@ public class SmokeOrFireScenario : ISimulationScenario
                     "Isolate the affected system or activate appropriate suppression",
                 CorrectAction = "Activate Fire Suppression",
                 ValidationType =
-                    ProcedureValidationType.PilotAction,
+                    ProcedureValidationType.CockpitState,
                 IsSafetyCritical = true
             },
 
@@ -120,12 +122,6 @@ public class SmokeOrFireScenario : ISimulationScenario
                     "AFFECTED SYSTEM REQUIRES ISOLATION";
                 break;
 
-            case "Activate Fire Suppression":
-                state.AlertMessage =
-                    "FIRE SUPPRESSION OR SYSTEM ISOLATION ACTIVE - " +
-                    "LAND IMMEDIATELY";
-                break;
-
             case "Declare Emergency":
                 state.AlertMessage =
                     "EMERGENCY DECLARED - " +
@@ -162,6 +158,9 @@ public class SmokeOrFireScenario : ISimulationScenario
 
         return stepOrder switch
         {
+            3 =>
+                state.FireSuppressionActivated,
+
             5 =>
                 state.FlightPhase is
                     "Descent" or

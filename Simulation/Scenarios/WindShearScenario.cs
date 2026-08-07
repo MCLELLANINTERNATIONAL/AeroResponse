@@ -87,7 +87,7 @@ public class WindShearScenario : ISimulationScenario
                     "Maintain the current aircraft configuration until clear",
                 CorrectAction = "Hold Configuration",
                 ValidationType =
-                    ProcedureValidationType.PilotAction,
+                    ProcedureValidationType.CockpitState,
                 IsSafetyCritical = true
             },
 
@@ -126,12 +126,6 @@ public class WindShearScenario : ISimulationScenario
 
         switch (actionName)
         {
-            case "Hold Configuration":
-                state.AlertMessage =
-                    "AIRCRAFT CONFIGURATION HELD - " +
-                    "CONTINUE WINDSHEAR ESCAPE MANEUVER";
-                break;
-
             case "Declare Emergency":
                 state.AlertMessage =
                     "ATC ADVISED - WINDSHEAR ENCOUNTER";
@@ -173,10 +167,19 @@ public class WindShearScenario : ISimulationScenario
                     engine => engine.Power >= 95),
 
             2 =>
-                state.Pitch >= 10,
+                state.Pitch >= 10 &&
+                state.Pitch <= 18,
+            
+            3 =>
+                state.Engines.Count > 0 &&
+                state.Engines.All(
+                    engine => engine.Power >= 95) &&
+                state.Pitch >= 10 &&
+                state.Pitch <= 18,
 
             4 =>
-                state.VerticalSpeed >= 0,
+                state.VerticalSpeed >= 300 &&
+                state.Altitude > 0,
 
             _ => false
         };

@@ -1,0 +1,73 @@
+.atr-subtitle {
+    fill: #aab5bf;
+
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.handle-track {
+    fill: #0b1117;
+    stroke: #596773;
+    stroke-width: 3;
+}
+
+.position-marker {
+    stroke: #9ba8b3;
+    stroke-width: 2;
+}
+
+.release-marker {
+    stroke: #d89a26;
+}
+
+.position-label {
+    fill: #aeb9c3;
+
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.release-label {
+    fill: #f2c15d;
+}
+
+.handle-stem {
+    stroke: #aeb8c1;
+    stroke-width: 7;
+    stroke-linecap: round;
+
+    transition:
+        y1 0.25s ease,
+        y2 0.25s ease;
+}
+
+.release-handle {
+    fill: #d7dde2;
+    stroke: #66737d;
+    stroke-width: 2;
+
+    transition:
+        y 0.25s ease,
+        fill 0.2s ease,
+        stroke 0.2s ease;
+}
+
+.release-handle.released {
+    fill: #d89a26;
+    stroke: #f2c15d;
+}
+
+.handle-text {
+    fill: #111820;
+
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+
+    pointer-events: none;
+
+    transition:
+        y 0.25s ease;
+}

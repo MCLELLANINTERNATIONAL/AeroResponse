@@ -11,6 +11,7 @@
 @using AeroResponse.Components.FlightControl
 @using AeroResponse.Components.FlightControl.Communication
 @using AeroResponse.Components.SystemGauges.FuelGauges
+@using AeroResponse.Components.FlightControl.LandingGear.AlternateExtension
 @using AeroResponse.Services
 @using AeroResponse.Simulation
 @using AeroResponse.Simulation.Layouts
@@ -432,13 +433,34 @@ Main cockpit
                         </div>
                     }
                     <OilGauges OilPressure="@cockpitState.OilPressure" OilTemperature="@cockpitState.OilTemperature" />
-                    <FuelGaugeRenderer
-                        Aircraft="@selectedAircraft"
-                        FuelTanks="@cockpitState.FuelTanks" />
-                    <HydraulicSystem
-                        Pressure="@cockpitState.HydraulicPressure"
-                        PumpOnline="@cockpitState.HydraulicPumpOnline"
-                        Fault="@cockpitState.HydraulicFault" />
+                    <div class="fuel-gauges-wrapper">
+                        <FuelGaugeRenderer
+                            Aircraft="@selectedAircraft"
+                            FuelTanks="@cockpitState.FuelTanks" />
+                        @if (selectedAircraft.Name == "Cessna 172"){
+                            @foreach (var tank in cockpitState.FuelTanks)
+                            {
+                                <button type="button"
+                                        class="fuel-tank-button isolate"
+                                        @onclick="() => HandleFuelTankIsolationAsync(tank)">
+                                    ISOLATE TANK @tank.Number
+                                </button>
+                            }
+                        }
+                    </div>
+                    <div class="hydraulicSystemsWrapper"
+                        tabindex="0"
+                        @onfocus="() => HandleHydraulicStatusFocusAsync()">
+                        <HydraulicSystem
+                            Pressure="@cockpitState.HydraulicPressure"
+                            PumpOnline="@cockpitState.HydraulicPumpOnline"
+                            Fault="@cockpitState.HydraulicFault" />
+                        <button type="button"
+                                class="btn btn-outline-warning"
+                                @onclick="ActivateBackupHydraulicSystem">
+                            Activate Backup Hydraulic System
+                        </button>
+                    </div>
                     <ElectricalSystem
                         BusVoltage="@cockpitState.BusVoltage"
                         BatteryVoltage="@cockpitState.BatteryVoltage"
@@ -447,14 +469,23 @@ Main cockpit
                         AlternatorOnline="@cockpitState.AlternatorOnline"
                         Fault="@cockpitState.ElectricalFault" />
                     <!-- Landing Gear -->
-                    <div class="switch-grid">
-                        @foreach (var unit in selectedAircraft.LandingGearConfig.Units.OrderBy(u => u.Order))
+                    <div class="switch-grid"
+                        tabindex="0"
+                        @onfocus="HandleLandingGearStatusFocusAsync">
+
+                        @foreach (var unit in cockpitState.LandingGears)
                         {
-                            <div class="switch-slot" @key="unit.Order">
-                                <LandingGearStatus Unit="unit" OnClick="HandleUnitClick" @key="unit.Number" />
+                            <div class="switch-slot" @key="unit.Number">
+                                <LandingGearStatus
+                                    Unit="@unit"
+                                    OnClick="HandleUnitClick" />
                             </div>
                         }
+
                     </div>
+                    <AlternateLandingGearRenderer
+                        Aircraft="@selectedAircraft"
+                        State="@cockpitState" />
                 </div>
             </section>
         </div>
@@ -488,7 +519,9 @@ Main cockpit
                         PitchChanged="value => cockpitState.Pitch = value"
                         Bank="@cockpitState.Bank"
                         BankChanged="value => cockpitState.Bank = value" />
-                    <div class="pilot-actions-panel">
+
+                <!-- Scenario Specific Pilot Options that Don't translate well to cockpit state -->
+                    <div class="pilot-actions-panel"> 
                         @if (procedureSteps.Any(
                                 step => step.CorrectAction == "Oxygen Masks"))
                             {
@@ -533,6 +566,20 @@ Main cockpit
 
                             </button>
                         }
+                        @if (procedureSteps.Any(
+                            step =>
+                                step.CorrectAction.StartsWith(
+                                    "Activate Fire Suppression Engine",
+                                    StringComparison.OrdinalIgnoreCase)))
+                        {
+                            <button type="button"
+                                    class="btn btn-danger"
+                                    @onclick="ActivateFireSuppression">
+
+                                Activate Engine Fire Suppression
+
+                            </button>
+                        }
                     </div>
                 </div>
                 <div class="communications-grid">
@@ -559,6 +606,12 @@ Main cockpit
                     <FireDetection
                         Status="@GetFireStatus()"
                         Label="@GetFireLabel()" />
+
+                    <button type="button"
+                            class="btn btn-danger fire-suppression-control"
+                            @onclick="ActivateCabinFireSuppression">
+                        Activate Cabin Fire Suppression
+                    </button>
 
                     <!-- FUEL CONTROL -->
                     

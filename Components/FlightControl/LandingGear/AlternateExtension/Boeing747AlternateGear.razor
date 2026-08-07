@@ -1,0 +1,256 @@
+@using AeroResponse.Models
+@using AeroResponse.Simulation
+
+<AlternateGearPanel>
+
+    <svg viewBox="0 0 360 220"
+         class="alternate-gear-svg"
+         role="img"
+         aria-label="Boeing 747 alternate landing gear extension panel">
+
+        <rect x="10"
+              y="10"
+              width="340"
+              height="200"
+              rx="12"
+              class="panel-face" />
+
+        <text x="180"
+              y="36"
+              text-anchor="middle"
+              class="panel-title">
+            ALTERNATE GEAR EXTENSION
+        </text>
+
+        <text x="180"
+              y="57"
+              text-anchor="middle"
+              class="boeing-subtitle">
+            RELEASE GEAR GROUPS
+        </text>
+
+        <!-- NOSE -->
+        <g role="button"
+           tabindex="0"
+           aria-label="Release nose landing gear"
+           @onclick="ReleaseNose">
+
+            <rect x="55"
+                  y="75"
+                  width="70"
+                  height="80"
+                  rx="8"
+                  class="@GetSwitchClass(noseReleased)" />
+
+            <line x1="90"
+                  y1="94"
+                  x2="90"
+                  y2="136"
+                  class="@GetLeverClass(noseReleased)" />
+
+            <circle cx="90"
+                    cy="@GetLeverKnobY(noseReleased)"
+                    r="9"
+                    class="switch-knob" />
+
+        </g>
+
+        <!-- LEFT -->
+        <g role="button"
+           tabindex="0"
+           aria-label="Release left main landing gear"
+           @onclick="ReleaseLeft">
+
+            <rect x="145"
+                  y="75"
+                  width="70"
+                  height="80"
+                  rx="8"
+                  class="@GetSwitchClass(leftReleased)" />
+
+            <line x1="180"
+                  y1="94"
+                  x2="180"
+                  y2="136"
+                  class="@GetLeverClass(leftReleased)" />
+
+            <circle cx="180"
+                    cy="@GetLeverKnobY(leftReleased)"
+                    r="9"
+                    class="switch-knob" />
+
+        </g>
+
+        <!-- RIGHT -->
+        <g role="button"
+           tabindex="0"
+           aria-label="Release right main landing gear"
+           @onclick="ReleaseRight">
+
+            <rect x="235"
+                  y="75"
+                  width="70"
+                  height="80"
+                  rx="8"
+                  class="@GetSwitchClass(rightReleased)" />
+
+            <line x1="270"
+                  y1="94"
+                  x2="270"
+                  y2="136"
+                  class="@GetLeverClass(rightReleased)" />
+
+            <circle cx="270"
+                    cy="@GetLeverKnobY(rightReleased)"
+                    r="9"
+                    class="switch-knob" />
+
+        </g>
+
+        <text x="90"
+              y="180"
+              text-anchor="middle"
+              class="switch-label">
+            NOSE
+        </text>
+
+        <text x="180"
+              y="180"
+              text-anchor="middle"
+              class="switch-label">
+            LEFT
+        </text>
+
+        <text x="270"
+              y="180"
+              text-anchor="middle"
+              class="switch-label">
+            RIGHT
+        </text>
+
+        <text x="180"
+              y="202"
+              text-anchor="middle"
+              class="panel-status">
+            @StatusText
+        </text>
+
+    </svg>
+
+</AlternateGearPanel>
+
+@code {
+    [Parameter, EditorRequired]
+    public CockpitState State { get; set; } = default!;
+
+    private bool noseReleased;
+    private bool leftReleased;
+    private bool rightReleased;
+
+    private string StatusText =>
+        State.AlternateGearExtensionCompleted
+            ? "GEAR DOWN AND LOCKED"
+            : noseReleased || leftReleased || rightReleased
+                ? "ALTERNATE EXTENSION IN PROGRESS"
+                : "SYSTEM ARMED";
+
+    private static string GetSwitchClass(bool released) =>
+        released
+            ? "alternate-switch released"
+            : "alternate-switch";
+
+    private static string GetLeverClass(bool released) =>
+        released
+            ? "switch-lever released"
+            : "switch-lever";
+
+    private static double GetLeverKnobY(bool released) =>
+        released
+            ? 132
+            : 98;
+
+    private async Task ReleaseNose()
+    {
+        if (noseReleased)
+        {
+            return;
+        }
+
+        noseReleased = true;
+        State.AlternateGearExtensionActivated = true;
+
+        SetGearGroupMoving(
+            LandingGearPosition.Nose);
+
+        await CompleteIfReadyAsync();
+    }
+
+    private async Task ReleaseLeft()
+    {
+        if (leftReleased)
+        {
+            return;
+        }
+
+        leftReleased = true;
+        State.AlternateGearExtensionActivated = true;
+
+        SetGearGroupMoving(
+            LandingGearPosition.LeftMain);
+
+        await CompleteIfReadyAsync();
+    }
+
+    private async Task ReleaseRight()
+    {
+        if (rightReleased)
+        {
+            return;
+        }
+
+        rightReleased = true;
+        State.AlternateGearExtensionActivated = true;
+
+        SetGearGroupMoving(
+            LandingGearPosition.RightMain);
+
+        await CompleteIfReadyAsync();
+    }
+
+    private void SetGearGroupMoving(
+        LandingGearPosition position)
+    {
+        foreach (var gear in State.LandingGears
+                     .Where(gear =>
+                         gear.Position == position))
+        {
+            gear.Status =
+                LandingGearStatusValue.Moving;
+        }
+    }
+
+    private async Task CompleteIfReadyAsync()
+    {
+        if (!noseReleased ||
+            !leftReleased ||
+            !rightReleased)
+        {
+            return;
+        }
+
+        await Task.Delay(1200);
+
+        foreach (var gear in State.LandingGears)
+        {
+            gear.Status =
+                LandingGearStatusValue.DownAndLocked;
+        }
+
+        State.AlternateGearExtensionCompleted =
+            State.LandingGears.Count > 0 &&
+            State.LandingGears.All(
+                gear =>
+                    gear.Status ==
+                    LandingGearStatusValue.DownAndLocked);
+    }
+}

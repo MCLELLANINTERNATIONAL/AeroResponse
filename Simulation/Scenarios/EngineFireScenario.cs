@@ -148,7 +148,7 @@ public class EngineFireScenario : ISimulationScenario
                 Instruction = "Prepare to divert and land",
                 CorrectAction = "Prepare Landing",
                 ValidationType =
-                    ProcedureValidationType.PilotAction,
+                    ProcedureValidationType.CockpitState,
                 IsSafetyCritical = true
             }
         ];
@@ -230,8 +230,16 @@ public class EngineFireScenario : ISimulationScenario
                 !affectedEngine.Running,
 
             4 =>
-                affectedEngine.FireSuppressionActivated,
-
+                affectedEngine.FireSuppressionActivated &&
+                affectedEngine.FuelCutoff,
+            
+            6 =>
+                state.FlightPhase is
+                    "Descent" or
+                    "Approach" or
+                    "Landing" ||
+                (state.Altitude <= 1_500 &&
+                state.Airspeed < 90),
             _ => false
         };
     }

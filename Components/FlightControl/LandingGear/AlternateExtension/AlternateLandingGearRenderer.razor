@@ -1,0 +1,42 @@
+@using AeroResponse.Models
+@using AeroResponse.Simulation
+
+@switch (Aircraft.CockpitLayoutKey)
+{
+    case "gulfstream-g700-standard":
+        <GulfstreamG700AlternateGear
+            State="@State" />
+        break;
+
+    case "atr-72-600-standard":
+        <Atr72600AlternateGear
+            State="@State" />
+        break;
+
+    case "boeing-747-standard":
+        <Boeing747AlternateGear
+            State="@State" />
+        break;
+
+    case "airbus-a320-standard":
+        <AirbusA320AlternateGear
+            State="@State" />
+        break;
+
+    case "dash-8-q400-standard":
+        <Dash8Q400AlternateGear
+            State="@State" />
+        break;
+        
+    default:
+        <p>Alternate landing gear extension is not available for this aircraft.</p>
+        break;
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public Aircraft Aircraft { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public CockpitState State { get; set; } = default!;
+}

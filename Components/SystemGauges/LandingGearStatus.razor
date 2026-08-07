@@ -13,8 +13,9 @@
 </svg>
 
 @code {
-    [Parameter] public LandingGearUnit Unit { get; set; } = default!;
-    [Parameter] public EventCallback<LandingGearUnit> OnClick { get; set; }
+    [Parameter, EditorRequired]
+    public LandingGearState Unit { get; set; } = default!;
+    [Parameter] public EventCallback<LandingGearState> OnClick { get; set; }
 
     private Task HandleClick() => OnClick.InvokeAsync(Unit);
 

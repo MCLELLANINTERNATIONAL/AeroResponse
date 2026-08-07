@@ -1,0 +1,176 @@
+@using AeroResponse.Models
+@using AeroResponse.Simulation
+
+<AlternateGearPanel>
+
+    <svg viewBox="0 0 320 220"
+         class="alternate-gear-svg"
+         role="img"
+         aria-label="ATR 72-600 alternate landing gear release">
+
+        <rect x="10"
+              y="10"
+              width="300"
+              height="200"
+              rx="12"
+              class="panel-face" />
+
+        <text x="160"
+              y="36"
+              text-anchor="middle"
+              class="panel-title">
+            ALTERNATE GEAR RELEASE
+        </text>
+
+        <text x="160"
+              y="58"
+              text-anchor="middle"
+              class="atr-subtitle">
+            MECHANICAL RELEASE
+        </text>
+
+        <!-- Handle track -->
+        <rect x="128"
+              y="76"
+              width="64"
+              height="96"
+              rx="12"
+              class="handle-track" />
+
+        <!-- Normal position marker -->
+        <line x1="112"
+              y1="92"
+              x2="128"
+              y2="92"
+              class="position-marker" />
+
+        <text x="105"
+              y="96"
+              text-anchor="end"
+              class="position-label">
+            NORMAL
+        </text>
+
+        <!-- Released position marker -->
+        <line x1="112"
+              y1="156"
+              x2="128"
+              y2="156"
+              class="position-marker release-marker" />
+
+        <text x="105"
+              y="160"
+              text-anchor="end"
+              class="position-label release-label">
+            RELEASE
+        </text>
+
+        <!-- Mechanical stem -->
+        <line x1="160"
+              y1="@HandleStemStartY"
+              x2="160"
+              y2="@HandleStemEndY"
+              class="handle-stem" />
+
+        <!-- Pull handle -->
+        <rect x="132"
+              y="@HandleY"
+              width="56"
+              height="25"
+              rx="7"
+              class="@HandleClass" />
+
+        <text x="160"
+              y="@HandleTextY"
+              text-anchor="middle"
+              class="handle-text">
+            PULL
+        </text>
+
+        <text x="160"
+              y="198"
+              text-anchor="middle"
+              class="panel-status">
+            @StatusText
+        </text>
+
+    </svg>
+
+    <button type="button"
+            class="alternate-gear-button"
+            disabled="@State.AlternateGearExtensionCompleted"
+            @onclick="PullReleaseHandle">
+
+        @(State.AlternateGearExtensionCompleted
+            ? "GEAR EXTENSION COMPLETE"
+            : "PULL ALTERNATE RELEASE")
+
+    </button>
+
+</AlternateGearPanel>
+
+@code {
+    [Parameter, EditorRequired]
+    public CockpitState State { get; set; } = default!;
+
+    private bool releasePulled;
+
+    private double HandleY =>
+        releasePulled
+            ? 144
+            : 80;
+
+    private double HandleTextY =>
+        HandleY + 17;
+
+    private double HandleStemStartY =>
+        releasePulled
+            ? 96
+            : 65;
+
+    private double HandleStemEndY =>
+        HandleY;
+
+    private string HandleClass =>
+        releasePulled
+            ? "release-handle released"
+            : "release-handle";
+
+    private string StatusText =>
+        releasePulled
+            ? "ALTERNATE RELEASE ENGAGED"
+            : "SYSTEM ARMED";
+
+    private async Task PullReleaseHandle()
+    {
+        if (releasePulled ||
+            State.AlternateGearExtensionCompleted)
+        {
+            return;
+        }
+
+        State.AlternateGearExtensionActivated = true;
+        releasePulled = true;
+
+        foreach (var gear in State.LandingGears)
+        {
+            gear.Status =
+                LandingGearStatusValue.Moving;
+        }
+
+        await Task.Delay(1200);
+
+        foreach (var gear in State.LandingGears)
+        {
+            gear.Status =
+                LandingGearStatusValue.DownAndLocked;
+        }
+
+        State.AlternateGearExtensionCompleted =
+            State.LandingGears.Count > 0 &&
+            State.LandingGears.All(
+                gear =>
+                    gear.Status ==
+                    LandingGearStatusValue.DownAndLocked);
+    }
+}

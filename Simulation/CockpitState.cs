@@ -72,6 +72,11 @@ public class CockpitState
     public bool FuelLeakActive { get; set; }
 
     public int? LeakingFuelTankNumber { get; set; }
+    public bool AlternateGearExtensionActivated { get; set; }
+
+    public bool AlternateGearExtensionCompleted { get; set; }
+
+    public List<LandingGearState> LandingGears { get; set; } = [];
 
     public Dictionary<string, object?> DynamicValues { get; set; } =
     new(StringComparer.OrdinalIgnoreCase);

@@ -117,7 +117,7 @@ public class FuelLeakScenario : ISimulationScenario
                     "Divert to the nearest suitable airport",
                 CorrectAction = "Prepare Diversion",
                 ValidationType =
-                    ProcedureValidationType.PilotAction,
+                    ProcedureValidationType.CockpitState,
                 IsSafetyCritical = false
             }
         ];
@@ -144,11 +144,6 @@ public class FuelLeakScenario : ISimulationScenario
                         : $"TANK {affectedTank.Number} FUEL LOSS CONFIRMED";
                 break;
 
-            case "Identify Fuel Leak Tank 1":
-                state.AlertMessage =
-                    "TANK 1 FUEL LEAK CONFIRMED";
-                break;
-
             case "Isolate Fuel Tank 1":
                 state.FuelLeakActive = false;
 
@@ -161,10 +156,6 @@ public class FuelLeakScenario : ISimulationScenario
                     "EMERGENCY DECLARED - FUEL LEAK DIVERSION REQUIRED";
                 break;
 
-            case "Prepare Diversion":
-                state.AlertMessage =
-                    "DIVERSION PLANNED - LAND AS SOON AS PRACTICAL";
-                break;
         }
 
         return state;
@@ -194,6 +185,28 @@ public class FuelLeakScenario : ISimulationScenario
     {
         ArgumentNullException.ThrowIfNull(state);
 
-        return false;
+        var affectedTank =
+            state.FuelTanks.FirstOrDefault(
+                tank =>
+                    tank.Number ==
+                    state.LeakingFuelTankNumber);
+
+        return stepOrder switch
+        {
+            3 =>
+                affectedTank is not null &&
+                affectedTank.Isolated &&
+                !state.FuelLeakActive,
+
+            5 =>
+                state.FlightPhase is
+                    "Descent" or
+                    "Approach" or
+                    "Landing" ||
+                (state.Altitude <= 1_500 &&
+                state.Airspeed < 90),
+
+            _ => false
+        };
     }
 }

@@ -1,0 +1,129 @@
+.g700-subtitle {
+    fill: #9caab6;
+
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.nitrogen-gauge-face {
+    fill: #10171d;
+    stroke: #667782;
+    stroke-width: 3;
+}
+
+.nitrogen-label {
+    fill: #dce5ec;
+
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+}
+
+.nitrogen-needle {
+    stroke: #f2c15d;
+    stroke-width: 5;
+    stroke-linecap: round;
+
+    transition: transform 0.18s ease;
+}
+
+.nitrogen-hub {
+    fill: #dce3e8;
+    stroke: #65717a;
+    stroke-width: 2;
+}
+
+.nitrogen-pressure {
+    fill: #aab8c3;
+
+    font-size: 0.56rem;
+    font-weight: 700;
+}
+
+.release-panel {
+    fill: #151d24;
+    stroke: #667681;
+    stroke-width: 2;
+
+    transition:
+        fill 0.2s ease,
+        stroke 0.2s ease;
+}
+
+.release-panel.released {
+    fill: #422319;
+    stroke: #e39a36;
+}
+
+.release-panel-label {
+    fill: #e6edf3;
+
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+}
+
+.release-guard {
+    fill: #414d56;
+    stroke: #8b98a2;
+    stroke-width: 2;
+}
+
+.release-guard.open {
+    fill: #5a3d10;
+    stroke: #d89a26;
+}
+
+.guard-label {
+    fill: #edf2f5;
+
+    font-size: 0.47rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.release-indicator {
+    fill: #371216;
+    stroke: #973b42;
+    stroke-width: 2;
+}
+
+.release-indicator.active {
+    fill: #d22f3a;
+    stroke: #ff7780;
+
+    filter:
+        drop-shadow(
+            0 0 5px rgba(255, 70, 80, 0.65)
+        );
+}
+
+.g700-control-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+}
+
+.emergency-release-button {
+    border-color: #bc454b;
+    color: #ffd2d4;
+    background: #511c21;
+}
+
+.emergency-release-button:hover:not(:disabled) {
+    border-color: #ef6268;
+    background: #71252b;
+}
+
+.g700-control-grid .alternate-gear-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+    .g700-control-grid {
+        grid-template-columns: 1fr;
+    }
+}

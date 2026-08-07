@@ -1,0 +1,263 @@
+@using AeroResponse.Models
+@using AeroResponse.Simulation
+
+<AlternateGearPanel>
+
+    <svg viewBox="0 0 360 250"
+         class="alternate-gear-svg"
+         role="img"
+         aria-label="Gulfstream G700 emergency landing gear nitrogen release">
+
+        <rect x="10"
+              y="10"
+              width="340"
+              height="230"
+              rx="12"
+              class="panel-face" />
+
+        <text x="180"
+              y="36"
+              text-anchor="middle"
+              class="panel-title">
+            EMERGENCY GEAR EXTENSION
+        </text>
+
+        <text x="180"
+              y="56"
+              text-anchor="middle"
+              class="g700-subtitle">
+            NITROGEN STORAGE SYSTEM
+        </text>
+
+        <!-- =============================
+             Nitrogen pressure indication
+             ============================= -->
+
+        <circle cx="95"
+                cy="130"
+                r="52"
+                class="nitrogen-gauge-face" />
+
+        <text x="95"
+              y="101"
+              text-anchor="middle"
+              class="nitrogen-label">
+            N₂
+        </text>
+
+        <line x1="95"
+              y1="130"
+              x2="95"
+              y2="91"
+              class="nitrogen-needle"
+              transform="@NitrogenNeedleTransform" />
+
+        <circle cx="95"
+                cy="130"
+                r="7"
+                class="nitrogen-hub" />
+
+        <text x="95"
+              y="164"
+              text-anchor="middle"
+              class="nitrogen-pressure">
+            @NitrogenPressure PSI
+        </text>
+
+        <!-- =============================
+             Emergency release section
+             ============================= -->
+
+        <rect x="190"
+              y="84"
+              width="130"
+              height="112"
+              rx="10"
+              class="@ReleasePanelClass" />
+
+        <text x="255"
+              y="108"
+              text-anchor="middle"
+              class="release-panel-label">
+            EMERGENCY
+        </text>
+
+        <text x="255"
+              y="126"
+              text-anchor="middle"
+              class="release-panel-label">
+            GEAR RELEASE
+        </text>
+
+        <!-- Guard -->
+        <rect x="220"
+              y="140"
+              width="70"
+              height="24"
+              rx="5"
+              class="@GuardClass" />
+
+        <text x="255"
+              y="157"
+              text-anchor="middle"
+              class="guard-label">
+            @(guardOpen ? "GUARD OPEN" : "GUARDED")
+        </text>
+
+        <!-- Release indicator -->
+        <circle cx="255"
+                cy="181"
+                r="10"
+                class="@ReleaseIndicatorClass" />
+
+        <text x="180"
+              y="222"
+              text-anchor="middle"
+              class="panel-status">
+            @StatusText
+        </text>
+
+    </svg>
+
+    <div class="g700-control-grid">
+
+        <button type="button"
+                class="alternate-gear-button"
+                disabled="@guardOpen"
+                @onclick="OpenGuard">
+            OPEN EMERGENCY RELEASE GUARD
+        </button>
+
+        <button type="button"
+                class="alternate-gear-button emergency-release-button"
+                disabled="@(!guardOpen ||
+                            nitrogenReleased ||
+                            State.AlternateGearExtensionCompleted)"
+                @onclick="ReleaseNitrogenAsync">
+            RELEASE EMERGENCY NITROGEN
+        </button>
+
+    </div>
+
+</AlternateGearPanel>
+
+@code {
+    [Parameter, EditorRequired]
+    public CockpitState State { get; set; } = default!;
+
+    private bool guardOpen;
+    private bool nitrogenReleased;
+
+    private int NitrogenPressure { get; set; } = 3000;
+
+    private string NitrogenNeedleTransform
+    {
+        get
+        {
+            var percentage =
+                Math.Clamp(
+                    NitrogenPressure / 3000.0,
+                    0,
+                    1);
+
+            var angle =
+                -120 + (percentage * 240);
+
+            return $"rotate({angle} 95 130)";
+        }
+    }
+
+    private string ReleasePanelClass =>
+        nitrogenReleased
+            ? "release-panel released"
+            : "release-panel";
+
+    private string GuardClass =>
+        guardOpen
+            ? "release-guard open"
+            : "release-guard";
+
+    private string ReleaseIndicatorClass =>
+        nitrogenReleased
+            ? "release-indicator active"
+            : "release-indicator";
+
+    private string StatusText =>
+        State.AlternateGearExtensionCompleted
+            ? "GEAR DOWN AND LOCKED"
+            : nitrogenReleased
+                ? "EMERGENCY EXTENSION IN PROGRESS"
+                : guardOpen
+                    ? "EMERGENCY RELEASE ARMED"
+                    : "SYSTEM STOWED";
+
+    private void OpenGuard()
+    {
+        if (guardOpen)
+        {
+            return;
+        }
+
+        State.AlternateGearExtensionActivated = true;
+        guardOpen = true;
+
+        State.AlertMessage =
+            "G700 EMERGENCY LANDING GEAR RELEASE ARMED";
+    }
+
+    private async Task ReleaseNitrogenAsync()
+    {
+        if (!guardOpen ||
+            nitrogenReleased ||
+            State.AlternateGearExtensionCompleted)
+        {
+            return;
+        }
+
+        nitrogenReleased = true;
+
+        State.AlternateGearExtensionActivated = true;
+
+        foreach (var gear in State.LandingGears)
+        {
+            gear.Status =
+                LandingGearStatusValue.Moving;
+        }
+
+        State.AlertMessage =
+            "G700 EMERGENCY NITROGEN RELEASED - GEAR EXTENDING";
+
+        const int steps = 10;
+
+        for (var step = 0;
+             step < steps;
+             step++)
+        {
+            NitrogenPressure =
+                Math.Max(
+                    400,
+                    NitrogenPressure - 260);
+
+            await Task.Delay(120);
+        }
+
+        foreach (var gear in State.LandingGears)
+        {
+            gear.Status =
+                LandingGearStatusValue.DownAndLocked;
+        }
+
+        State.AlternateGearExtensionCompleted =
+            State.LandingGears.Count > 0 &&
+            State.LandingGears.All(
+                gear =>
+                    gear.Status ==
+                    LandingGearStatusValue.DownAndLocked);
+
+        if (State.AlternateGearExtensionCompleted)
+        {
+            State.AlertMessage =
+                "G700 EMERGENCY LANDING GEAR EXTENSION COMPLETE";
+        }
+    }
+}

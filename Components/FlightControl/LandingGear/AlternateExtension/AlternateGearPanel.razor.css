@@ -1,0 +1,82 @@
+.alternate-gear-panel {
+    display: grid;
+    gap: 0.75rem;
+
+    padding: 1rem;
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.9rem;
+
+    background:
+        linear-gradient(
+            180deg,
+            #1c252f,
+            #10161d
+        );
+}
+
+/*
+    ::deep allows this scoped parent component
+    to style elements rendered inside ChildContent.
+*/
+
+.alternate-gear-panel ::deep .alternate-gear-svg {
+    display: block;
+
+    width: 100%;
+    max-height: 260px;
+}
+
+.alternate-gear-panel ::deep .panel-face {
+    fill: #101820;
+    stroke: #788896;
+    stroke-width: 2;
+}
+
+.alternate-gear-panel ::deep .panel-title,
+.alternate-gear-panel ::deep .switch-label,
+.alternate-gear-panel ::deep .panel-status {
+    fill: #e7eef5;
+
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.alternate-gear-panel ::deep .alternate-gear-button {
+    min-height: 42px;
+    padding: 0.55rem 0.8rem;
+
+    border: 1px solid #d89a26;
+    border-radius: 6px;
+
+    color: #ffe7ad;
+    background: #4a320c;
+
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.1s ease;
+}
+
+.alternate-gear-panel ::deep .alternate-gear-button:hover {
+    border-color: #f2b84b;
+    background: #6a4912;
+}
+
+.alternate-gear-panel ::deep .alternate-gear-button:active {
+    transform: translateY(1px);
+}
+
+.alternate-gear-panel ::deep .alternate-gear-button:focus-visible {
+    outline: 2px solid #f2c15d;
+    outline-offset: 2px;
+}

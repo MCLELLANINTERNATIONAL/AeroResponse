@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using AeroResponse.Models;
 using AeroResponse.Services;
 using AeroResponse.Simulation;
@@ -5,6 +6,7 @@ using AeroResponse.Simulation.Controls;
 using AeroResponse.Simulation.Layouts;
 using AeroResponse.Simulation.Scenarios;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
@@ -24,6 +26,13 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
        ==================================================================================================== */
     [Inject]
     private ILogger<Simulation> Logger { get; set; } = default!;
+
+    [Inject]
+    private AuthenticationStateProvider AuthenticationStateProvider
+    {
+        get;
+        set;
+    } = default!;
 
     [Inject]
     private ICockpitLayoutProvider LayoutProvider { get; set; } = default!;
@@ -128,6 +137,12 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
     private bool _isScenarioMenuOpen;
 
+    private string _currentPilotUserId =
+        string.Empty;
+
+    private string _currentPilotName =
+        "Pilot";
+
     private IReadOnlyList<Aircraft>
         _aircraftOptions = [];
 
@@ -186,6 +201,43 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
     {
         _isReady = false;
         _loadFailed = false;
+
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var principal =
+            authenticationState.User;
+
+        _currentPilotUserId =
+            principal.FindFirstValue(
+                ClaimTypes.NameIdentifier)
+            ?? string.Empty;
+
+        var firstName =
+            principal.FindFirstValue(
+                ClaimTypes.GivenName);
+
+        var surname =
+            principal.FindFirstValue(
+                ClaimTypes.Surname);
+
+        var fullName =
+            string.Join(
+                " ",
+                new[]
+                {
+                    firstName,
+                    surname
+                }
+                .Where(value =>
+                    !string.IsNullOrWhiteSpace(value)));
+
+        _currentPilotName =
+            !string.IsNullOrWhiteSpace(fullName)
+                ? fullName
+                : principal.Identity?.Name
+                    ?? "Pilot";
 
         var allAircraft =
             await AircraftService.GetAllAsync();
@@ -549,13 +601,13 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         // the emergency immediately when TriggerType is "Immediate".
         cockpitState =
             SimulationSession.StartSimulation(
-                userId: "test-pilot",
+                userId: _currentPilotUserId,
                 aircraftId: selectedAircraft.Id,
                 scenario: selectedScenarioRecord,
                 aircraft: cockpitLayout,
                 expectedSteps: procedureSteps,
                 initialState: cockpitState,
-                pilotName: "Pilot");
+                pilotName: _currentPilotName);
 
         _completedReport = null;
         _isCompleting = false;
@@ -1227,13 +1279,13 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         // but pass the CURRENT aircraft state.
         cockpitState =
             SimulationSession.StartSimulation(
-                userId: "test-pilot",
+                userId: _currentPilotUserId,
                 aircraftId: selectedAircraft.Id,
                 scenario: selectedScenarioRecord,
                 aircraft: cockpitLayout,
                 expectedSteps: procedureSteps,
                 initialState: cockpitState,
-                pilotName: "Pilot");
+                pilotName: _currentPilotName);
     }
 
     private Task CompleteAssessmentAsync()

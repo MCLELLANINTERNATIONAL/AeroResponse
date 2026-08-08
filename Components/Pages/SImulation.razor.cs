@@ -223,14 +223,14 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 ClaimTypes.NameIdentifier)
             ?? "debug-pilot";
 
-            
+
         if (string.IsNullOrWhiteSpace(
             _currentPilotUserId))
         {
             throw new InvalidOperationException(
                 "Authenticated user does not have a usable identifier.");
         }
-        
+
         var firstName =
             principal.FindFirstValue(
                 ClaimTypes.GivenName);
@@ -789,7 +789,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 Quantity = 26.5
             })
             .ToList();
-        
+
         var landingGears =
             selectedAircraft.LandingGearConfig.Units
                 .OrderBy(unit => unit.Order)
@@ -853,7 +853,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         {
             return "Ground";
         }
-            
+
         if (altitude <= 100 && airspeed < 40)
         {
             return "Taxi";
@@ -1593,7 +1593,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             .FirstOrDefault(step =>
                 !_completedProcedureStepOrders.Contains(
                     step.StepOrder));
-}
+    }
 
 
     private async Task ToggleVoiceControlAsync()
@@ -2144,7 +2144,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         {
             return;
         }
-                if (!cockpitState.SatellitePhoneConnected)
+        if (!cockpitState.SatellitePhoneConnected)
         {
             return;
         }
@@ -2216,7 +2216,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             engine,
             power);
     }
-    
+
     private void HandleFuelControlChanged(
         EngineState engine)
     {
@@ -2461,8 +2461,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
         /*
         * Our aircraft definitions use roughly 75%
-        * engine power as normal cruise power.
-        *
+        * engine power as normal cruise power.*
         * Therefore:
         *
         * 75% throttle -> aircraft cruise speed
@@ -2586,8 +2585,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         string command)
     {
         /*
-        * Use the LAST number in the command.
-        *
+        * Use the LAST number in the command.*
         * Example:
         * "engine 1 power 100"
         *
@@ -2792,8 +2790,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             {
                 /*
                 * If this is a single-engine aircraft,
-                * "set throttle to 100" is unambiguous.
-                */
+                * "set throttle to 100" is unambiguous.*/
                 if (cockpitState.Engines.Count == 1)
                 {
                     var onlyEngine =
@@ -3294,8 +3291,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
             /*
             * Check disconnect before connect because
-            * "disconnect" contains "connect".
-            */
+            * "disconnect" contains "connect".*/
             if (command.Contains("disconnect"))
             {
                 SetSatelliteConnection(
@@ -3339,8 +3335,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 }
 
                 /*
-                * Keep using your existing communication behavior.
-                */
+                * Keep using your existing communication behavior.*/
                 await HandleSatelliteEmergency();
 
                 return CockpitCommandResult.Success(
@@ -3408,8 +3403,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         {
             /*
             * If an engine number was spoken, target that
-            * specific engine.
-            *
+            * specific engine.*
             * "Activate fire suppression engine 2"
             */
             if (engineNumber.HasValue)
@@ -3437,8 +3431,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             * "Activate engine fire suppression"
             *
             * Behave exactly like the physical button,
-            * which uses GetAffectedEngine().
-            */
+            * which uses GetAffectedEngine().*/
             await ActivateFireSuppression();
 
             var affectedEngine =
@@ -3466,8 +3459,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
     /* ===================================================================================================
      |                                     Focus Commands and Helpers                                      |
      ==================================================================================================== */
-     private async Task<bool> FocusCockpitInstrumentAsync(
-        InstrumentDefinition instrument)
+    private async Task<bool> FocusCockpitInstrumentAsync(
+       InstrumentDefinition instrument)
     {
         if (string.IsNullOrWhiteSpace(
                 instrument.ControlId))
@@ -3492,8 +3485,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             "aeroFocus.focusControl",
             controlId);
     }
-     private InstrumentDefinition? FindInstrumentForVoiceFocus(
-            string command)
+    private InstrumentDefinition? FindInstrumentForVoiceFocus(
+           string command)
     {
         var normalized =
             NormalizeVoiceCommand(
@@ -3501,8 +3494,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
         /*
         * Strip the focus language so we're left
-        * primarily with the instrument name.
-        */
+        * primarily with the instrument name.*/
         var target =
             normalized
                 .Replace(
@@ -3573,8 +3565,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
             /*
             * Voice aliases defined by the
-            * aircraft cockpit layout.
-            */
+            * aircraft cockpit layout.*/
             foreach (var alias in
                     instrument.VoiceAliases)
             {

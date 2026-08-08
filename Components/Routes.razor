@@ -1,11 +1,42 @@
 ﻿@using AeroResponse.Components.Account.Shared
-<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+
+<Router AppAssembly="typeof(Program).Assembly"
+        NotFoundPage="typeof(Pages.NotFound)">
+
     <Found Context="routeData">
-        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
-            <NotAuthorized>
-                <RedirectToLogin />
+
+        <AuthorizeRouteView RouteData="routeData"
+                            DefaultLayout="typeof(Layout.MainLayout)">
+
+            <NotAuthorized Context="authenticationState">
+
+                @if (authenticationState.User.Identity?.IsAuthenticated == true)
+                {
+                    <div class="container py-5">
+                        <h1>Access denied</h1>
+
+                        <p>
+                            Your account does not have permission
+                            to view this page.
+                        </p>
+
+                        <a href="/">
+                            Return home
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <RedirectToLogin />
+                }
+
             </NotAuthorized>
+
         </AuthorizeRouteView>
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+
+        <FocusOnNavigate RouteData="routeData"
+                         Selector="h1" />
+
     </Found>
+
 </Router>

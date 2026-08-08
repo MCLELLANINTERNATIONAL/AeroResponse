@@ -1,15 +1,6 @@
 @page "/reports/instructor"
+@attribute [Authorize(Policy = AccountPermissions.TrainerReports)]
 @rendermode InteractiveServer
-
-@* ============================================================
-    TEMPORARILY DISABLED WHILE DEVELOPING THE DASHBOARD.
-
-    FINAL VERSION:
-    Uncomment @attribute [Authorize]
-    and set DevelopmentPreviewMode = false below.
-   ============================================================ *@
-
-@* @attribute [Authorize] *@
 
 @using System.IO
 @using System.Security.Claims
@@ -180,15 +171,39 @@ else
                 Badges
             </NavLink>
 
-            <NavLink href="/reports/instructor">
+            <AuthorizeView Policy="@AccountPermissions.TrainerReports">
+
+
+                <Authorized>
+
+
+                    <NavLink href="/reports/instructor">
                 <span>👨‍✈</span>
                 Instructor Reports
             </NavLink>
 
-            <NavLink href="/reports/admin">
+
+                </Authorized>
+
+
+            </AuthorizeView>
+
+            <AuthorizeView Policy="@AccountPermissions.AdminPages">
+
+
+                <Authorized>
+
+
+                    <NavLink href="/reports/admin">
                 <span>▦</span>
                 Admin Reports
             </NavLink>
+
+
+                </Authorized>
+
+
+            </AuthorizeView>
 
             <button id="download-instructor-report-button"
                     class="download-report-button"
@@ -1000,7 +1015,9 @@ else
                                                     </span>
 
                                                     <strong>
-                                                        @pilot.PilotName
+                                                        <NavLink href="@($"/reports?pilotUserId={Uri.EscapeDataString(pilot.PilotUserId)}")">
+                                                            @pilot.PilotName
+                                                        </NavLink>
                                                     </strong>
 
                                                 </div>
@@ -1192,7 +1209,7 @@ else
      * 1. Change this to false.
      * 2. Uncomment @attribute [Authorize] at the top.
      */
-    private const bool DevelopmentPreviewMode = true;
+    private const bool DevelopmentPreviewMode = false;
 
 
     private InstructorDashboardVm? _dashboard;

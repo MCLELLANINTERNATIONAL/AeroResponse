@@ -1,4 +1,10 @@
-﻿<header class="site-header">
+﻿@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject AccountPermissionService PermissionService
+@inject NavigationManager NavigationManager
+
+@implements IDisposable
+
+<header class="site-header">
     <div class="nav-container">
 
         <NavLink class="brand"
@@ -37,38 +43,44 @@
                 Membership
             </NavLink>
 
-            <NavLink href="reports">
-                Reports
-            </NavLink>
+            @if (_canUsePilotPages)
+            {
+                <NavLink href="reports">
+                    Reports
+                </NavLink>
 
-            <NavLink href="aircraft">
-                Aircraft
-            </NavLink>
+                <NavLink href="simulation">
+                    Simulation
+                </NavLink>
+            }
 
-            <NavLink href="simulation">
-                Simulation
-            </NavLink>
+            @if (_canUseAdminPages)
+            {
+                <NavLink href="aircraft">
+                    Aircraft
+                </NavLink>
 
-            <NavLink href="scenarios">
-                Scenarios
-            </NavLink>
+                <NavLink href="scenarios">
+                    Scenarios
+                </NavLink>
+            }
+
         </nav>
 
         <div class="account-actions">
+
             <AuthorizeView>
+
                 <Authorized>
-                    <UserAccountEmblem />
+                    <NavLink href="/user"
+                             class="user-account-link">
+                        <UserAccountEmblem />
+                    </NavLink>
 
                     <form action="/Account/Logout"
-                          method="post"
-                          class="logout-action">
-
+                        method="post"
+                        class="logout-action">
                         <AntiforgeryToken />
-
-                        <input type="hidden"
-                               name="ReturnUrl"
-                               value="" />
-
                         <button type="submit"
                                 class="logout-button">
                             Log Out
@@ -87,8 +99,60 @@
                         Sign Up
                     </a>
                 </NotAuthorized>
+
             </AuthorizeView>
+
         </div>
 
     </div>
 </header>
+
+@code {
+    private bool _canUsePilotPages;
+    private bool _canUseAdminPages;
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged +=
+            HandleLocationChanged;
+
+        await LoadPermissionsAsync();
+    }
+
+    private async Task LoadPermissionsAsync()
+    {
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        _canUsePilotPages =
+            await PermissionService
+                .HasPermissionAsync(
+                    authenticationState.User,
+                    AccountPermissions.PilotPages);
+
+        _canUseAdminPages =
+            await PermissionService
+                .HasPermissionAsync(
+                    authenticationState.User,
+                    AccountPermissions.AdminPages);
+    }
+
+    private async void HandleLocationChanged(
+        object? sender,
+        LocationChangedEventArgs e)
+    {
+        await InvokeAsync(
+            async () =>
+            {
+                await LoadPermissionsAsync();
+                StateHasChanged();
+            });
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -=
+            HandleLocationChanged;
+    }
+}

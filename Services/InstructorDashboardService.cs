@@ -57,6 +57,20 @@ public sealed class InstructorDashboardService
                 .Unauthorised();
         }
 
+        // Administrators inherit trainer-report access and may
+        // review system-wide pilot performance.
+        if (string.Equals(
+                currentAccount.AccountType,
+                "admin",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return await GetSystemWideDashboardAsync(
+                days,
+                selectedPilotUserId,
+                isDevelopmentPreview: false,
+                cancellationToken: cancellationToken);
+        }
+
 
         /*
          * Trainers belong to an owner/company.
@@ -69,6 +83,10 @@ public sealed class InstructorDashboardService
                 "trainer" =>
                     currentAccount
                         .OwnerIdentityUserId,
+
+                "owner" =>
+                    currentAccount
+                        .IdentityUserId,
 
                 "owner_small" =>
                     currentAccount
@@ -226,10 +244,25 @@ public sealed class InstructorDashboardService
        DO NOT use this method as the final security model.
        ========================================================= */
 
-    public async Task<InstructorDashboardVm>
+    public Task<InstructorDashboardVm>
         GetDevelopmentPreviewAsync(
             int days = 30,
             string? selectedPilotUserId = null,
+            CancellationToken cancellationToken = default)
+    {
+        return GetSystemWideDashboardAsync(
+            days,
+            selectedPilotUserId,
+            isDevelopmentPreview: true,
+            cancellationToken: cancellationToken);
+    }
+
+
+    private async Task<InstructorDashboardVm>
+        GetSystemWideDashboardAsync(
+            int days,
+            string? selectedPilotUserId,
+            bool isDevelopmentPreview,
             CancellationToken cancellationToken = default)
     {
         var toUtc =
@@ -352,12 +385,14 @@ public sealed class InstructorDashboardService
             reports,
             pilots,
             ownerIdentityUserId:
-                "DEVELOPMENT-PREVIEW",
+                isDevelopmentPreview
+                    ? "DEVELOPMENT-PREVIEW"
+                    : "ADMIN",
             days,
             fromUtc,
             toUtc,
             selectedPilotUserId,
-            isDevelopmentPreview: true);
+            isDevelopmentPreview);
     }
 
 

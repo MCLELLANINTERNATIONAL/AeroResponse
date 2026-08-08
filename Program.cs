@@ -9,6 +9,7 @@ using AeroResponse.Data.Mongo.Referrals;
 using AeroResponse.Hubs;
 using AeroResponse.Repositories;
 using AeroResponse.Services;
+using AeroResponse.Services.Authorization;
 using AeroResponse.Simulation;
 using AeroResponse.Simulation.Controls;
 using AeroResponse.Simulation.Layouts;
@@ -35,10 +36,32 @@ builder.Services
 // AUTHENTICATION AND AUTHORIZATION
 // =========================================================
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(
+        AccountPermissions.PilotPages,
+        policy => policy.Requirements.Add(
+            new AccountPermissionRequirement(
+                AccountPermissions.PilotPages)));
+
+    options.AddPolicy(
+        AccountPermissions.TrainerReports,
+        policy => policy.Requirements.Add(
+            new AccountPermissionRequirement(
+                AccountPermissions.TrainerReports)));
+
+    options.AddPolicy(
+        AccountPermissions.AdminPages,
+        policy => policy.Requirements.Add(
+            new AccountPermissionRequirement(
+                AccountPermissions.AdminPages)));
+});
 builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddScoped<IdentityRedirectManager>();
+builder.Services.AddScoped<AccountPermissionService>();
+builder.Services.AddScoped<PilotReportAccessService>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, AccountPermissionHandler>();
 
 builder.Services.AddScoped<
     AuthenticationStateProvider,
@@ -235,7 +258,7 @@ builder.Services.AddScoped<
     InstructorDashboardService>();
 
 // Provides the system-wide Administration Dashboard.
-// This currently has no role-based access restriction.
+// Access is restricted by the admin permission policy.
 builder.Services.AddScoped<
     AdminDashboardService>();
 

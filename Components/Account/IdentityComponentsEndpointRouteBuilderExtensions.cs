@@ -47,11 +47,11 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
 
         accountGroup.MapPost("/Logout", async (
             ClaimsPrincipal user,
-            [FromServices] SignInManager<ApplicationUser> signInManager,
-            [FromForm] string returnUrl) =>
+            [FromServices] SignInManager<ApplicationUser> signInManager) =>
         {
             await signInManager.SignOutAsync();
-            return TypedResults.LocalRedirect($"~/{returnUrl}");
+
+            return TypedResults.LocalRedirect("~/");
         });
 
         accountGroup.MapPost("/Delete", async (

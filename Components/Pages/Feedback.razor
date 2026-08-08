@@ -2,7 +2,11 @@
 @rendermode InteractiveServer
 @implements IDisposable
 
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+
 @inject PerformanceDashboardService DashboardService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Feedback | AeroResponse</PageTitle>
 
@@ -15,10 +19,15 @@
 else if (_dashboard?.Latest is null)
 {
     <div class="reports-empty">
-        <h1>No feedback available yet</h1>
+
+        <h1>
+            No feedback available yet
+        </h1>
+
         <p>
             Complete a practice scenario to receive performance feedback.
         </p>
+
     </div>
 }
 else
@@ -28,25 +37,46 @@ else
     <main class="reports-page">
 
         <header class="reports-header">
+
             <div>
-                <h1>PERFORMANCE FEEDBACK</h1>
+
+                <h1>
+                    PERFORMANCE FEEDBACK
+                </h1>
+
                 <p>
                     Review instructor and AI-generated recommendations
                 </p>
+
             </div>
 
             <div class="pilot-chip">
-                <span class="pilot-avatar">✈</span>
+
+                <span class="pilot-avatar">
+                    ✈
+                </span>
 
                 <div>
-                    <strong>@report.PilotName</strong>
-                    <small>Professional Pilot</small>
+
+                    <strong>
+                        @report.PilotName
+                    </strong>
+
+                    <small>
+                        Professional Pilot
+                    </small>
+
                 </div>
+
             </div>
+
         </header>
 
+
         <nav class="reports-tabs">
-            <NavLink href="/reports"
+
+            <NavLink
+            href="/reports"
             Match="NavLinkMatch.All">
             ◉ Overview
         </NavLink>
@@ -78,70 +108,116 @@ else
         <NavLink href="/reports/admin">
             ▦ Admin Reports
         </NavLink>
+
     </nav>
+
 
     <section class="reports-grid">
 
+        <!-- =========================================================
+        FEEDBACK
+        ========================================================= -->
+
         <article class="report-card feedback-card">
 
-            <h2>Feedback</h2>
+            <h2>
+                Feedback
+            </h2>
 
-            <div class="feedback-tabs"
+
+            <!-- =====================================================
+            FEEDBACK TABS
+            ===================================================== -->
+
+            <div
+            class="feedback-tabs"
             role="tablist"
             aria-label="Feedback type">
 
-            <button type="button"
+            <button
+            type="button"
             role="tab"
             aria-selected="@(_activeFeedbackTab == FeedbackTab.Instructor)"
             class="@GetFeedbackTabClass(FeedbackTab.Instructor)"
             @onclick="() => SelectFeedbackTab(FeedbackTab.Instructor)">
+
             Instructor Feedback
+
         </button>
 
-        <button type="button"
+
+        <button
+        type="button"
         role="tab"
         aria-selected="@(_activeFeedbackTab == FeedbackTab.Ai)"
         class="@GetFeedbackTabClass(FeedbackTab.Ai)"
         @onclick="() => SelectFeedbackTab(FeedbackTab.Ai)">
+
         AI Feedback
+
     </button>
 
 </div>
 
+
+<!-- =====================================================
+INSTRUCTOR FEEDBACK
+===================================================== -->
+
 @if (_activeFeedbackTab == FeedbackTab.Instructor)
 {
-    <section class="feedback-tab-content"
-    role="tabpanel">
-
     <div class="feedback-good">
+
         <strong>
             @GetInstructorHeading(report)
         </strong>
 
-        <p>
-            @report.Feedback
-        </p>
+        @if (string.IsNullOrWhiteSpace(report.Feedback))
+        {
+            <p>
+                No instructor feedback is available
+                for this assessment.
+            </p>
+        }
+        else
+        {
+            <p>
+                @report.Feedback
+            </p>
+        }
+
     </div>
 
-    <h3>Areas to Improve</h3>
+
+    <h3>
+        Areas to Improve
+    </h3>
+
 
     <ul>
+
         @foreach (var item in ImprovementItems(report))
         {
-            <li>@item</li>
+            <li>
+                @item
+            </li>
         }
+
     </ul>
-
-</section>
 }
-else
-{
-    <section class="feedback-tab-content"
-    role="tabpanel">
 
+
+<!-- =====================================================
+AI FEEDBACK
+===================================================== -->
+
+@if (_activeFeedbackTab == FeedbackTab.Ai)
+{
     <div class="feedback-ai">
 
-        <h3>AI Performance Analysis</h3>
+        <h3>
+            AI Performance Analysis
+        </h3>
 
         @if (string.IsNullOrWhiteSpace(report.AiFeedback))
         {
@@ -159,81 +235,200 @@ else
 
     </div>
 
-    <h3>AI Recommended Focus</h3>
+
+    <h3>
+        AI Recommended Focus
+    </h3>
+
 
     <ul>
+
         @foreach (var item in AiImprovementItems(report))
         {
-            <li>@item</li>
+            <li>
+                @item
+            </li>
         }
-    </ul>
 
-</section>
+    </ul>
 }
 
 </article>
 
-<article class="report-card">
-    <h2>Scenario Reviewed</h2>
+
+<!-- =========================================================
+CURRENT SCENARIO
+========================================================= -->
+
+<article class="report-card scenario-summary">
+
+    <h2>
+        Current Scenario
+    </h2>
+
 
     <div class="scenario-title">
-        <span>✈</span>
+
+        <span>
+            ✈
+        </span>
+
 
         <div>
-            <strong>@report.ScenarioName</strong>
+
+            <strong>
+                @report.ScenarioName
+            </strong>
+
 
             <small>
                 Completed:
-                @report.CompletedAt
+                @(report.CompletedAt
                 .ToLocalTime()
-                .ToString("dd MMM yyyy 'at' HH:mm")
+                .ToString("dd MMM yyyy 'at' HH:mm"))
             </small>
+
 
             <small>
-                Difficulty: @report.Difficulty
+                Difficulty:
+                @report.Difficulty
             </small>
+
         </div>
 
-        <b>EMERGENCY</b>
+
+        <b>
+            EMERGENCY
+        </b>
+
     </div>
+
 
     <hr />
 
+
+    <!-- REACTION TIME -->
+
     <div class="info-row">
-        <span>◷</span>
-        <label>Reaction Time</label>
+
+        <span>
+            ◷
+        </span>
+
+        <label>
+            Reaction Time
+        </label>
+
         <strong>
             @report.ReactionTimeSeconds seconds
         </strong>
+
     </div>
 
-    <div class="info-row">
-        <span>☑</span>
-        <label>Actions Taken</label>
-        <strong>@report.ActionsTaken</strong>
-    </div>
+
+    <!-- ACTIONS TAKEN -->
 
     <div class="info-row">
-        <span>⚠</span>
-        <label>Safety-Critical Errors</label>
+
+        <span>
+            ☑
+        </span>
+
+        <label>
+            Actions Taken
+        </label>
+
+        <strong>
+            @report.ActionsTaken
+        </strong>
+
+    </div>
+
+
+    <!-- SAFETY CRITICAL ERRORS -->
+
+    <div class="info-row">
+
+        <span>
+            ⚠
+        </span>
+
+        <label>
+            Safety-Critical Errors
+        </label>
+
         <strong>
             @report.SafetyCriticalErrors
         </strong>
+
     </div>
 
+
+    <!-- PROCEDURAL ACCURACY -->
+
     <div class="info-row">
-        <span>▣</span>
-        <label>Checklist Accuracy</label>
+
+        <span>
+            ▣
+        </span>
+
+        <label>
+            Procedural Accuracy
+        </label>
+
         <strong>
-            @report.ChecklistAccuracyScore%
+            @report.ProcedureAccuracyScore%
         </strong>
+
     </div>
+
+
+    <!-- CHECKLIST USAGE -->
+
+    <div class="info-row">
+
+        <span>
+            ☑
+        </span>
+
+        <label>
+            Checklist Usage
+        </label>
+
+        <strong>
+            @report.ChecklistUsageScore%
+        </strong>
+
+    </div>
+
+
+    <!-- RESULT -->
+
+    <div class="info-row">
+
+        <span>
+            🏁
+        </span>
+
+        <label>
+            Result
+        </label>
+
+        <strong>
+            @(report.Passed
+            ? "Passed"
+            : "Review Required")
+        </strong>
+
+    </div>
+
 </article>
 
 </section>
 
+
 <p class="live-note">
-    ● Feedback updates automatically when a pilot
+    ● Instructor and AI feedback update automatically when a pilot
     completes a scenario.
 </p>
 
@@ -241,27 +436,102 @@ else
 }
 
 @code {
-    private const string UserId = "test-pilot";
+
+    /*
+     * =====================================================================
+     * CURRENT PILOT
+     *
+     * Authentication is not yet fully implemented.
+     *
+     * Use the authenticated ASP.NET Identity UserId when available.
+     *
+     * Otherwise use debug-pilot during development so Simulation,
+     * Overview, Flight Logs, Scoring, Analytics, Feedback and Badges
+     * all query the same pilot history.
+     * =====================================================================
+     */
+
+    private string _currentUserId =
+        string.Empty;
+
+
+    /*
+     * =====================================================================
+     * PAGE STATE
+     * =====================================================================
+     */
 
     private PerformanceDashboardVm? _dashboard;
 
     private bool _loading = true;
 
+
+    /*
+     * =====================================================================
+     * ACTIVE FEEDBACK TAB
+     * =====================================================================
+     */
+
     private FeedbackTab _activeFeedbackTab =
         FeedbackTab.Instructor;
 
+
+    /*
+     * =====================================================================
+     * INITIALIZATION
+     * =====================================================================
+     */
+
     protected override async Task OnInitializedAsync()
     {
-        PerformanceFeed.ReportSaved += OnReportSaved;
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
 
+        var principal =
+            authenticationState.User;
+
+
+        /*
+         * Use the real authenticated Identity UserId when available.
+         *
+         * Until authentication is complete, use debug-pilot so the
+         * Feedback page reads the same pilot used by Simulation and
+         * the other reporting pages.
+         */
+        _currentUserId =
+            principal.FindFirstValue(
+                ClaimTypes.NameIdentifier)
+            ?? "debug-pilot";
+
+
+        /*
+         * Listen for newly completed reports.
+         */
+        PerformanceFeed.ReportSaved +=
+            OnReportSaved;
+
+
+        /*
+         * Load the latest report for this pilot.
+         */
         await LoadAsync();
     }
+
+
+    /*
+     * =====================================================================
+     * FEEDBACK TAB SELECTION
+     * =====================================================================
+     */
 
     private void SelectFeedbackTab(
         FeedbackTab tab)
     {
-        _activeFeedbackTab = tab;
+        _activeFeedbackTab =
+            tab;
     }
+
 
     private string GetFeedbackTabClass(
         FeedbackTab tab)
@@ -271,28 +541,58 @@ else
             : "feedback-tab-button";
     }
 
+
+    /*
+     * =====================================================================
+     * INSTRUCTOR FEEDBACK HEADING
+     * =====================================================================
+     */
+
     private static string GetInstructorHeading(
         SimulationReport report)
     {
+        /*
+         * No response or an actual failed simulation always requires
+         * review regardless of numerical score.
+         */
         if (report.ActionsTaken == 0 ||
             !report.Passed)
         {
             return "Review Required";
         }
 
+
         return report.OverallScore >= 85
             ? "☆ Great Job!"
             : "Good Attempt";
     }
 
+
+    /*
+     * =====================================================================
+     * LIVE REPORT UPDATE
+     * =====================================================================
+     */
+
     private async void OnReportSaved(
         string userId)
     {
-        if (userId != UserId)
+        /*
+         * Ignore simulation reports belonging to another pilot.
+         */
+        if (!string.Equals(
+                userId,
+                _currentUserId,
+                StringComparison.Ordinal))
         {
             return;
         }
 
+
+        /*
+         * Reload both Instructor and AI feedback from the same newest
+         * SimulationReport.
+         */
         await InvokeAsync(
             async () =>
             {
@@ -302,15 +602,24 @@ else
             });
     }
 
+
+    /*
+     * =====================================================================
+     * LOAD DASHBOARD DATA
+     * =====================================================================
+     */
+
     private async Task LoadAsync()
     {
         try
         {
             _loading = true;
 
+
             _dashboard =
                 await DashboardService
-                    .GetDashboardAsync(UserId);
+                    .GetDashboardAsync(
+                        _currentUserId);
         }
         finally
         {
@@ -318,54 +627,119 @@ else
         }
     }
 
+
+    /*
+     * =====================================================================
+     * INSTRUCTOR IMPROVEMENT ITEMS
+     *
+     * These recommendations are generated from the same latest
+     * SimulationReport shown throughout the Feedback page.
+     * =====================================================================
+     */
+
     private static IEnumerable<string>
         ImprovementItems(
             SimulationReport report)
     {
-        var hasImprovementItem = false;
+        var hasImprovementItem =
+            false;
 
+
+        /*
+         * No pilot response.
+         */
         if (report.ActionsTaken == 0)
         {
-            hasImprovementItem = true;
+            hasImprovementItem =
+                true;
 
             yield return
                 "Begin the response immediately after the warning appears.";
         }
 
+
+        /*
+         * Reaction time.
+         */
         if (report.ReactionTimeSeconds > 10)
         {
-            hasImprovementItem = true;
+            hasImprovementItem =
+                true;
 
             yield return
                 $"Improve time to identify the primary failure " +
                 $"({report.ReactionTimeSeconds - 10}s slower than target).";
         }
 
+
+        /*
+         * Procedural accuracy.
+         */
+        if (report.ProcedureAccuracyScore < 95)
+        {
+            hasImprovementItem =
+                true;
+
+            yield return
+                "Review the emergency procedure and maintain the correct action sequence.";
+        }
+
+
+        /*
+         * Checklist usage.
+         */
+        if (report.ChecklistUsageScore < 90)
+        {
+            hasImprovementItem =
+                true;
+
+            yield return
+                "Use the emergency checklist consistently once immediate memory actions are complete.";
+        }
+
+
+        /*
+         * Communication.
+         */
         if (report.CommunicationScore < 90)
         {
-            hasImprovementItem = true;
+            hasImprovementItem =
+                true;
 
             yield return
-                "Consider declaring the emergency and requesting " +
-                "assistance earlier.";
+                "Consider declaring the emergency and communicating intentions earlier.";
         }
 
-        if (report.ChecklistAccuracyScore < 95)
+
+        /*
+         * Decision making.
+         */
+        if (report.DecisionMakingScore < 85)
         {
-            hasImprovementItem = true;
+            hasImprovementItem =
+                true;
 
             yield return
-                "Maintain checklist discipline when workload increases.";
+                "Prioritise safety-critical actions before secondary cockpit tasks.";
         }
 
+
+        /*
+         * Safety-critical errors.
+         */
         if (report.SafetyCriticalErrors > 0)
         {
-            hasImprovementItem = true;
+            hasImprovementItem =
+                true;
 
             yield return
                 "Review safety-critical actions before the next attempt.";
         }
 
+
+        /*
+         * Strong performance.
+         */
         if (!hasImprovementItem)
         {
             yield return
@@ -373,55 +747,143 @@ else
         }
     }
 
+
+    /*
+     * =====================================================================
+     * AI RECOMMENDED FOCUS
+     *
+     * These recommendations complement report.AiFeedback.
+     * =====================================================================
+     */
+
     private static IEnumerable<string>
         AiImprovementItems(
             SimulationReport report)
     {
+        var hasRecommendation =
+            false;
+
+
+        /*
+         * No initial response.
+         */
         if (report.ActionsTaken == 0)
         {
+            hasRecommendation =
+                true;
+
             yield return
-                "Practise recognising the initial warning and beginning the first memory action.";
+                "Practise recognising the initial warning and beginning the first memory action immediately.";
         }
 
+
+        /*
+         * Procedure.
+         */
         if (report.ProcedureAccuracyScore < 85)
         {
+            hasRecommendation =
+                true;
+
             yield return
                 "Review the gold-standard procedure and practise the exact action sequence.";
         }
 
+
+        /*
+         * Time management.
+         */
         if (report.TimeManagementScore < 80)
         {
+            hasRecommendation =
+                true;
+
             yield return
                 "Reduce the delay between the warning and the first cockpit action.";
         }
 
+
+        /*
+         * Decision making.
+         */
         if (report.DecisionMakingScore < 80)
         {
+            hasRecommendation =
+                true;
+
             yield return
                 "Prioritise safety-critical actions before secondary tasks.";
         }
 
+
+        /*
+         * Communication.
+         */
         if (report.CommunicationScore < 90)
         {
+            hasRecommendation =
+                true;
+
             yield return
                 "Declare the emergency and communicate intentions earlier.";
         }
 
-        if (report.ProcedureAccuracyScore >= 85 &&
-            report.TimeManagementScore >= 80 &&
-            report.DecisionMakingScore >= 80 &&
-            report.CommunicationScore >= 90)
+
+        /*
+         * Checklist usage.
+         */
+        if (report.ChecklistUsageScore < 90)
+        {
+            hasRecommendation =
+                true;
+
+            yield return
+                "Increase checklist use after completing immediate memory actions.";
+        }
+
+
+        /*
+         * Safety-critical errors.
+         */
+        if (report.SafetyCriticalErrors > 0)
+        {
+            hasRecommendation =
+                true;
+
+            yield return
+                "Focus the next practice attempt on eliminating safety-critical procedural errors.";
+        }
+
+
+        /*
+         * High performance.
+         */
+        if (!hasRecommendation)
         {
             yield return
                 "Maintain the current standard and practise under a higher difficulty level.";
         }
     }
 
+
+    /*
+     * =====================================================================
+     * CLEANUP
+     * =====================================================================
+     */
+
     public void Dispose()
     {
         PerformanceFeed.ReportSaved -=
             OnReportSaved;
     }
+
+
+    /*
+     * =====================================================================
+     * FEEDBACK TAB TYPES
+     * =====================================================================
+     */
 
     private enum FeedbackTab
     {

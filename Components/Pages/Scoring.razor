@@ -2,7 +2,11 @@
 @rendermode InteractiveServer
 @implements IDisposable
 
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+
 @inject PerformanceDashboardService DashboardService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Scoring | AeroResponse</PageTitle>
 
@@ -16,7 +20,9 @@ else if (_dashboard?.Latest is null)
 {
     <div class="reports-empty">
         <h1>No scoring information yet</h1>
-        <p>Complete a practice scenario to view your scoring results.</p>
+        <p>
+            Complete a practice scenario to view your scoring results.
+        </p>
     </div>
 }
 else
@@ -28,21 +34,33 @@ else
         <header class="reports-header">
             <div>
                 <h1>SCORING</h1>
-                <p>Review your overall score and performance breakdown</p>
+                <p>
+                    Review your overall score and performance breakdown
+                </p>
             </div>
 
             <div class="pilot-chip">
-                <span class="pilot-avatar">✈</span>
+                <span class="pilot-avatar">
+                    ✈
+                </span>
 
                 <div>
-                    <strong>@report.PilotName</strong>
-                    <small>Professional Pilot</small>
+                    <strong>
+                        @report.PilotName
+                    </strong>
+
+                    <small>
+                        Professional Pilot
+                    </small>
                 </div>
             </div>
         </header>
 
         <nav class="reports-tabs">
-            <NavLink href="/reports" Match="NavLinkMatch.All">
+
+            <NavLink
+                href="/reports"
+                Match="NavLinkMatch.All">
                 ◉ Overview
             </NavLink>
 
@@ -73,215 +91,499 @@ else
             <NavLink href="/reports/admin">
                 ▦ Admin Reports
             </NavLink>
+
         </nav>
 
         <section class="reports-grid top-grid">
 
+            <!-- =========================================================
+                 OVERALL SCORE
+                 ========================================================= -->
+
             <article class="report-card score-card">
-                <h2>Overall Score</h2>
+
+                <h2>
+                    Overall Score
+                </h2>
 
                 <div class="score-main">
 
-                    <div class="score-ring"
-                    style="--score:@report.OverallScore">
+                    <div
+                        class="score-ring"
+                        style="--score:@report.OverallScore">
 
-                    <span>@report.OverallScore%</span>
+                        <span>
+                            @report.OverallScore%
+                        </span>
 
-                    <small>
-                        @(report.OverallScore >= 70
-                        ? "Great Performance!"
-                        : "Keep Practising")
-                    </small>
+                        <small>
+                            @(report.Passed
+                                ? "Great Performance!"
+                                : "Keep Practising")
+                        </small>
+
+                    </div>
+
+                    <div class="score-copy">
+
+                        <small>
+                            Total Score
+                        </small>
+
+                        <strong>
+                            @(report.OverallScore * 10) / 1000
+                        </strong>
+
+                        <small>
+                            Passing Score
+                        </small>
+
+                        <b>
+                            70% (700/1000)
+                        </b>
+
+                        <small>
+                            Rank
+                        </small>
+
+                        <strong>
+                            Top @RankPercent%
+                        </strong>
+
+                        <em>
+                            of all users
+                        </em>
+
+                    </div>
+
                 </div>
 
-                <div class="score-copy">
-                    <small>Total Score</small>
-                    <strong>@(report.OverallScore * 10) / 1000</strong>
+                <div class="pass-banner">
 
-                    <small>Passing Score</small>
-                    <b>70% (700/1000)</b>
+                    🏆
 
-                    <small>Rank</small>
-                    <strong>Top @RankPercent%</strong>
-                    <em>of all users</em>
+                    <span>
+
+                        <strong>
+                            @(report.Passed
+                                ? "You passed this scenario!"
+                                : "Scenario not yet passed")
+                        </strong>
+
+                        <small>
+                            @(report.Passed
+                                ? "Keep up the great work."
+                                : "Review feedback and try again.")
+                        </small>
+
+                    </span>
+
                 </div>
-            </div>
 
-            <div class="pass-banner">
-                🏆
+            </article>
 
-                <span>
+
+            <!-- =========================================================
+                 SCORE BREAKDOWN
+                 ========================================================= -->
+
+            <article class="report-card">
+
+                <h2>
+                    Score Breakdown
+                </h2>
+
+
+                <!-- PROCEDURAL ACCURACY -->
+
+                <div class="metric">
+
+                    <div class="metric-result">
+
+                        <span>
+                            Procedural Accuracy
+                        </span>
+
+                        <strong>
+                            @report.ProcedureAccuracyScore%
+                        </strong>
+
+                    </div>
+
+                    <div class="metric-track">
+
+                        <div
+                            class="metric-fill blue"
+                            style="width: @report.ProcedureAccuracyScore%;">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- DECISION MAKING -->
+
+                <div class="metric">
+
+                    <div class="metric-result">
+
+                        <span>
+                            Decision Making
+                        </span>
+
+                        <strong>
+                            @report.DecisionMakingScore%
+                        </strong>
+
+                    </div>
+
+                    <div class="metric-track">
+
+                        <div
+                            class="metric-fill green"
+                            style="width: @report.DecisionMakingScore%;">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- CHECKLIST USAGE -->
+
+                <div class="metric">
+
+                    <div class="metric-result">
+
+                        <span>
+                            Checklist Usage
+                        </span>
+
+                        <strong>
+                            @report.ChecklistUsageScore%
+                        </strong>
+
+                    </div>
+
+                    <div class="metric-track">
+
+                        <div
+                            class="metric-fill orange"
+                            style="width: @report.ChecklistUsageScore%;">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- TIME MANAGEMENT -->
+
+                <div class="metric">
+
+                    <div class="metric-result">
+
+                        <span>
+                            Time Management
+                        </span>
+
+                        <strong>
+                            @report.TimeManagementScore%
+                        </strong>
+
+                    </div>
+
+                    <div class="metric-track">
+
+                        <div
+                            class="metric-fill purple"
+                            style="width: @report.TimeManagementScore%;">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- COMMUNICATION -->
+
+                <div class="metric">
+
+                    <div class="metric-result">
+
+                        <span>
+                            Communication
+                        </span>
+
+                        <strong>
+                            @report.CommunicationScore%
+                        </strong>
+
+                    </div>
+
+                    <div class="metric-track">
+
+                        <div
+                            class="metric-fill cyan"
+                            style="width: @report.CommunicationScore%;">
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- =========================================================
+                 CURRENT SCENARIO
+                 ========================================================= -->
+
+            <article class="report-card scenario-summary">
+
+                <h2>
+                    Current Scenario
+                </h2>
+
+                <div class="scenario-title">
+
+                    <span>
+                        ✈
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            @report.ScenarioName
+                        </strong>
+
+                        <small>
+                            Completed:
+                            @(report.CompletedAt
+                                .ToLocalTime()
+                                .ToString(
+                                    "dd MMM yyyy 'at' HH:mm"))
+                        </small>
+
+                        <small>
+                            Difficulty:
+                            @report.Difficulty
+                        </small>
+
+                    </div>
+
+                    <b>
+                        EMERGENCY
+                    </b>
+
+                </div>
+
+                <hr />
+
+
+                <!-- REACTION TIME -->
+
+                <div class="info-row">
+
+                    <span>
+                        ◷
+                    </span>
+
+                    <label>
+                        Reaction Time
+                    </label>
+
                     <strong>
-                        @(report.OverallScore >= 70
-                        ? "You passed this scenario!"
-                        : "Scenario not yet passed")
+                        @report.ReactionTimeSeconds seconds
                     </strong>
 
-                    <small>
-                        @(report.OverallScore >= 70
-                        ? "Keep up the great work."
-                        : "Review feedback and try again.")
-                    </small>
-                </span>
-            </div>
-        </article>
-
-        <article class="report-card">
-            <h2>Score Breakdown</h2>
-
-            <div class="metric">
-                <div class="metric-result">
-                    <span>Procedural Accuracy</span>
-                    <strong>@report.ChecklistAccuracyScore%</strong>
                 </div>
 
-                <div class="metric-track">
-                    <div class="metric-fill blue"
-                    style="width: @report.ChecklistAccuracyScore%;">
+
+                <!-- ACTIONS TAKEN -->
+
+                <div class="info-row">
+
+                    <span>
+                        ☑
+                    </span>
+
+                    <label>
+                        Actions Taken
+                    </label>
+
+                    <strong>
+                        @report.ActionsTaken
+                    </strong>
+
                 </div>
-            </div>
-        </div>
 
-        <div class="metric">
-            <div class="metric-result">
-                <span>Decision Making</span>
-                <strong>@report.DecisionMakingScore%</strong>
-            </div>
 
-            <div class="metric-track">
-                <div class="metric-fill green"
-                style="width: @report.DecisionMakingScore%;">
-            </div>
-        </div>
-    </div>
+                <!-- CHECKLIST USED -->
 
-    <div class="metric">
-        <div class="metric-result">
-            <span>Checklist Usage</span>
-            <strong>@report.ChecklistUsageScore%</strong>
-        </div>
+                <div class="info-row">
 
-        <div class="metric-track">
-            <div class="metric-fill orange"
-            style="width: @report.ChecklistUsageScore%;">
-        </div>
-    </div>
-</div>
+                    <span>
+                        ▣
+                    </span>
 
-<div class="metric">
-    <div class="metric-result">
-        <span>Time Management</span>
-        <strong>@report.TimeManagementScore%</strong>
-    </div>
+                    <label>
+                        Checklist Used
+                    </label>
 
-    <div class="metric-track">
-        <div class="metric-fill purple"
-        style="width: @report.TimeManagementScore%;">
-    </div>
-</div>
-</div>
+                    <strong>
+                        @report.ChecklistUsageScore%
+                    </strong>
 
-<div class="metric">
-    <div class="metric-result">
-        <span>Communication</span>
-        <strong>@report.CommunicationScore%</strong>
-    </div>
+                </div>
 
-    <div class="metric-track">
-        <div class="metric-fill cyan"
-        style="width: @report.CommunicationScore%;">
-    </div>
-</div>
-</div>
-</article>
+            </article>
 
-<article class="report-card scenario-summary">
-    <h2>Current Scenario</h2>
+        </section>
 
-    <div class="scenario-title">
-        <span>✈</span>
+        <p class="live-note">
+            ● Live scoring information updates automatically when a pilot
+            completes a practice scenario.
+        </p>
 
-        <div>
-            <strong>@report.ScenarioName</strong>
-
-            <small>
-                Completed:
-                @report.CompletedAt
-                .ToLocalTime()
-                .ToString("dd MMM yyyy 'at' HH:mm")
-            </small>
-
-            <small>
-                Difficulty: @report.Difficulty
-            </small>
-        </div>
-
-        <b>EMERGENCY</b>
-    </div>
-
-    <hr />
-
-    <div class="info-row">
-        <span>◷</span>
-        <label>Reaction Time</label>
-        <strong>@report.ReactionTimeSeconds seconds</strong>
-    </div>
-
-    <div class="info-row">
-        <span>☑</span>
-        <label>Actions Taken</label>
-        <strong>@report.ActionsTaken</strong>
-    </div>
-
-    <div class="info-row">
-        <span>▣</span>
-        <label>Checklist Used</label>
-        <strong>@report.ChecklistUsageScore%</strong>
-    </div>
-</article>
-
-</section>
-
-<p class="live-note">
-    ● Live scoring information updates automatically when a pilot
-    completes a practice scenario.
-</p>
-
-</main>
+    </main>
 }
 
+
 @code {
-    private const string UserId = "test-pilot";
+
+    /*
+     * =====================================================================
+     * CURRENT PILOT
+     *
+     * Authentication is not yet fully implemented.
+     *
+     * If an authenticated Identity user exists, use their real UserId.
+     *
+     * Otherwise use debug-pilot during development so Simulation,
+     * Overview, Flight Logs, Scoring, Analytics, Feedback and Badges
+     * can all reference the same pilot.
+     * =====================================================================
+     */
+
+    private string _currentUserId =
+        string.Empty;
+
+
+    /*
+     * =====================================================================
+     * PAGE STATE
+     * =====================================================================
+     */
 
     private PerformanceDashboardVm? _dashboard;
+
     private bool _loading = true;
+
+
+    /*
+     * =====================================================================
+     * INITIALIZATION
+     * =====================================================================
+     */
 
     protected override async Task OnInitializedAsync()
     {
-        PerformanceFeed.ReportSaved += OnReportSaved;
+        /*
+         * Obtain the current authentication state.
+         */
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var principal =
+            authenticationState.User;
+
+
+        /*
+         * Use the authenticated ASP.NET Identity UserId where available.
+         *
+         * Until authentication is complete, all unauthenticated
+         * development simulations use debug-pilot.
+         */
+        _currentUserId =
+            principal.FindFirstValue(
+                ClaimTypes.NameIdentifier)
+            ?? "debug-pilot";
+
+
+        /*
+         * Listen for newly completed simulation reports.
+         */
+        PerformanceFeed.ReportSaved +=
+            OnReportSaved;
+
+
+        /*
+         * Load the current pilot's scoring data.
+         */
         await LoadAsync();
     }
 
-    private async void OnReportSaved(string userId)
+
+    /*
+     * =====================================================================
+     * LIVE REPORT UPDATE
+     * =====================================================================
+     */
+
+    private async void OnReportSaved(
+        string userId)
     {
-        if (userId != UserId)
+        /*
+         * Ignore reports belonging to another pilot.
+         */
+        if (!string.Equals(
+                userId,
+                _currentUserId,
+                StringComparison.Ordinal))
         {
             return;
         }
 
-        await InvokeAsync(async () =>
-        {
-            await LoadAsync();
-            StateHasChanged();
-        });
+
+        /*
+         * Reload this pilot's report immediately after a simulation
+         * has been saved.
+         */
+        await InvokeAsync(
+            async () =>
+            {
+                await LoadAsync();
+
+                StateHasChanged();
+            });
     }
+
+
+    /*
+     * =====================================================================
+     * LOAD DASHBOARD DATA
+     * =====================================================================
+     */
 
     private async Task LoadAsync()
     {
         try
         {
             _loading = true;
-            _dashboard = await DashboardService.GetDashboardAsync(UserId);
+
+            /*
+             * IMPORTANT:
+             *
+             * The scoring page now requests exactly the same pilot ID
+             * that the simulation uses when saving the report.
+             */
+            _dashboard =
+                await DashboardService
+                    .GetDashboardAsync(
+                        _currentUserId);
         }
         finally
         {
@@ -289,13 +591,29 @@ else
         }
     }
 
+
+    /*
+     * =====================================================================
+     * RANK DISPLAY
+     * =====================================================================
+     */
+
     private int RankPercent =>
         Math.Max(
             1,
-            100 - (_dashboard?.Latest?.OverallScore ?? 0));
+            100 -
+            (_dashboard?.Latest?.OverallScore ?? 0));
+
+
+    /*
+     * =====================================================================
+     * CLEANUP
+     * =====================================================================
+     */
 
     public void Dispose()
     {
-        PerformanceFeed.ReportSaved -= OnReportSaved;
+        PerformanceFeed.ReportSaved -=
+            OnReportSaved;
     }
 }

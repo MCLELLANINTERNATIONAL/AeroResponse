@@ -2,7 +2,11 @@
 @rendermode InteractiveServer
 @implements IDisposable
 
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+
 @inject PerformanceDashboardService DashboardService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Flight Logs | AeroResponse</PageTitle>
 
@@ -16,7 +20,10 @@ else if (_dashboard?.Latest is null)
 {
     <div class="reports-empty">
         <h1>No flight logs available yet</h1>
-        <p>Complete a practice scenario to create your first flight log.</p>
+
+        <p>
+            Complete a practice scenario to create your first flight log.
+        </p>
     </div>
 }
 else
@@ -26,23 +33,41 @@ else
     <main class="reports-page">
 
         <header class="reports-header">
+
             <div>
                 <h1>FLIGHT LOGS</h1>
-                <p>Review your completed emergency-response scenarios</p>
+
+                <p>
+                    Review your completed emergency-response scenarios
+                </p>
             </div>
 
             <div class="pilot-chip">
-                <span class="pilot-avatar">✈</span>
+
+                <span class="pilot-avatar">
+                    ✈
+                </span>
 
                 <div>
-                    <strong>@latestReport.PilotName</strong>
-                    <small>Professional Pilot</small>
+                    <strong>
+                        @latestReport.PilotName
+                    </strong>
+
+                    <small>
+                        Professional Pilot
+                    </small>
                 </div>
+
             </div>
+
         </header>
 
+
         <nav class="reports-tabs">
-            <NavLink href="/reports" Match="NavLinkMatch.All">
+
+            <NavLink
+                href="/reports"
+                Match="NavLinkMatch.All">
                 ◉ Overview
             </NavLink>
 
@@ -73,117 +98,219 @@ else
             <NavLink href="/reports/admin">
                 ▦ Admin Reports
             </NavLink>
+
         </nav>
 
+
         <section class="reports-grid flight-logs-grid">
+
+            <!-- =========================================================
+                 SCENARIO HISTORY
+                 ========================================================= -->
 
             <article class="report-card flight-logs-card">
 
                 <div class="card-heading">
-                    <h2>Scenario History</h2>
-                    <span>@_dashboard.Reports.Count completed</span>
+
+                    <h2>
+                        Scenario History
+                    </h2>
+
+                    <span>
+                        @_dashboard.Reports.Count completed
+                    </span>
+
                 </div>
 
+
                 <div class="table-responsive">
+
                     <table class="table flight-logs-table">
 
                         <thead>
+
                             <tr>
-                                <th scope="col">Scenario</th>
-                                <th scope="col">Date and Time</th>
-                                <th scope="col">Difficulty</th>
-                                <th scope="col">Score</th>
-                                <th scope="col">Reaction Time</th>
-                                <th scope="col">Checklist</th>
-                                <th scope="col">Result</th>
+                                <th scope="col">
+                                    Scenario
+                                </th>
+
+                                <th scope="col">
+                                    Date and Time
+                                </th>
+
+                                <th scope="col">
+                                    Difficulty
+                                </th>
+
+                                <th scope="col">
+                                    Score
+                                </th>
+
+                                <th scope="col">
+                                    Reaction Time
+                                </th>
+
+                                <th scope="col">
+                                    Checklist
+                                </th>
+
+                                <th scope="col">
+                                    Result
+                                </th>
                             </tr>
+
                         </thead>
 
+
                         <tbody>
-                            @foreach (var report in _dashboard.Reports
-                            .OrderByDescending(item => item.CompletedAt))
+
+                            @foreach (
+                                var report in
+                                    _dashboard.Reports
+                                        .OrderByDescending(
+                                            item =>
+                                                item.CompletedAt))
                             {
                                 <tr>
+
                                     <td>
-                                        <strong>@report.ScenarioName</strong>
+                                        <strong>
+                                            @report.ScenarioName
+                                        </strong>
                                     </td>
+
 
                                     <td>
                                         @(report.CompletedAt
-                                        .ToLocalTime()
-                                        .ToString("dd MMM yyyy HH:mm"))
+                                            .ToLocalTime()
+                                            .ToString(
+                                                "dd MMM yyyy HH:mm"))
                                     </td>
+
 
                                     <td>
                                         @report.Difficulty
                                     </td>
 
+
                                     <td>
-                                        <strong>@report.OverallScore%</strong>
+                                        <strong>
+                                            @report.OverallScore%
+                                        </strong>
                                     </td>
+
 
                                     <td>
                                         @report.ReactionTimeSeconds seconds
                                     </td>
 
+
                                     <td>
                                         @report.ChecklistUsageScore%
                                     </td>
 
+
                                     <td>
-                                        @if (report.OverallScore >= 70)
+
+                                        @if (report.Passed)
                                         {
-                                            <span class="result-status result-passed">
+                                            <span
+                                                class="result-status result-passed">
                                                 Passed
                                             </span>
                                         }
                                         else
                                         {
-                                            <span class="result-status result-review">
+                                            <span
+                                                class="result-status result-review">
                                                 Review Required
                                             </span>
                                         }
+
                                     </td>
+
                                 </tr>
                             }
+
                         </tbody>
 
                     </table>
+
                 </div>
+
             </article>
+
+
+            <!-- =========================================================
+                 FLIGHT LOG SUMMARY
+                 ========================================================= -->
 
             <article class="report-card flight-summary-card">
 
-                <h2>Flight Log Summary</h2>
+                <h2>
+                    Flight Log Summary
+                </h2>
+
 
                 <div class="stat-row">
-                    <div>
-                        <small>Total Scenarios</small>
-                        <strong>@_dashboard.Reports.Count</strong>
-                    </div>
 
                     <div>
-                        <small>Average Score</small>
-                        <strong>@_dashboard.AverageScore%</strong>
+
+                        <small>
+                            Total Scenarios
+                        </small>
+
+                        <strong>
+                            @_dashboard.Reports.Count
+                        </strong>
+
                     </div>
 
-                    <div>
-                        <small>Best Score</small>
-                        <strong>@_dashboard.BestScore%</strong>
-                    </div>
 
                     <div>
-                        <small>Improvement</small>
+
+                        <small>
+                            Average Score
+                        </small>
+
+                        <strong>
+                            @_dashboard.AverageScore%
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <small>
+                            Best Score
+                        </small>
+
+                        <strong>
+                            @_dashboard.BestScore%
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <small>
+                            Improvement
+                        </small>
 
                         <strong class="@ImprovementClass">
                             @Signed(_dashboard.Improvement)%
                         </strong>
+
                     </div>
+
                 </div>
 
             </article>
 
         </section>
+
 
         <p class="live-note">
             ● Flight logs update automatically when a pilot completes a scenario.
@@ -192,31 +319,122 @@ else
     </main>
 }
 
+
 @code {
-    private const string UserId = "test-pilot";
+
+    /*
+     * =====================================================================
+     * CURRENT PILOT
+     *
+     * Authentication is not yet fully implemented.
+     *
+     * Use the authenticated Identity UserId when available.
+     *
+     * Otherwise use debug-pilot during development so Simulation,
+     * Overview, Flight Logs, Scoring, Analytics, Feedback and Badges
+     * all query the same pilot history.
+     * =====================================================================
+     */
+
+    private string _currentUserId =
+        string.Empty;
+
+
+    /*
+     * =====================================================================
+     * PAGE STATE
+     * =====================================================================
+     */
 
     private PerformanceDashboardVm? _dashboard;
+
     private bool _loading = true;
+
+
+    /*
+     * =====================================================================
+     * INITIALIZATION
+     * =====================================================================
+     */
 
     protected override async Task OnInitializedAsync()
     {
-        PerformanceFeed.ReportSaved += OnReportSaved;
+        /*
+         * Read the current authentication state.
+         */
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var principal =
+            authenticationState.User;
+
+
+        /*
+         * Use the authenticated pilot's Identity UserId where available.
+         *
+         * Until full authentication is implemented, use debug-pilot.
+         */
+        _currentUserId =
+            principal.FindFirstValue(
+                ClaimTypes.NameIdentifier)
+            ?? "debug-pilot";
+
+
+        /*
+         * Listen for newly saved simulation reports.
+         */
+        PerformanceFeed.ReportSaved +=
+            OnReportSaved;
+
+
+        /*
+         * Load this pilot's flight history.
+         */
         await LoadAsync();
     }
 
-    private async void OnReportSaved(string userId)
+
+    /*
+     * =====================================================================
+     * LIVE REPORT UPDATE
+     * =====================================================================
+     */
+
+    private async void OnReportSaved(
+        string userId)
     {
-        if (userId != UserId)
+        /*
+         * Ignore reports belonging to another pilot.
+         */
+        if (!string.Equals(
+                userId,
+                _currentUserId,
+                StringComparison.Ordinal))
         {
             return;
         }
 
-        await InvokeAsync(async () =>
-        {
-            await LoadAsync();
-            StateHasChanged();
-        });
+
+        /*
+         * Reload the flight log immediately after this pilot completes
+         * another simulation.
+         */
+        await InvokeAsync(
+            async () =>
+            {
+                await LoadAsync();
+
+                StateHasChanged();
+            });
     }
+
+
+    /*
+     * =====================================================================
+     * LOAD DASHBOARD DATA
+     * =====================================================================
+     */
 
     private async Task LoadAsync()
     {
@@ -224,8 +442,15 @@ else
         {
             _loading = true;
 
+
+            /*
+             * Load exactly the same current pilot history used by the
+             * other pilot-facing report pages.
+             */
             _dashboard =
-                await DashboardService.GetDashboardAsync(UserId);
+                await DashboardService
+                    .GetDashboardAsync(
+                        _currentUserId);
         }
         finally
         {
@@ -233,20 +458,37 @@ else
         }
     }
 
+
+    /*
+     * =====================================================================
+     * IMPROVEMENT DISPLAY
+     * =====================================================================
+     */
+
     private string ImprovementClass =>
         (_dashboard?.Improvement ?? 0) >= 0
             ? "positive"
             : "negative";
 
-    private static string Signed(int number)
+
+    private static string Signed(
+        int number)
     {
         return number >= 0
             ? $"+{number}"
             : number.ToString();
     }
 
+
+    /*
+     * =====================================================================
+     * CLEANUP
+     * =====================================================================
+     */
+
     public void Dispose()
     {
-        PerformanceFeed.ReportSaved -= OnReportSaved;
+        PerformanceFeed.ReportSaved -=
+            OnReportSaved;
     }
 }

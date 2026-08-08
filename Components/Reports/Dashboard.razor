@@ -564,12 +564,15 @@ LIVE DASHBOARD STATUS
 
 
     // =========================================================
-    // STATE
+    // DASHBOARD STATE
     // =========================================================
 
     private PerformanceDashboardVm? _dashboard;
 
     private bool _loading = true;
+
+    private ReportTab _activeReportTab =
+        ReportTab.Overview;
 
     private FeedbackTab _activeFeedbackTab =
         FeedbackTab.Instructor;
@@ -589,35 +592,7 @@ LIVE DASHBOARD STATUS
 
 
     // =========================================================
-    // LIVE REPORT UPDATES
-    // =========================================================
-
-    private async void OnReportSaved(
-        string userId)
-    {
-        /*
-         * Ignore reports belonging to another pilot.
-         */
-        if (!string.Equals(
-                userId,
-                UserId,
-                StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        await InvokeAsync(
-            async () =>
-            {
-                await LoadAsync();
-
-                StateHasChanged();
-            });
-    }
-
-
-    // =========================================================
-    // DASHBOARD LOADING
+    // DATABASE
     // =========================================================
 
     private async Task LoadAsync()
@@ -638,9 +613,158 @@ LIVE DASHBOARD STATUS
     }
 
 
+    private async void OnReportSaved(
+        string userId)
+    {
+        if (!string.Equals(
+                userId,
+                UserId,
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        await InvokeAsync(
+            async () =>
+            {
+                await LoadAsync();
+
+                StateHasChanged();
+            });
+    }
+
+
     // =========================================================
-    // RANK
+    // MAIN REPORT TABS
     // =========================================================
+
+    private void SelectReportTab(
+        ReportTab tab)
+    {
+        _activeReportTab =
+            tab;
+    }
+
+
+    private string GetReportTabClass(
+        ReportTab tab)
+    {
+        return _activeReportTab ==
+            tab
+                ? "active"
+                : string.Empty;
+    }
+
+
+    // =========================================================
+    // FEEDBACK SUB-TABS
+    // =========================================================
+
+    private void SelectFeedbackTab(
+        FeedbackTab tab)
+    {
+        _activeFeedbackTab =
+            tab;
+    }
+
+
+    private string GetFeedbackTabClass(
+        FeedbackTab tab)
+    {
+        return _activeFeedbackTab ==
+            tab
+                ? "feedback-tab-button active"
+                : "feedback-tab-button";
+    }
+
+
+    // =========================================================
+    // SCORE DISPLAY
+    // =========================================================
+
+    private static RenderFragment ScoreMetric(
+        string label,
+        int score,
+        string colorClass) =>
+        builder =>
+        {
+            var sequence = 0;
+
+            builder.OpenElement(
+                sequence++,
+                "div");
+
+            builder.AddAttribute(
+                sequence++,
+                "class",
+                "metric");
+
+
+            builder.OpenElement(
+                sequence++,
+                "div");
+
+            builder.AddAttribute(
+                sequence++,
+                "class",
+                "metric-result");
+
+
+            builder.OpenElement(
+                sequence++,
+                "span");
+
+            builder.AddContent(
+                sequence++,
+                label);
+
+            builder.CloseElement();
+
+
+            builder.OpenElement(
+                sequence++,
+                "strong");
+
+            builder.AddContent(
+                sequence++,
+                $"{score}%");
+
+            builder.CloseElement();
+
+            builder.CloseElement();
+
+
+            builder.OpenElement(
+                sequence++,
+                "div");
+
+            builder.AddAttribute(
+                sequence++,
+                "class",
+                "metric-track");
+
+
+            builder.OpenElement(
+                sequence++,
+                "div");
+
+            builder.AddAttribute(
+                sequence++,
+                "class",
+                $"metric-fill {colorClass}");
+
+            builder.AddAttribute(
+                sequence++,
+                "style",
+                $"width: {score}%");
+
+            builder.CloseElement();
+
+            builder.CloseElement();
+
+            builder.CloseElement();
+        };
+
 
     private int RankPercent =>
         Math.Max(
@@ -648,10 +772,6 @@ LIVE DASHBOARD STATUS
             100 -
             (_dashboard?.Latest?.OverallScore ?? 0));
 
-
-    // =========================================================
-    // INFORMATION ROW
-    // =========================================================
 
     private static MarkupString InfoRow(
         string icon,
@@ -668,10 +788,6 @@ LIVE DASHBOARD STATUS
             """);
     }
 
-
-    // =========================================================
-    // SIMULATION DURATION
-    // =========================================================
 
     private static string Duration(
         SimulationReport report)
@@ -691,7 +807,7 @@ LIVE DASHBOARD STATUS
 
 
     // =========================================================
-    // CHART DATA
+    // ANALYTICS
     // =========================================================
 
     private IReadOnlyList<(double X, double Y)>
@@ -773,10 +889,6 @@ LIVE DASHBOARD STATUS
                 }));
 
 
-    // =========================================================
-    // NUMBER FORMATTING
-    // =========================================================
-
     private static string Signed(
         int number)
     {
@@ -787,7 +899,7 @@ LIVE DASHBOARD STATUS
 
 
     // =========================================================
-    // INSTRUCTOR IMPROVEMENT ITEMS
+    // FEEDBACK
     // =========================================================
 
     private static IEnumerable<string>
@@ -797,48 +909,39 @@ LIVE DASHBOARD STATUS
         var hasImprovementItem =
             false;
 
-
         if (report.ReactionTimeSeconds > 10)
         {
-            hasImprovementItem =
-                true;
+            hasImprovementItem = true;
 
             yield return
                 $"Improve time to identify the primary failure " +
                 $"({report.ReactionTimeSeconds - 10}s slower than target).";
         }
 
-
         if (report.CommunicationScore < 90)
         {
-            hasImprovementItem =
-                true;
+            hasImprovementItem = true;
 
             yield return
                 "Consider declaring the emergency and requesting " +
                 "assistance earlier.";
         }
 
-
         if (report.ChecklistAccuracyScore < 95)
         {
-            hasImprovementItem =
-                true;
+            hasImprovementItem = true;
 
             yield return
                 "Maintain checklist discipline when workload increases.";
         }
 
-
         if (report.SafetyCriticalErrors > 0)
         {
-            hasImprovementItem =
-                true;
+            hasImprovementItem = true;
 
             yield return
                 "Review safety-critical actions before the next attempt.";
         }
-
 
         if (!hasImprovementItem)
         {
@@ -849,35 +952,8 @@ LIVE DASHBOARD STATUS
     }
 
 
-    // =========================================================
-    // FEEDBACK TABS
-    // =========================================================
-
-    private void SelectFeedbackTab(
-        FeedbackTab tab)
-    {
-        _activeFeedbackTab =
-            tab;
-    }
-
-
-    private string GetFeedbackTabClass(
-        FeedbackTab tab)
-    {
-        return _activeFeedbackTab ==
-            tab
-                ? "feedback-tab-button active"
-                : "feedback-tab-button";
-    }
-
-
-    // =========================================================
-    // INSTRUCTOR FEEDBACK
-    // =========================================================
-
-    private static string
-        GetInstructorHeading(
-            SimulationReport report)
+    private static string GetInstructorHeading(
+        SimulationReport report)
     {
         if (report.ActionsTaken == 0)
         {
@@ -886,8 +962,7 @@ LIVE DASHBOARD STATUS
 
         if (!report.Passed)
         {
-            return
-                "Further Practice Required";
+            return "Further Practice Required";
         }
 
         return report.OverallScore >= 85
@@ -896,24 +971,15 @@ LIVE DASHBOARD STATUS
     }
 
 
-    private static string
-        GetInstructorFeedbackClass(
-            SimulationReport report)
+    private static string GetInstructorFeedbackClass(
+        SimulationReport report)
     {
-        if (report.ActionsTaken == 0 ||
-            !report.Passed)
-        {
-            return
-                "feedback-good feedback-review";
-        }
-
-        return "feedback-good";
+        return report.ActionsTaken == 0 ||
+               !report.Passed
+            ? "feedback-good feedback-review"
+            : "feedback-good";
     }
 
-
-    // =========================================================
-    // AI IMPROVEMENT ITEMS
-    // =========================================================
 
     private static IEnumerable<string>
         AiImprovementItems(
@@ -922,84 +988,64 @@ LIVE DASHBOARD STATUS
         var hasRecommendation =
             false;
 
-
         if (report.ActionsTaken == 0)
         {
-            hasRecommendation =
-                true;
+            hasRecommendation = true;
 
             yield return
-                "Begin the response immediately after " +
-                "the emergency warning appears.";
+                "Begin the response immediately after the emergency warning appears.";
         }
-
 
         if (report.ProcedureAccuracyScore < 85)
         {
-            hasRecommendation =
-                true;
+            hasRecommendation = true;
 
             yield return
-                "Review the gold-standard procedure and " +
-                "practise the exact action sequence.";
+                "Review the gold-standard procedure and practise the exact action sequence.";
         }
-
 
         if (report.TimeManagementScore < 80)
         {
-            hasRecommendation =
-                true;
+            hasRecommendation = true;
 
             yield return
-                "Reduce the delay between the warning " +
-                "and the first cockpit action.";
+                "Reduce the delay between the warning and the first cockpit action.";
         }
-
 
         if (report.DecisionMakingScore < 80)
         {
-            hasRecommendation =
-                true;
+            hasRecommendation = true;
 
             yield return
-                "Prioritise safety-critical actions " +
-                "before secondary tasks.";
+                "Prioritise safety-critical actions before secondary tasks.";
         }
-
 
         if (report.CommunicationScore < 90)
         {
-            hasRecommendation =
-                true;
+            hasRecommendation = true;
 
             yield return
-                "Declare the emergency and communicate " +
-                "intentions earlier.";
+                "Declare the emergency and communicate intentions earlier.";
         }
-
 
         if (report.SafetyCriticalErrors > 0)
         {
-            hasRecommendation =
-                true;
+            hasRecommendation = true;
 
             yield return
-                "Repeat the safety-critical memory actions " +
-                "before attempting the scenario again.";
+                "Repeat the safety-critical memory actions before attempting the scenario again.";
         }
-
 
         if (!hasRecommendation)
         {
             yield return
-                "Maintain the current standard and practise " +
-                "at a higher difficulty level.";
+                "Maintain the current standard and practise at a higher difficulty level.";
         }
     }
 
 
     // =========================================================
-    // PDF DOWNLOAD
+    // PDF
     // =========================================================
 
     private async Task DownloadReportAsync()
@@ -1065,9 +1111,16 @@ LIVE DASHBOARD STATUS
     }
 
 
-    // =========================================================
-    // FEEDBACK TAB ENUM
-    // =========================================================
+    private enum ReportTab
+    {
+        Overview,
+        FlightLogs,
+        Scoring,
+        Analytics,
+        Feedback,
+        Badges
+    }
+
 
     private enum FeedbackTab
     {
@@ -1075,10 +1128,6 @@ LIVE DASHBOARD STATUS
         Ai
     }
 
-
-    // =========================================================
-    // CLEANUP
-    // =========================================================
 
     public void Dispose()
     {

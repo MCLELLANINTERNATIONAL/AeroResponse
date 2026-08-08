@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
+using AeroResponse.Services.Authorization;
 
 using SimulationSelectionModel =
     AeroResponse.Models.SimulationSelection;
@@ -51,6 +52,9 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
     [Inject]
     private AircraftService AircraftService { get; set; } = default!;
+
+    [Inject]
+    private AircraftAccessService AircraftAccessService { get; set; } = default!;
 
     [Inject]
     private ScenarioTriggerEvaluator TriggerEvaluator { get; set; } = default!;
@@ -264,13 +268,18 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 .Select(layout => layout.Key)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        _aircraftOptions = allAircraft
+        var aircraftWithLayouts = allAircraft
             .Where(aircraft =>
                 !string.IsNullOrWhiteSpace(
                     aircraft.CockpitLayoutKey) &&
                 availableLayoutKeys.Contains(
                     aircraft.CockpitLayoutKey))
             .ToArray();
+
+        _aircraftOptions =
+            await AircraftAccessService.FilterAllowedAircraftAsync(
+                principal,
+                aircraftWithLayouts);
 
         _scenarioRecords =
             await ScenarioDataService
@@ -369,16 +378,20 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             }
 
             var requestedAircraft =
-                await AircraftService.GetByIdWithLandingGearAsync(aircraftId);
+                _aircraftOptions.FirstOrDefault(
+                    aircraft => aircraft.Id == aircraftId);
 
             if (requestedAircraft is null)
             {
-                requestedAircraft = _aircraftOptions.FirstOrDefault() // Gracefully defaulting when Server Conflicts with Local 
+                requestedAircraft = _aircraftOptions.FirstOrDefault()
                     ?? throw new KeyNotFoundException(
-                        "No aircraft are available to simulate.");
+                        "No aircraft are available for this account.");
             }
 
-            selectedAircraft = requestedAircraft;
+            // Reload the allowed aircraft with its landing gear configuration.
+            selectedAircraft =
+                await AircraftService.GetByIdWithLandingGearAsync(requestedAircraft.Id)
+                ?? requestedAircraft;
 
             cockpitLayout =
                 await LayoutProvider.GetLayout(

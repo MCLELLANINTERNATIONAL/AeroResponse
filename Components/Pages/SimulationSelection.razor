@@ -13,6 +13,8 @@
 @inject SimulationSelectionStorage SelectionStorage
 @inject NavigationManager Navigation
 @inject AircraftService AircraftService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject AircraftAccessService AircraftAccessService
 
 <PageTitle>Select Simulation</PageTitle>
 
@@ -350,14 +352,30 @@
             return;
         }
 
-        _aircraftOptions =
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var allAircraft =
             await AircraftService.GetAllAsync();
+
+        _aircraftOptions =
+            await AircraftAccessService.FilterAllowedAircraftAsync(
+                authenticationState.User,
+                allAircraft);
 
         _scenarioOptions =
             SimulationEngine.GetScenarios();
 
         _savedSelection =
             await SelectionStorage.GetAsync();
+
+        if (_savedSelection?.IsValid == true &&
+            int.TryParse(_savedSelection.AircraftKey, out var storedAircraftId) &&
+            !_aircraftOptions.Any(aircraft => aircraft.Id == storedAircraftId))
+        {
+            _savedSelection = null;
+        }
 
         if (_savedSelection?.IsValid == true &&
             int.TryParse(

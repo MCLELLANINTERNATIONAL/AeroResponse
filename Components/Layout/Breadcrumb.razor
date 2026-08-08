@@ -1,0 +1,665 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject ScenarioService ScenarioService
+
+@if (Items.Count > 0)
+{
+    <nav class="breadcrumb-shell"
+        aria-label="Breadcrumb">
+
+        <div class="breadcrumb-container">
+
+            <ol class="breadcrumb-list">
+
+                @for (var index = 0; index < Items.Count; index++)
+                {
+                    var item = Items[index];
+                    var isLast = index == Items.Count - 1;
+
+                    <li class="breadcrumb-item">
+
+                        @if (index > 0)
+                        {
+                            <span class="breadcrumb-separator"
+                                aria-hidden="true">
+
+                                <i class="fa-solid fa-chevron-right"></i>
+
+                            </span>
+                        }
+
+                        @if (!isLast &&
+                            !string.IsNullOrWhiteSpace(item.Href))
+                        {
+                            <NavLink href="@item.Href"
+                                    class="breadcrumb-link">
+
+                                @if (item.IsHome)
+                                {
+                                    <i class="fa-solid fa-house"
+                                    aria-hidden="true"></i>
+                                }
+
+                                <span>
+                                    @item.Label
+                                </span>
+
+                            </NavLink>
+                        }
+                        else
+                        {
+                            <span class="breadcrumb-current"
+                                aria-current="@(isLast ? "page" : null)">
+
+                                @if (item.IsHome)
+                                {
+                                    <i class="fa-solid fa-house"
+                                    aria-hidden="true"></i>
+                                }
+
+                                <span>
+                                    @item.Label
+                                </span>
+
+                            </span>
+                        }
+
+                    </li>
+                }
+
+            </ol>
+
+        </div>
+
+    </nav>
+}
+
+@code {
+
+    private readonly List<BreadcrumbItem> Items = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += HandleLocationChanged;
+
+        await BuildBreadcrumbAsync();
+    }
+
+    private async void HandleLocationChanged(
+        object? sender,
+        LocationChangedEventArgs args)
+    {
+        await InvokeAsync(async () =>
+        {
+            await BuildBreadcrumbAsync();
+
+            StateHasChanged();
+        });
+    }
+
+    private async Task BuildBreadcrumbAsync()
+    {
+        Items.Clear();
+
+        var relativePath = Navigation
+            .ToBaseRelativePath(Navigation.Uri)
+            .Split('?', '#')[0]
+            .Trim('/');
+
+        /*
+         * Do not display a breadcrumb
+         * on the Home page.
+         */
+        if (string.IsNullOrWhiteSpace(relativePath))
+        {
+            return;
+        }
+
+        var segments = relativePath
+            .Split(
+                '/',
+                StringSplitOptions.RemoveEmptyEntries)
+            .Select(Uri.UnescapeDataString)
+            .ToArray();
+
+        /*
+         * Every breadcrumb starts with Home.
+         */
+        Items.Add(
+            new BreadcrumbItem(
+                "Home",
+                "/",
+                true));
+
+        if (segments.Length == 0)
+        {
+            return;
+        }
+
+        switch (segments[0].ToLowerInvariant())
+        {
+            case "reports":
+
+                BuildReportsBreadcrumb(
+                    segments);
+
+                break;
+
+            case "scenarios":
+
+                await BuildScenarioBreadcrumbAsync(
+                    segments);
+
+                break;
+
+            case "simulation":
+
+                await BuildSimulationBreadcrumbAsync(
+                    segments);
+
+                break;
+
+            case "aircraft":
+
+                Items.Add(
+                    new BreadcrumbItem(
+                        "Aircraft",
+                        null));
+
+                break;
+
+            case "membership":
+
+                Items.Add(
+                    new BreadcrumbItem(
+                        "Membership",
+                        null));
+
+                break;
+
+            case "checkout":
+
+                Items.Add(
+                    new BreadcrumbItem(
+                        "Membership",
+                        "/membership"));
+
+                Items.Add(
+                    new BreadcrumbItem(
+                        "Checkout",
+                        null));
+
+                break;
+
+            case "payment-confirmation":
+
+                Items.Add(
+                    new BreadcrumbItem(
+                        "Membership",
+                        "/membership"));
+
+                Items.Add(
+                    new BreadcrumbItem(
+                        "Payment Confirmation",
+                        null));
+
+                break;
+
+            case "user":
+
+                Items.Add(
+                    new BreadcrumbItem(
+                        "User Profile",
+                        null));
+
+                break;
+
+            default:
+
+                /*
+                 * Future pages that are not explicitly
+                 * configured will still receive
+                 * an automatically generated breadcrumb.
+                 */
+                BuildGenericBreadcrumb(
+                    segments);
+
+                break;
+        }
+    }
+
+
+    /* ============================================================
+        REPORTS
+       ============================================================ */
+
+    private void BuildReportsBreadcrumb(
+        string[] segments)
+    {
+        if (segments.Length == 1)
+        {
+            Items.Add(
+                new BreadcrumbItem(
+                    "Reports",
+                    null));
+
+            return;
+        }
+
+        Items.Add(
+            new BreadcrumbItem(
+                "Reports",
+                "/reports"));
+
+        var label =
+            segments[1]
+                .ToLowerInvariant()
+            switch
+            {
+                "admin"
+                    => "Admin Dashboard",
+
+                "instructor"
+                    => "Instructor Dashboard",
+
+                "analytics"
+                    => "Performance Analytics",
+
+                "badges"
+                    => "Badges & Achievements",
+
+                "feedback"
+                    => "Performance Feedback",
+
+                "flight-logs"
+                    => "Flight Logs",
+
+                "scoring"
+                    => "Scoring",
+
+                _
+                    => ToDisplayText(
+                        segments[1])
+            };
+
+        Items.Add(
+            new BreadcrumbItem(
+                label,
+                null));
+    }
+
+
+    /* ============================================================
+        SCENARIOS
+       ============================================================ */
+
+    private async Task BuildScenarioBreadcrumbAsync(
+        string[] segments)
+    {
+        if (segments.Length == 1)
+        {
+            Items.Add(
+                new BreadcrumbItem(
+                    "Emergency Scenarios",
+                    null));
+
+            return;
+        }
+
+        Items.Add(
+            new BreadcrumbItem(
+                "Emergency Scenarios",
+                "/scenarios"));
+
+        /*
+         * /scenarios/create
+         */
+        if (segments[1].Equals(
+                "create",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            Items.Add(
+                new BreadcrumbItem(
+                    "Create Scenario",
+                    null));
+
+            return;
+        }
+
+        /*
+         * /scenarios/edit/{id}
+         */
+        if (segments[1].Equals(
+                "edit",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            var scenarioName =
+                await ResolveScenarioNameAsync(
+                    segments,
+                    2);
+
+            Items.Add(
+                new BreadcrumbItem(
+                    scenarioName is null
+                        ? "Edit Scenario"
+                        : $"Edit {scenarioName}",
+                    null));
+
+            return;
+        }
+
+        /*
+         * /scenarios/delete/{id}
+         */
+        if (segments[1].Equals(
+                "delete",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            var scenarioName =
+                await ResolveScenarioNameAsync(
+                    segments,
+                    2);
+
+            Items.Add(
+                new BreadcrumbItem(
+                    scenarioName is null
+                        ? "Delete Scenario"
+                        : $"Delete {scenarioName}",
+                    null));
+
+            return;
+        }
+
+        /*
+         * /scenarios/{id}
+         */
+        var detailsName =
+            await ResolveScenarioNameAsync(
+                segments,
+                1);
+
+        Items.Add(
+            new BreadcrumbItem(
+                detailsName
+                    ?? ToDisplayText(
+                        segments[1]),
+                null));
+    }
+
+
+    /* ============================================================
+        SIMULATION
+       ============================================================ */
+
+    private async Task BuildSimulationBreadcrumbAsync(
+        string[] segments)
+    {
+        if (segments.Length == 1)
+        {
+            Items.Add(
+                new BreadcrumbItem(
+                    "Simulation",
+                    null));
+
+            return;
+        }
+
+        /*
+         * /simulation/select
+         */
+        if (segments[1].Equals(
+                "select",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            Items.Add(
+                new BreadcrumbItem(
+                    "Simulation",
+                    null));
+
+            Items.Add(
+                new BreadcrumbItem(
+                    "Select Training Session",
+                    null));
+
+            return;
+        }
+
+        /*
+         * Example:
+         *
+         * /simulation/Boeing737/EngineFire
+         */
+
+        Items.Add(
+            new BreadcrumbItem(
+                "Select Training Session",
+                "/simulation/select"));
+
+        var aircraftLabel =
+            ToDisplayText(
+                segments[1]);
+
+        Items.Add(
+            new BreadcrumbItem(
+                aircraftLabel,
+                null));
+
+        if (segments.Length >= 3)
+        {
+            var scenarioLabel =
+                await ResolveScenarioTypeNameAsync(
+                    segments[2]);
+
+            Items.Add(
+                new BreadcrumbItem(
+                    scenarioLabel
+                        ?? ToDisplayText(
+                            segments[2]),
+                    null));
+        }
+    }
+
+
+    /* ============================================================
+        GENERIC / FUTURE PAGES
+       ============================================================ */
+
+    private void BuildGenericBreadcrumb(
+        string[] segments)
+    {
+        var accumulatedPath =
+            string.Empty;
+
+        for (
+            var index = 0;
+            index < segments.Length;
+            index++)
+        {
+            accumulatedPath +=
+                "/" + segments[index];
+
+            var isLast =
+                index ==
+                segments.Length - 1;
+
+            Items.Add(
+                new BreadcrumbItem(
+                    ToDisplayText(
+                        segments[index]),
+
+                    isLast
+                        ? null
+                        : accumulatedPath));
+        }
+    }
+
+
+    /* ============================================================
+        SCENARIO DATABASE LOOKUP
+       ============================================================ */
+
+    private async Task<string?> ResolveScenarioNameAsync(
+        string[] segments,
+        int idIndex)
+    {
+        if (segments.Length <= idIndex ||
+            !int.TryParse(
+                segments[idIndex],
+                out var scenarioId))
+        {
+            return null;
+        }
+
+        try
+        {
+            var scenario =
+                await ScenarioService
+                    .GetByIdAsync(
+                        scenarioId);
+
+            return scenario?.Title;
+        }
+        catch
+        {
+            /*
+             * A breadcrumb lookup failure should
+             * never prevent the page from loading.
+             */
+            return $"Scenario {scenarioId}";
+        }
+    }
+
+
+    /* ============================================================
+        SIMULATION SCENARIO LOOKUP
+       ============================================================ */
+
+    private async Task<string?> ResolveScenarioTypeNameAsync(
+        string scenarioType)
+    {
+        try
+        {
+            var scenario =
+                await ScenarioService
+                    .GetByEmergencyTypeAsync(
+                        scenarioType);
+
+            return scenario?.Title;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+
+    /* ============================================================
+        ROUTE TEXT FORMATTING
+       ============================================================ */
+
+    private static string ToDisplayText(
+        string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        /*
+         * Examples:
+         *
+         * flight-logs
+         * becomes
+         * Flight Logs
+         *
+         * performance_feedback
+         * becomes
+         * Performance Feedback
+         */
+        var decoded =
+            Uri.UnescapeDataString(value)
+                .Replace('-', ' ')
+                .Replace('_', ' ');
+
+        var characters =
+            new List<char>(
+                decoded.Length + 8);
+
+        /*
+         * Add spaces to camel-case values.
+         *
+         * EngineFire
+         * becomes
+         * Engine Fire
+         *
+         * Boeing737 remains Boeing737.
+         */
+        for (
+            var index = 0;
+            index < decoded.Length;
+            index++)
+        {
+            var character =
+                decoded[index];
+
+            if (
+                index > 0 &&
+                char.IsUpper(character) &&
+                char.IsLower(
+                    decoded[index - 1]))
+            {
+                characters.Add(' ');
+            }
+
+            /*
+             * Add a space between a letter
+             * and a number.
+             *
+             * Boeing737
+             * becomes
+             * Boeing 737.
+             */
+            if (
+                index > 0 &&
+                char.IsDigit(character) &&
+                char.IsLetter(
+                    decoded[index - 1]))
+            {
+                characters.Add(' ');
+            }
+
+            characters.Add(
+                character);
+        }
+
+        return System.Globalization
+            .CultureInfo
+            .CurrentCulture
+            .TextInfo
+            .ToTitleCase(
+                new string(
+                    characters.ToArray())
+                .ToLower());
+    }
+
+
+    /* ============================================================
+        CLEAN-UP
+       ============================================================ */
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -=
+            HandleLocationChanged;
+    }
+
+
+    /* ============================================================
+        BREADCRUMB MODEL
+       ============================================================ */
+
+    private sealed record BreadcrumbItem(
+        string Label,
+        string? Href,
+        bool IsHome = false);
+}

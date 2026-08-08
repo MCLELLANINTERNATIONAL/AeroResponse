@@ -1,11 +1,18 @@
 @page "/reports"
 @rendermode InteractiveServer
 @implements IDisposable
+
 @using System.IO
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.JSInterop
+
 @inject PerformanceDashboardService DashboardService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
 
 <PageTitle>PILOT RESULTS DASHBOARD</PageTitle>
+
 
 @* =========================================================
 LOADING STATE
@@ -18,6 +25,7 @@ LOADING STATE
     </div>
 }
 
+
 @* =========================================================
 EMPTY DASHBOARD STATE
 ========================================================= *@
@@ -25,10 +33,18 @@ EMPTY DASHBOARD STATE
 else if (_dashboard?.Latest is null)
 {
     <div class="reports-empty">
-        <h1>No results yet</h1>
-        <p>Complete a practice scenario to populate this dashboard.</p>
+
+        <h1>
+            No results yet
+        </h1>
+
+        <p>
+            Complete a practice scenario to populate this dashboard.
+        </p>
+
     </div>
 }
+
 
 @* =========================================================
 MAIN DASHBOARD
@@ -38,206 +54,368 @@ else
 {
     var report = _dashboard.Latest;
 
-    <main id="pilot-performance-report" class="reports-page">
+    <main
+    id="pilot-performance-report"
+    class="reports-page">
 
-        @* =====================================================
-        DASHBOARD HEADER
-        ===================================================== *@
-
-        <header class="reports-header">
-            <div>
-                <h1>PILOT RESULTS DASHBOARD</h1>
-                <p>Review your performance and achievements</p>
-            </div>
-
-            <div class="pilot-chip">
-                <span class="pilot-avatar">✈</span>
-
-                <div>
-                    <strong>@report.PilotName</strong>
-                    <small>Professional Pilot</small>
-                </div>
-            </div>
-        </header>
-
-        @* =====================================================
-        DASHBOARD NAVIGATION
-        ===================================================== *@
-
-        <nav class="reports-tabs">
-            <NavLink href="/reports" Match="NavLinkMatch.All">
-                ◉ Overview
-            </NavLink>
-
-            <NavLink href="/reports/flight-logs">
-                ✈ Flight Logs
-            </NavLink>
-
-            <NavLink href="/reports/scoring">
-                ⚙ Scoring
-            </NavLink>
-
-            <NavLink href="/reports/analytics">
-                ▥ Analytics
-            </NavLink>
-
-            <NavLink href="/reports/feedback">
-                ✪ Feedback
-            </NavLink>
-
-            <NavLink href="/reports/badges">
-                🏆 Badges
-            </NavLink>
-
-            <NavLink href="/reports/instructor">
-                👨‍✈ Instructor Reports
-            </NavLink>
-
-            <NavLink href="/reports/admin">
-                ▦ Admin Reports
-            </NavLink>
-            
-            <button id="download-report-button"
-                type="button"
-                @onclick="DownloadReportAsync">
-                ⬇ Download PDF
-            </button>
-        </nav>
 
     @* =====================================================
-    TOP DASHBOARD GRID
+    DASHBOARD HEADER
     ===================================================== *@
 
-    <section id="overview" class="reports-grid top-grid">
+    <header class="reports-header">
 
-        @* =================================================
-        OVERALL SCORE CARD
-        ================================================= *@
+        <div>
 
-        <article class="report-card score-card">
-            <h2>Overall Score</h2>
+            <h1>
+                PILOT RESULTS DASHBOARD
+            </h1>
 
-            <div class="score-main">
+            <p>
+                Review your performance and achievements
+            </p>
 
-                <div class="score-ring"
-                style="--score:@report.OverallScore">
-
-                <span>@report.OverallScore%</span>
-
-                <small>
-                    @(report.OverallScore >= 70
-                    ? "Great Performance!"
-                    : "Keep Practising")
-                </small>
-            </div>
-
-            <div class="score-copy">
-                <small>Total Score</small>
-                <strong>@(report.OverallScore * 10) / 1000</strong>
-
-                <small>Passing Score</small>
-                <b>70% (700/1000)</b>
-
-                <small>Rank</small>
-                <strong>Top @RankPercent%</strong>
-                <em>of all users</em>
-            </div>
         </div>
 
-        <div class="pass-banner">
-            🏆
 
-            <span>
+        <div class="pilot-chip">
+
+            <span class="pilot-avatar">
+                ✈
+            </span>
+
+            <div>
+
                 <strong>
-                    @(report.OverallScore >= 70
-                    ? "You passed this scenario!"
-                    : "Scenario not yet passed")
+                    @report.PilotName
                 </strong>
 
                 <small>
-                    @(report.OverallScore >= 70
-                    ? "Keep up the great work."
-                    : "Review feedback and try again.")
+                    Professional Pilot
                 </small>
-            </span>
-        </div>
-    </article>
 
-    @* =================================================
-    SCORE BREAKDOWN CARD
-    ================================================= *@
-
-    <article id="scoring" class="report-card">
-        <h2>Score Breakdown</h2>
-
-        <div class="metric">
-            <div class="metric-result">
-                <span>Procedural Accuracy</span>
-                <strong>@report.ChecklistAccuracyScore%</strong>
             </div>
 
-            <div class="metric-track">
-                <div class="metric-fill blue"
-                style="width: @report.ChecklistAccuracyScore%;">
-            </div>
-        </div>
-    </div>
-
-    <div class="metric">
-        <div class="metric-result">
-            <span>Decision Making</span>
-            <strong>@report.DecisionMakingScore%</strong>
         </div>
 
-        <div class="metric-track">
-            <div class="metric-fill green"
-            style="width: @report.DecisionMakingScore%;">
-        </div>
+    </header>
+
+
+    @* =====================================================
+    DASHBOARD NAVIGATION
+    ===================================================== *@
+
+    <nav class="reports-tabs">
+
+        <NavLink
+        href="/reports"
+        Match="NavLinkMatch.All">
+        ◉ Overview
+    </NavLink>
+
+    <NavLink href="/reports/flight-logs">
+        ✈ Flight Logs
+    </NavLink>
+
+    <NavLink href="/reports/scoring">
+        ⚙ Scoring
+    </NavLink>
+
+    <NavLink href="/reports/analytics">
+        ▥ Analytics
+    </NavLink>
+
+    <NavLink href="/reports/feedback">
+        ✪ Feedback
+    </NavLink>
+
+    <NavLink href="/reports/badges">
+        🏆 Badges
+    </NavLink>
+
+    <NavLink href="/reports/instructor">
+        👨‍✈ Instructor Reports
+    </NavLink>
+
+    <NavLink href="/reports/admin">
+        ▦ Admin Reports
+    </NavLink>
+
+
+    <button
+    id="download-report-button"
+    type="button"
+    @onclick="DownloadReportAsync">
+
+    ⬇ Download PDF
+
+</button>
+
+</nav>
+
+
+@* =====================================================
+TOP DASHBOARD GRID
+===================================================== *@
+
+<section
+id="overview"
+class="reports-grid top-grid">
+
+
+@* =================================================
+OVERALL SCORE CARD
+================================================= *@
+
+<article class="report-card score-card">
+
+    <h2>
+        Overall Score
+    </h2>
+
+
+    <div class="score-main">
+
+        <div
+        class="score-ring"
+        style="--score:@report.OverallScore">
+
+        <span>
+            @report.OverallScore%
+        </span>
+
+        <small>
+            @(report.Passed
+            ? "Great Performance!"
+            : "Keep Practising")
+        </small>
+
     </div>
+
+
+    <div class="score-copy">
+
+        <small>
+            Total Score
+        </small>
+
+        <strong>
+            @(report.OverallScore * 10) / 1000
+        </strong>
+
+
+        <small>
+            Passing Score
+        </small>
+
+        <b>
+            70% (700/1000)
+        </b>
+
+
+        <small>
+            Rank
+        </small>
+
+        <strong>
+            Top @RankPercent%
+        </strong>
+
+        <em>
+            of all users
+        </em>
+
+    </div>
+
 </div>
 
+
+<div class="pass-banner">
+
+    🏆
+
+    <span>
+
+        <strong>
+            @(report.Passed
+            ? "You passed this scenario!"
+            : "Scenario not yet passed")
+        </strong>
+
+        <small>
+            @(report.Passed
+            ? "Keep up the great work."
+            : "Review feedback and try again.")
+        </small>
+
+    </span>
+
+</div>
+
+</article>
+
+
+@* =================================================
+SCORE BREAKDOWN CARD
+================================================= *@
+
+<article
+id="scoring"
+class="report-card">
+
+<h2>
+    Score Breakdown
+</h2>
+
+
+@* PROCEDURAL ACCURACY *@
+
 <div class="metric">
+
     <div class="metric-result">
-        <span>Checklist Usage</span>
-        <strong>@report.ChecklistUsageScore%</strong>
+
+        <span>
+            Procedural Accuracy
+        </span>
+
+        <strong>
+            @report.ProcedureAccuracyScore%
+        </strong>
+
     </div>
 
     <div class="metric-track">
-        <div class="metric-fill orange"
+
+        <div
+        class="metric-fill blue"
+        style="width: @report.ProcedureAccuracyScore%;">
+    </div>
+
+</div>
+
+</div>
+
+
+@* DECISION MAKING *@
+
+<div class="metric">
+
+    <div class="metric-result">
+
+        <span>
+            Decision Making
+        </span>
+
+        <strong>
+            @report.DecisionMakingScore%
+        </strong>
+
+    </div>
+
+    <div class="metric-track">
+
+        <div
+        class="metric-fill green"
+        style="width: @report.DecisionMakingScore%;">
+    </div>
+
+</div>
+
+</div>
+
+
+@* CHECKLIST USAGE *@
+
+<div class="metric">
+
+    <div class="metric-result">
+
+        <span>
+            Checklist Usage
+        </span>
+
+        <strong>
+            @report.ChecklistUsageScore%
+        </strong>
+
+    </div>
+
+    <div class="metric-track">
+
+        <div
+        class="metric-fill orange"
         style="width: @report.ChecklistUsageScore%;">
     </div>
-</div>
+
 </div>
 
+</div>
+
+
+@* TIME MANAGEMENT *@
+
 <div class="metric">
+
     <div class="metric-result">
-        <span>Time Management</span>
-        <strong>@report.TimeManagementScore%</strong>
+
+        <span>
+            Time Management
+        </span>
+
+        <strong>
+            @report.TimeManagementScore%
+        </strong>
+
     </div>
 
     <div class="metric-track">
-        <div class="metric-fill purple"
+
+        <div
+        class="metric-fill purple"
         style="width: @report.TimeManagementScore%;">
     </div>
-</div>
+
 </div>
 
+</div>
+
+
+@* COMMUNICATION *@
+
 <div class="metric">
+
     <div class="metric-result">
-        <span>Communication</span>
-        <strong>@report.CommunicationScore%</strong>
+
+        <span>
+            Communication
+        </span>
+
+        <strong>
+            @report.CommunicationScore%
+        </strong>
+
     </div>
 
     <div class="metric-track">
-        <div class="metric-fill cyan"
+
+        <div
+        class="metric-fill cyan"
         style="width: @report.CommunicationScore%;">
     </div>
-</div>
+
 </div>
 
-<a class="card-link" href="#analytics">
-    View scoring details →
+</div>
+
+
+<a
+class="card-link"
+href="/reports/scoring">
+
+View scoring details →
+
 </a>
+
 </article>
 
 
@@ -246,40 +424,64 @@ SCENARIO SUMMARY CARD
 ================================================= *@
 
 <article class="report-card scenario-summary">
-    <h2>Scenario Summary</h2>
+
+    <h2>
+        Scenario Summary
+    </h2>
+
 
     <div class="scenario-title">
-        <span>✈</span>
+
+        <span>
+            ✈
+        </span>
+
 
         <div>
-            <strong>@report.ScenarioName</strong>
+
+            <strong>
+                @report.ScenarioName
+            </strong>
+
 
             <small>
                 Completed on:
                 @(report.CompletedAt
                 .ToLocalTime()
-                .ToString("dd MMM yyyy 'at' HH:mm"))
+                .ToString(
+                "dd MMM yyyy 'at' HH:mm"))
             </small>
+
 
             <small>
-                Scenario Difficulty: @report.Difficulty
+                Scenario Difficulty:
+                @report.Difficulty
             </small>
+
         </div>
 
-        <b>EMERGENCY</b>
+
+        <b>
+            EMERGENCY
+        </b>
+
     </div>
 
+
     <hr />
+
 
     @InfoRow(
     "◷",
     "Reaction Time",
     $"{report.ReactionTimeSeconds}s")
 
+
     @InfoRow(
     "◷",
     "Total Time",
     Duration(report))
+
 
     @InfoRow(
     "◷",
@@ -288,6 +490,7 @@ SCENARIO SUMMARY CARD
     .ToLocalTime()
     .ToString("HH:mm:ss"))
 
+
     @InfoRow(
     "◷",
     "End Time",
@@ -295,18 +498,36 @@ SCENARIO SUMMARY CARD
     .ToLocalTime()
     .ToString("HH:mm:ss"))
 
+
     @InfoRow(
     "☑",
     "Actions Taken",
     report.ActionsTaken.ToString())
 
+
     @InfoRow(
     "▣",
     "Checklist Used",
     $"{report.ChecklistUsageScore}%")
+
+
+    @InfoRow(
+    "⚠",
+    "Safety-Critical Errors",
+    report.SafetyCriticalErrors.ToString())
+
+
+    @InfoRow(
+    "🏁",
+    "Result",
+    report.Passed
+    ? "Passed"
+    : "Review Required")
+
 </article>
 
 </section>
+
 
 @* =====================================================
 BOTTOM DASHBOARD GRID
@@ -314,229 +535,442 @@ BOTTOM DASHBOARD GRID
 
 <section class="reports-grid bottom-grid">
 
+
     @* =================================================
-    PERFORMANCE ANALYTICS CARD
+    PERFORMANCE ANALYTICS
     ================================================= *@
 
-    <article id="analytics"
+    <article
+    id="analytics"
     class="report-card analytics-card">
 
     <div class="card-heading">
-        <h2>Performance Analytics</h2>
-        <span>Last 10 Scenarios</span>
+
+        <h2>
+            Performance Analytics
+        </h2>
+
+        <span>
+            Last 10 Scenarios
+        </span>
+
     </div>
 
-    <svg class="trend-chart"
+
+    <svg
+    class="trend-chart"
     viewBox="0 0 620 260"
     role="img"
     aria-label="Pilot performance trend">
 
+
+    @* GRID *@
+
     <g class="grid-lines">
+
         @for (var y = 0; y <= 4; y++)
         {
-            <line x1="45"
+            <line
+            x1="45"
             y1="@(25 + y * 48)"
             x2="600"
             y2="@(25 + y * 48)" />
         }
+
     </g>
 
-    <polyline class="average-line"
+
+    @* REAL RUNNING AVERAGE *@
+
+    <polyline
+    class="average-line"
     points="@AveragePoints" />
 
-    <polyline class="score-line"
+
+    @* ACTUAL PILOT SCORES *@
+
+    <polyline
+    class="score-line"
     points="@ScorePoints" />
+
 
     @foreach (var point in ChartPoints)
     {
-        <circle cx="@point.X"
+        <circle
+        cx="@point.X"
         cy="@point.Y"
         r="4" />
     }
+
 </svg>
 
+
 <div class="chart-legend">
-    <span>● Your Score</span>
-    <span>● Average Score</span>
+
+    <span>
+        ● Your Score
+    </span>
+
+    <span>
+        ● Running Average
+    </span>
+
 </div>
+
 
 <div class="stat-row">
+
     <div>
-        <small>Average Score</small>
-        <strong>@_dashboard.AverageScore%</strong>
+
+        <small>
+            Average Score
+        </small>
+
+        <strong>
+            @_dashboard.AverageScore%
+        </strong>
+
     </div>
 
+
     <div>
-        <small>Best Score</small>
-        <strong>@_dashboard.BestScore%</strong>
+
+        <small>
+            Best Score
+        </small>
+
+        <strong>
+            @_dashboard.BestScore%
+        </strong>
+
     </div>
 
+
     <div>
-        <small>Total Scenarios</small>
-        <strong>@_dashboard.Reports.Count</strong>
+
+        <small>
+            Total Scenarios
+        </small>
+
+        <strong>
+            @_dashboard.Reports.Count
+        </strong>
+
     </div>
 
-    <div>
-        <small>Improvement</small>
 
-        <strong class="positive">
+    <div>
+
+        <small>
+            Improvement
+        </small>
+
+        <strong class="@ImprovementCssClass">
             @Signed(_dashboard.Improvement)%
         </strong>
+
     </div>
+
 </div>
+
+
+<a
+class="card-link"
+href="/reports/analytics">
+
+View full analytics →
+
+</a>
+
 </article>
+
 
 @* =================================================
 FEEDBACK CARD
 ================================================= *@
 
-<article id="feedback"
+<article
+id="feedback"
 class="report-card feedback-card">
 
-<h2>Feedback</h2>
+<h2>
+    Feedback
+</h2>
 
-<div class="feedback-tabs"
-     role="tablist"
-     aria-label="Feedback type">
 
-    <button type="button"
-            role="tab"
-            aria-selected="@(_activeFeedbackTab == FeedbackTab.Instructor)"
-            class="@GetFeedbackTabClass(FeedbackTab.Instructor)"
-            @onclick="() => SelectFeedbackTab(FeedbackTab.Instructor)">
-        Instructor Feedback
-    </button>
+@* =================================================
+FEEDBACK TABS
+================================================= *@
 
-    <button type="button"
-            role="tab"
-            aria-selected="@(_activeFeedbackTab == FeedbackTab.Ai)"
-            class="@GetFeedbackTabClass(FeedbackTab.Ai)"
-            @onclick="() => SelectFeedbackTab(FeedbackTab.Ai)">
-        AI Feedback
-    </button>
+<div
+class="feedback-tabs"
+role="tablist"
+aria-label="Feedback type">
+
+
+<button
+type="button"
+role="tab"
+aria-selected="@(_activeFeedbackTab == FeedbackTab.Instructor)"
+class="@GetFeedbackTabClass(FeedbackTab.Instructor)"
+@onclick="() => SelectFeedbackTab(FeedbackTab.Instructor)">
+
+Instructor Feedback
+
+</button>
+
+
+<button
+type="button"
+role="tab"
+aria-selected="@(_activeFeedbackTab == FeedbackTab.Ai)"
+class="@GetFeedbackTabClass(FeedbackTab.Ai)"
+@onclick="() => SelectFeedbackTab(FeedbackTab.Ai)">
+
+AI Feedback
+
+</button>
 
 </div>
+
+
+@* =================================================
+INSTRUCTOR FEEDBACK
+================================================= *@
 
 @if (_activeFeedbackTab == FeedbackTab.Instructor)
 {
-    <section class="feedback-tab-content"
-             role="tabpanel">
+    <section
+    class="feedback-tab-content"
+    role="tabpanel">
 
-        <div class="@GetInstructorFeedbackClass(report)">
-            <strong>
-                @GetInstructorHeading(report)
-            </strong>
 
+    <div class="@GetInstructorFeedbackClass(report)">
+
+        <strong>
+            @GetInstructorHeading(report)
+        </strong>
+
+
+        @if (string.IsNullOrWhiteSpace(
+        report.Feedback))
+        {
+            <p>
+                No instructor feedback is available
+                for this assessment.
+            </p>
+        }
+        else
+        {
             <p>
                 @report.Feedback
             </p>
-        </div>
+        }
 
-        <h3>Areas to Improve</h3>
+    </div>
 
-        <ul>
-            @foreach (var item in ImprovementItems(report))
-            {
-                <li>@item</li>
-            }
-        </ul>
 
-        <a class="card-link"
-           href="/reports/feedback">
-            View full instructor feedback →
-        </a>
+    <h3>
+        Areas to Improve
+    </h3>
 
-    </section>
+
+    <ul>
+
+        @foreach (
+        var item in
+        ImprovementItems(report))
+        {
+            <li>
+                @item
+            </li>
+        }
+
+    </ul>
+
+
+    <a
+    class="card-link"
+    href="/reports/feedback">
+
+    View full instructor feedback →
+
+</a>
+
+</section>
 }
+
+
+@* =================================================
+AI FEEDBACK
+================================================= *@
+
 else
 {
-    <section class="feedback-tab-content"
-             role="tabpanel">
+    <section
+    class="feedback-tab-content"
+    role="tabpanel">
 
-        <div class="feedback-ai">
 
-            <h3>AI Performance Analysis</h3>
+    <div class="feedback-ai">
 
-            @if (string.IsNullOrWhiteSpace(report.AiFeedback))
-            {
-                <p>
-                    No AI-generated analysis is available
-                    for this assessment.
-                </p>
-            }
-            else
-            {
-                <p>
-                    @report.AiFeedback
-                </p>
-            }
+        <h3>
+            AI Performance Analysis
+        </h3>
 
-        </div>
 
-        <h3>AI Recommended Focus</h3>
+        @if (string.IsNullOrWhiteSpace(
+        report.AiFeedback))
+        {
+            <p>
+                No AI-generated analysis is available
+                for this assessment.
+            </p>
+        }
+        else
+        {
+            <p>
+                @report.AiFeedback
+            </p>
+        }
 
-        <ul>
-            @foreach (var item in AiImprovementItems(report))
-            {
-                <li>@item</li>
-            }
-        </ul>
+    </div>
 
-        <a class="card-link"
-           href="/reports/feedback">
-            View full AI feedback →
-        </a>
 
-    </section>
+    <h3>
+        AI Recommended Focus
+    </h3>
+
+
+    <ul>
+
+        @foreach (
+        var item in
+        AiImprovementItems(report))
+        {
+            <li>
+                @item
+            </li>
+        }
+
+    </ul>
+
+
+    <a
+    class="card-link"
+    href="/reports/feedback">
+
+    View full AI feedback →
+
+</a>
+
+</section>
 }
 
 </article>
 
+
 @* =================================================
-BADGES AND ACHIEVEMENTS CARD
+BADGES AND ACHIEVEMENTS
 ================================================= *@
 
-<article id="badges"
+<article
+id="badges"
 class="report-card badges-card">
 
 <div class="card-heading">
-    <h2>Badges Earned</h2>
-    <span>@_dashboard.Achievements.Count earned</span>
+
+    <h2>
+        Badges Earned
+    </h2>
+
+    <span>
+        @_dashboard.Achievements.Count earned
+    </span>
+
 </div>
 
-<div class="badges-grid">
 
-    @foreach (var badge in _dashboard.Achievements)
-    {
-        <div class="badge">
-            <div class="badge-icon">
-                @badge.Icon
-            </div>
+@if (_dashboard.Achievements.Count == 0)
+{
+    <div class="reports-empty">
 
-            <strong>@badge.Name</strong>
+        <h3>
+            No badges earned yet
+        </h3>
 
-            <small>
-                Earned:
-                @(badge.EarnedAt
-                .ToLocalTime()
-                .ToString("dd MMM yyyy"))
-            </small>
-        </div>
-    }
+        <p>
+            Continue completing training scenarios
+            to unlock achievements.
+        </p>
 
-    <div class="badge locked">
-        <div class="badge-icon">🔒</div>
-
-        <strong>Perfect Score</strong>
-
-        <small>
-            Score 100% in any scenario
-        </small>
     </div>
-</div>
+}
+else
+{
+    <div class="badges-grid">
+
+        @foreach (
+        var badge in
+        _dashboard.Achievements)
+        {
+            <div class="badge">
+
+                <div class="badge-icon">
+                    @badge.Icon
+                </div>
+
+                <strong>
+                    @badge.Name
+                </strong>
+
+                <small>
+                    Earned:
+                    @(badge.EarnedAt
+                    .ToLocalTime()
+                    .ToString(
+                    "dd MMM yyyy"))
+                </small>
+
+            </div>
+        }
+
+
+        @if (!HasPerfectScoreBadge)
+        {
+            <div class="badge locked">
+
+                <div class="badge-icon">
+                    🔒
+                </div>
+
+                <strong>
+                    Perfect Score
+                </strong>
+
+                <small>
+                    Score 100% in any scenario
+                </small>
+
+            </div>
+        }
+
+    </div>
+}
+
+
+<a
+class="card-link"
+href="/reports/badges">
+
+View all achievements →
+
+</a>
+
 </article>
 
 </section>
+
 
 @* =====================================================
 LIVE DASHBOARD STATUS
@@ -551,60 +985,92 @@ LIVE DASHBOARD STATUS
 }
 
 @code {
-    // =========================================================
-    // DEVELOPMENT USER
-    // =========================================================
 
-    /*
-     * TODO:
-     * Replace this with the authenticated user's ID
-     * once authentication is completed.
-     */
-    private const string UserId = "debug-pilot";
+    /* =====================================================================
+       CURRENT PILOT
+
+       Authentication is not yet fully implemented.
+
+       When an authenticated ASP.NET Identity user exists, use their
+       NameIdentifier.
+
+       Until authentication is completed, use debug-pilot so Simulation
+       and all pilot-facing reporting pages query the same records.
+       ===================================================================== */
+
+    private string _currentUserId =
+        string.Empty;
 
 
-    // =========================================================
-    // DASHBOARD STATE
-    // =========================================================
+    /* =====================================================================
+       DASHBOARD STATE
+       ===================================================================== */
 
     private PerformanceDashboardVm? _dashboard;
 
     private bool _loading = true;
 
+
     private FeedbackTab _activeFeedbackTab =
         FeedbackTab.Instructor;
 
 
-    // =========================================================
-    // INITIALIZATION
-    // =========================================================
+    /* =====================================================================
+       INITIALIZATION
+       ===================================================================== */
 
     protected override async Task OnInitializedAsync()
     {
+        /*
+         * Resolve the current pilot.
+         */
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var principal =
+            authenticationState.User;
+
+
+        _currentUserId =
+            principal.FindFirstValue(
+                ClaimTypes.NameIdentifier)
+            ?? "debug-pilot";
+
+
+        /*
+         * Listen for newly completed simulation reports.
+         */
         PerformanceFeed.ReportSaved +=
             OnReportSaved;
 
+
+        /*
+         * Load this pilot's dashboard.
+         */
         await LoadAsync();
     }
 
 
-    // =========================================================
-    // LIVE REPORT UPDATES
-    // =========================================================
+    /* =====================================================================
+       LIVE REPORT UPDATES
+       ===================================================================== */
 
     private async void OnReportSaved(
         string userId)
     {
         /*
-         * Ignore reports belonging to another pilot.
+         * Only refresh this dashboard when the saved report belongs
+         * to the pilot currently viewing it.
          */
         if (!string.Equals(
                 userId,
-                UserId,
+                _currentUserId,
                 StringComparison.Ordinal))
         {
             return;
         }
+
 
         await InvokeAsync(
             async () =>
@@ -616,31 +1082,38 @@ LIVE DASHBOARD STATUS
     }
 
 
-    // =========================================================
-    // DASHBOARD LOADING
-    // =========================================================
+    /* =====================================================================
+       DASHBOARD LOADING
+       ===================================================================== */
 
     private async Task LoadAsync()
     {
         try
         {
-            _loading = true;
+            _loading =
+                true;
 
+
+            /*
+             * Uses exactly the same UserId as Flight Logs,
+             * Scoring, Analytics, Feedback and Badges.
+             */
             _dashboard =
                 await DashboardService
                     .GetDashboardAsync(
-                        UserId);
+                        _currentUserId);
         }
         finally
         {
-            _loading = false;
+            _loading =
+                false;
         }
     }
 
 
-    // =========================================================
-    // RANK
-    // =========================================================
+    /* =====================================================================
+       RANK
+       ===================================================================== */
 
     private int RankPercent =>
         Math.Max(
@@ -649,9 +1122,9 @@ LIVE DASHBOARD STATUS
             (_dashboard?.Latest?.OverallScore ?? 0));
 
 
-    // =========================================================
-    // INFORMATION ROW
-    // =========================================================
+    /* =====================================================================
+       INFORMATION ROW
+       ===================================================================== */
 
     private static MarkupString InfoRow(
         string icon,
@@ -669,9 +1142,9 @@ LIVE DASHBOARD STATUS
     }
 
 
-    // =========================================================
-    // SIMULATION DURATION
-    // =========================================================
+    /* =====================================================================
+       SIMULATION DURATION
+       ===================================================================== */
 
     private static string Duration(
         SimulationReport report)
@@ -680,19 +1153,21 @@ LIVE DASHBOARD STATUS
             report.CompletedAt -
             report.StartedAt;
 
+
         if (duration < TimeSpan.Zero)
         {
             return "00:00";
         }
+
 
         return duration.ToString(
             @"mm\:ss");
     }
 
 
-    // =========================================================
-    // CHART DATA
-    // =========================================================
+    /* =====================================================================
+        ACTUAL PILOT SCORE CHART
+       ===================================================================== */
 
     private IReadOnlyList<(double X, double Y)>
         ChartPoints
@@ -702,12 +1177,14 @@ LIVE DASHBOARD STATUS
             var reports =
                 _dashboard?.ChartReports;
 
+
             if (reports is null ||
                 reports.Count == 0)
             {
                 return Array.Empty<
                     (double X, double Y)>();
             }
+
 
             return reports
                 .Select(
@@ -718,10 +1195,12 @@ LIVE DASHBOARD STATUS
                                 1,
                                 reports.Count - 1);
 
+
                         var x =
                             45 +
                             index *
                             (555.0 / denominator);
+
 
                         var score =
                             Math.Clamp(
@@ -729,10 +1208,12 @@ LIVE DASHBOARD STATUS
                                 0,
                                 100);
 
+
                         var y =
                             217 -
                             score *
                             1.8;
+
 
                         return (
                             X: x,
@@ -743,6 +1224,10 @@ LIVE DASHBOARD STATUS
     }
 
 
+    /* =====================================================================
+        SCORE POLYLINE
+       ===================================================================== */
+
     private string ScorePoints =>
         string.Join(
             " ",
@@ -751,31 +1236,112 @@ LIVE DASHBOARD STATUS
                     $"{point.X:F1},{point.Y:F1}"));
 
 
+    /* =====================================================================
+        REAL RUNNING AVERAGE
+
+        This replaces the old fabricated:
+           55 + index * 2
+
+        Each point now represents the actual running average of the
+        pilot's displayed last-ten simulation results.
+       ===================================================================== */
+
+    private IReadOnlyList<(double X, double Y)>
+        AverageChartPoints
+    {
+        get
+        {
+            var reports =
+                _dashboard?.ChartReports;
+
+
+            if (reports is null ||
+                reports.Count == 0)
+            {
+                return Array.Empty<
+                    (double X, double Y)>();
+            }
+
+
+            var points =
+                new List<(double X, double Y)>();
+
+
+            for (var index = 0;
+                index < reports.Count;
+                index++)
+            {
+                var denominator =
+                    Math.Max(
+                        1,
+                        reports.Count - 1);
+
+
+                var x =
+                    45 +
+                    index *
+                    (555.0 / denominator);
+
+
+                /*
+                 * Actual average from the first displayed attempt
+                 * through the current displayed attempt.
+                 */
+                var runningAverage =
+                    reports
+                        .Take(index + 1)
+                        .Average(
+                            item =>
+                                item.OverallScore);
+
+
+                var clampedAverage =
+                    Math.Clamp(
+                        runningAverage,
+                        0,
+                        100);
+
+
+                var y =
+                    217 -
+                    clampedAverage *
+                    1.8;
+
+
+                points.Add(
+                    (
+                        X: x,
+                        Y: y
+                    ));
+            }
+
+
+            return points;
+        }
+    }
+
+
+    /* =====================================================================
+        AVERAGE POLYLINE
+       ===================================================================== */
+
     private string AveragePoints =>
         string.Join(
             " ",
-            ChartPoints.Select(
-                (point, index) =>
-                {
-                    var averageScore =
-                        Math.Clamp(
-                            55 + index * 2,
-                            0,
-                            100);
-
-                    var y =
-                        217 -
-                        averageScore *
-                        1.8;
-
-                    return
-                        $"{point.X:F1},{y:F1}";
-                }));
+            AverageChartPoints.Select(
+                point =>
+                    $"{point.X:F1},{point.Y:F1}"));
 
 
-    // =========================================================
-    // NUMBER FORMATTING
-    // =========================================================
+    /* =====================================================================
+        IMPROVEMENT
+       ===================================================================== */
+
+    private string ImprovementCssClass =>
+        (_dashboard?.Improvement ?? 0) >= 0
+            ? "positive"
+            : "negative";
+
 
     private static string Signed(
         int number)
@@ -786,9 +1352,9 @@ LIVE DASHBOARD STATUS
     }
 
 
-    // =========================================================
-    // INSTRUCTOR IMPROVEMENT ITEMS
-    // =========================================================
+    /* =====================================================================
+        INSTRUCTOR IMPROVEMENT ITEMS
+       ===================================================================== */
 
     private static IEnumerable<string>
         ImprovementItems(
@@ -798,6 +1364,22 @@ LIVE DASHBOARD STATUS
             false;
 
 
+        /*
+         * No pilot response.
+         */
+        if (report.ActionsTaken == 0)
+        {
+            hasImprovementItem =
+                true;
+
+            yield return
+                "Begin the response immediately after the emergency warning appears.";
+        }
+
+
+        /*
+         * Reaction time.
+         */
         if (report.ReactionTimeSeconds > 10)
         {
             hasImprovementItem =
@@ -809,27 +1391,61 @@ LIVE DASHBOARD STATUS
         }
 
 
+        /*
+         * Procedural accuracy.
+         */
+        if (report.ProcedureAccuracyScore < 95)
+        {
+            hasImprovementItem =
+                true;
+
+            yield return
+                "Review the emergency procedure and maintain the correct action sequence.";
+        }
+
+
+        /*
+         * Checklist usage.
+         */
+        if (report.ChecklistUsageScore < 90)
+        {
+            hasImprovementItem =
+                true;
+
+            yield return
+                "Use the emergency checklist consistently once immediate memory actions are complete.";
+        }
+
+
+        /*
+         * Communication.
+         */
         if (report.CommunicationScore < 90)
         {
             hasImprovementItem =
                 true;
 
             yield return
-                "Consider declaring the emergency and requesting " +
-                "assistance earlier.";
+                "Consider declaring the emergency and requesting assistance earlier.";
         }
 
 
-        if (report.ChecklistAccuracyScore < 95)
+        /*
+         * Decision making.
+         */
+        if (report.DecisionMakingScore < 85)
         {
             hasImprovementItem =
                 true;
 
             yield return
-                "Maintain checklist discipline when workload increases.";
+                "Prioritise safety-critical actions before secondary cockpit tasks.";
         }
 
 
+        /*
+         * Safety-critical errors.
+         */
         if (report.SafetyCriticalErrors > 0)
         {
             hasImprovementItem =
@@ -840,18 +1456,20 @@ LIVE DASHBOARD STATUS
         }
 
 
+        /*
+         * No improvement issues.
+         */
         if (!hasImprovementItem)
         {
             yield return
-                "Continue maintaining the same high standard " +
-                "in future scenarios.";
+                "Continue maintaining the same high standard in future scenarios.";
         }
     }
 
 
-    // =========================================================
-    // FEEDBACK TABS
-    // =========================================================
+    /* =====================================================================
+        FEEDBACK TABS
+       ===================================================================== */
 
     private void SelectFeedbackTab(
         FeedbackTab tab)
@@ -866,14 +1484,14 @@ LIVE DASHBOARD STATUS
     {
         return _activeFeedbackTab ==
             tab
-                ? "feedback-tab-button active"
-                : "feedback-tab-button";
+            ? "feedback-tab-button active"
+            : "feedback-tab-button";
     }
 
 
-    // =========================================================
-    // INSTRUCTOR FEEDBACK
-    // =========================================================
+    /* =====================================================================
+        INSTRUCTOR FEEDBACK
+       ===================================================================== */
 
     private static string
         GetInstructorHeading(
@@ -884,11 +1502,13 @@ LIVE DASHBOARD STATUS
             return "Review Required";
         }
 
+
         if (!report.Passed)
         {
             return
                 "Further Practice Required";
         }
+
 
         return report.OverallScore >= 85
             ? "☆ Great Job!"
@@ -907,13 +1527,14 @@ LIVE DASHBOARD STATUS
                 "feedback-good feedback-review";
         }
 
+
         return "feedback-good";
     }
 
 
-    // =========================================================
-    // AI IMPROVEMENT ITEMS
-    // =========================================================
+    /* =====================================================================
+        AI RECOMMENDED FOCUS
+       ===================================================================== */
 
     private static IEnumerable<string>
         AiImprovementItems(
@@ -923,84 +1544,125 @@ LIVE DASHBOARD STATUS
             false;
 
 
+        /*
+         * No response.
+         */
         if (report.ActionsTaken == 0)
         {
             hasRecommendation =
                 true;
 
             yield return
-                "Begin the response immediately after " +
-                "the emergency warning appears.";
+                "Begin the response immediately after the emergency warning appears.";
         }
 
 
+        /*
+         * Procedural accuracy.
+         */
         if (report.ProcedureAccuracyScore < 85)
         {
             hasRecommendation =
                 true;
 
             yield return
-                "Review the gold-standard procedure and " +
-                "practise the exact action sequence.";
+                "Review the gold-standard procedure and practise the exact action sequence.";
         }
 
 
+        /*
+         * Time management.
+         */
         if (report.TimeManagementScore < 80)
         {
             hasRecommendation =
                 true;
 
             yield return
-                "Reduce the delay between the warning " +
-                "and the first cockpit action.";
+                "Reduce the delay between the warning and the first cockpit action.";
         }
 
 
+        /*
+         * Decision making.
+         */
         if (report.DecisionMakingScore < 80)
         {
             hasRecommendation =
                 true;
 
             yield return
-                "Prioritise safety-critical actions " +
-                "before secondary tasks.";
+                "Prioritise safety-critical actions before secondary tasks.";
         }
 
 
+        /*
+         * Communication.
+         */
         if (report.CommunicationScore < 90)
         {
             hasRecommendation =
                 true;
 
             yield return
-                "Declare the emergency and communicate " +
-                "intentions earlier.";
+                "Declare the emergency and communicate intentions earlier.";
         }
 
 
+        /*
+         * Checklist usage.
+         */
+        if (report.ChecklistUsageScore < 90)
+        {
+            hasRecommendation =
+                true;
+
+            yield return
+                "Increase checklist use after completing immediate memory actions.";
+        }
+
+
+        /*
+         * Safety-critical errors.
+         */
         if (report.SafetyCriticalErrors > 0)
         {
             hasRecommendation =
                 true;
 
             yield return
-                "Repeat the safety-critical memory actions " +
-                "before attempting the scenario again.";
+                "Repeat the safety-critical memory actions before attempting the scenario again.";
         }
 
 
+        /*
+         * High standard.
+         */
         if (!hasRecommendation)
         {
             yield return
-                "Maintain the current standard and practise " +
-                "at a higher difficulty level.";
+                "Maintain the current standard and practise at a higher difficulty level.";
         }
     }
 
 
-    // =========================================================
-    // PDF DOWNLOAD
-    // =========================================================
+    /* =====================================================================
+        PERFECT SCORE BADGE
+       ===================================================================== */
+
+    private bool HasPerfectScoreBadge =>
+        _dashboard?.Achievements.Any(
+            achievement =>
+                string.Equals(
+                    achievement.Code,
+                    "perfect-score",
+                    StringComparison.OrdinalIgnoreCase))
+        == true;
+
+
+    /* =====================================================================
+        PDF DOWNLOAD
+       ===================================================================== */
 
     private async Task DownloadReportAsync()
     {
@@ -1009,16 +1671,20 @@ LIVE DASHBOARD STATUS
             return;
         }
 
+
         var report =
             _dashboard.Latest;
+
 
         var pilotName =
             MakeFileNameSafe(
                 report.PilotName);
 
+
         var scenarioName =
             MakeFileNameSafe(
                 report.ScenarioName);
+
 
         var completedDate =
             report.CompletedAt
@@ -1026,11 +1692,13 @@ LIVE DASHBOARD STATUS
                 .ToString(
                     "yyyy-MM-dd");
 
+
         var fileName =
             $"AeroResponse-" +
             $"{pilotName}-" +
             $"{scenarioName}-" +
             $"{completedDate}.pdf";
+
 
         await JS.InvokeVoidAsync(
             "aeroReports.downloadPdf",
@@ -1039,23 +1707,30 @@ LIVE DASHBOARD STATUS
     }
 
 
+    /* =====================================================================
+        SAFE DOWNLOAD FILE NAME
+       ===================================================================== */
+
     private static string MakeFileNameSafe(
         string value)
     {
         if (string.IsNullOrWhiteSpace(
-            value))
+                value))
         {
             return "Report";
         }
 
-        foreach (var invalidCharacter
-                 in Path.GetInvalidFileNameChars())
+
+        foreach (
+            var invalidCharacter in
+                Path.GetInvalidFileNameChars())
         {
             value =
                 value.Replace(
                     invalidCharacter,
                     '-');
         }
+
 
         return value
             .Replace(
@@ -1065,9 +1740,9 @@ LIVE DASHBOARD STATUS
     }
 
 
-    // =========================================================
-    // FEEDBACK TAB ENUM
-    // =========================================================
+    /* =====================================================================
+        FEEDBACK TYPES
+       ===================================================================== */
 
     private enum FeedbackTab
     {
@@ -1076,9 +1751,9 @@ LIVE DASHBOARD STATUS
     }
 
 
-    // =========================================================
-    // CLEANUP
-    // =========================================================
+    /* =====================================================================
+        CLEANUP
+       ===================================================================== */
 
     public void Dispose()
     {

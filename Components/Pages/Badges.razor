@@ -2,7 +2,11 @@
 @rendermode InteractiveServer
 @implements IDisposable
 
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+
 @inject PerformanceDashboardService DashboardService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Badges | AeroResponse</PageTitle>
 
@@ -16,7 +20,10 @@ else if (_dashboard?.Latest is null)
 {
     <div class="reports-empty">
         <h1>No achievements available yet</h1>
-        <p>Complete a practice scenario to begin earning badges.</p>
+
+        <p>
+            Complete a practice scenario to begin earning badges.
+        </p>
     </div>
 }
 else
@@ -26,23 +33,41 @@ else
     <main class="reports-page">
 
         <header class="reports-header">
+
             <div>
                 <h1>BADGES AND ACHIEVEMENTS</h1>
-                <p>Review the achievements earned during your training</p>
+
+                <p>
+                    Review the achievements earned during your training
+                </p>
             </div>
 
             <div class="pilot-chip">
-                <span class="pilot-avatar">✈</span>
+
+                <span class="pilot-avatar">
+                    ✈
+                </span>
 
                 <div>
-                    <strong>@report.PilotName</strong>
-                    <small>Professional Pilot</small>
+                    <strong>
+                        @report.PilotName
+                    </strong>
+
+                    <small>
+                        Professional Pilot
+                    </small>
                 </div>
+
             </div>
+
         </header>
 
+
         <nav class="reports-tabs">
-            <NavLink href="/reports" Match="NavLinkMatch.All">
+
+            <NavLink
+                href="/reports"
+                Match="NavLinkMatch.All">
                 ◉ Overview
             </NavLink>
 
@@ -73,25 +98,44 @@ else
             <NavLink href="/reports/admin">
                 ▦ Admin Reports
             </NavLink>
+
         </nav>
 
+
         <section class="reports-grid">
+
+            <!-- =========================================================
+                 BADGES EARNED
+                 ========================================================= -->
 
             <article class="report-card badges-card">
 
                 <div class="card-heading">
-                    <h2>Badges Earned</h2>
-                    <span>@_dashboard.Achievements.Count earned</span>
+
+                    <h2>
+                        Badges Earned
+                    </h2>
+
+                    <span>
+                        @_dashboard.Achievements.Count earned
+                    </span>
+
                 </div>
+
 
                 @if (_dashboard.Achievements.Count == 0)
                 {
                     <div class="reports-empty">
-                        <h3>No badges earned yet</h3>
+
+                        <h3>
+                            No badges earned yet
+                        </h3>
+
                         <p>
                             Continue completing training scenarios to unlock
                             your first achievement.
                         </p>
+
                     </div>
                 }
                 else
@@ -101,59 +145,116 @@ else
                         @foreach (var badge in _dashboard.Achievements)
                         {
                             <div class="badge">
+
                                 <div class="badge-icon">
                                     @badge.Icon
                                 </div>
 
-                                <strong>@badge.Name</strong>
+                                <strong>
+                                    @badge.Name
+                                </strong>
 
                                 <small>
-                                    Earned: @(badge.EarnedAt.ToLocalTime().ToString("dd MMM yyyy"))
+                                    Earned:
+                                    @(badge.EarnedAt
+                                        .ToLocalTime()
+                                        .ToString("dd MMM yyyy"))
                                 </small>
+
                             </div>
                         }
 
-                        <div class="badge locked">
-                            <div class="badge-icon">🔒</div>
 
-                            <strong>Perfect Score</strong>
+                        <!-- LOCKED BADGE -->
+
+                        <div class="badge locked">
+
+                            <div class="badge-icon">
+                                🔒
+                            </div>
+
+                            <strong>
+                                Perfect Score
+                            </strong>
 
                             <small>
                                 Score 100% in any scenario
                             </small>
+
                         </div>
 
                     </div>
                 }
+
             </article>
 
+
+            <!-- =========================================================
+                 ACHIEVEMENT SUMMARY
+                 ========================================================= -->
+
             <article class="report-card">
-                <h2>Achievement Summary</h2>
+
+                <h2>
+                    Achievement Summary
+                </h2>
 
                 <div class="stat-row">
+
                     <div>
-                        <small>Badges Earned</small>
-                        <strong>@_dashboard.Achievements.Count</strong>
+
+                        <small>
+                            Badges Earned
+                        </small>
+
+                        <strong>
+                            @_dashboard.Achievements.Count
+                        </strong>
+
                     </div>
 
                     <div>
-                        <small>Scenarios Completed</small>
-                        <strong>@_dashboard.Reports.Count</strong>
+
+                        <small>
+                            Scenarios Completed
+                        </small>
+
+                        <strong>
+                            @_dashboard.Reports.Count
+                        </strong>
+
                     </div>
 
                     <div>
-                        <small>Best Score</small>
-                        <strong>@_dashboard.BestScore%</strong>
+
+                        <small>
+                            Best Score
+                        </small>
+
+                        <strong>
+                            @_dashboard.BestScore%
+                        </strong>
+
                     </div>
 
                     <div>
-                        <small>Latest Score</small>
-                        <strong>@report.OverallScore%</strong>
+
+                        <small>
+                            Latest Score
+                        </small>
+
+                        <strong>
+                            @report.OverallScore%
+                        </strong>
+
                     </div>
+
                 </div>
+
             </article>
 
         </section>
+
 
         <p class="live-note">
             ● New badges appear automatically when achievement conditions are met.
@@ -162,38 +263,140 @@ else
     </main>
 }
 
+
 @code {
-    private const string UserId = "test-pilot";
+
+    /*
+     * =====================================================================
+     * CURRENT PILOT
+     *
+     * Authentication is not yet fully implemented.
+     *
+     * If an authenticated user exists, use their ASP.NET Identity UserId.
+     *
+     * Otherwise use debug-pilot during development so every pilot-facing
+     * report page reads the same simulation history.
+     * =====================================================================
+     */
+
+    private string _currentUserId =
+        string.Empty;
+
+
+    /*
+     * =====================================================================
+     * PAGE STATE
+     * =====================================================================
+     */
 
     private PerformanceDashboardVm? _dashboard;
+
     private bool _loading = true;
+
+
+    /*
+     * =====================================================================
+     * INITIALIZATION
+     * =====================================================================
+     */
 
     protected override async Task OnInitializedAsync()
     {
-        PerformanceFeed.ReportSaved += OnReportSaved;
+        /*
+         * Read the current authentication state.
+         */
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var principal =
+            authenticationState.User;
+
+
+        /*
+         * Use the authenticated pilot's real Identity UserId where one
+         * exists.
+         *
+         * Until authentication is complete, use debug-pilot so the Badges
+         * page reads the same development pilot used by Simulation and
+         * the other reporting pages.
+         */
+        _currentUserId =
+            principal.FindFirstValue(
+                ClaimTypes.NameIdentifier)
+            ?? "debug-pilot";
+
+
+        /*
+         * Listen for newly saved simulation reports.
+         */
+        PerformanceFeed.ReportSaved +=
+            OnReportSaved;
+
+
+        /*
+         * Load this pilot's achievement history.
+         */
         await LoadAsync();
     }
 
-    private async void OnReportSaved(string userId)
+
+    /*
+     * =====================================================================
+     * LIVE REPORT UPDATE
+     * =====================================================================
+     */
+
+    private async void OnReportSaved(
+        string userId)
     {
-        if (userId != UserId)
+        /*
+         * Ignore reports saved for another pilot.
+         */
+        if (!string.Equals(
+                userId,
+                _currentUserId,
+                StringComparison.Ordinal))
         {
             return;
         }
 
-        await InvokeAsync(async () =>
-        {
-            await LoadAsync();
-            StateHasChanged();
-        });
+
+        /*
+         * Reload badges and achievement statistics immediately after
+         * this pilot completes another simulation.
+         */
+        await InvokeAsync(
+            async () =>
+            {
+                await LoadAsync();
+
+                StateHasChanged();
+            });
     }
+
+
+    /*
+     * =====================================================================
+     * LOAD DASHBOARD DATA
+     * =====================================================================
+     */
 
     private async Task LoadAsync()
     {
         try
         {
             _loading = true;
-            _dashboard = await DashboardService.GetDashboardAsync(UserId);
+
+
+            /*
+             * Retrieve the same pilot history used by Overview,
+             * Flight Logs, Scoring, Analytics and Feedback.
+             */
+            _dashboard =
+                await DashboardService
+                    .GetDashboardAsync(
+                        _currentUserId);
         }
         finally
         {
@@ -201,8 +404,16 @@ else
         }
     }
 
+
+    /*
+     * =====================================================================
+     * CLEANUP
+     * =====================================================================
+     */
+
     public void Dispose()
     {
-        PerformanceFeed.ReportSaved -= OnReportSaved;
+        PerformanceFeed.ReportSaved -=
+            OnReportSaved;
     }
 }

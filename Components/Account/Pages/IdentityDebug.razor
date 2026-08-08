@@ -1,0 +1,578 @@
+@page "/identity-debug"
+@rendermode InteractiveServer
+
+@using AeroResponse.Data
+@using AeroResponse.Data.Mongo
+@using AeroResponse.Data.Mongo.Accounts
+@using Microsoft.AspNetCore.Identity
+@using MongoDB.Driver
+
+@inject UserManager<ApplicationUser> UserManager
+@inject MongoDbContext MongoDbContext
+
+<PageTitle>Identity Debug</PageTitle>
+
+<div style="
+    max-width: 900px;
+    margin: 50px auto;
+    padding: 30px;
+    font-family: Arial, sans-serif;
+">
+
+    <h1>Identity Login Debug</h1>
+
+    <p>
+        This temporary page checks whether the account exists
+        in MongoDB and in the ASP.NET Identity SQLite database.
+    </p>
+
+    <hr />
+
+    <div style="margin-top: 25px;">
+
+        <label style="
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        ">
+            Email
+        </label>
+
+        <input
+            type="email"
+            @bind="_email"
+            style="
+                width: 100%;
+                box-sizing: border-box;
+                padding: 12px;
+                margin-bottom: 20px;
+                font-size: 16px;
+            " />
+
+        <label style="
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        ">
+            Password
+        </label>
+
+        <input
+            type="password"
+            @bind="_password"
+            style="
+                width: 100%;
+                box-sizing: border-box;
+                padding: 12px;
+                margin-bottom: 20px;
+                font-size: 16px;
+            " />
+
+        <button
+            type="button"
+            @onclick="RunTestAsync"
+            disabled="@_testing"
+            style="
+                padding: 12px 25px;
+                font-size: 16px;
+                font-weight: bold;
+                cursor: pointer;
+            ">
+
+            @if (_testing)
+            {
+                <span>Testing...</span>
+            }
+            else
+            {
+                <span>Test Account</span>
+            }
+
+        </button>
+
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div style="
+            margin-top: 30px;
+            padding: 20px;
+            border: 2px solid #cc0000;
+            background: #ffeaea;
+        ">
+
+            <h2>Error</h2>
+
+            <pre style="white-space: pre-wrap;">@_error</pre>
+
+        </div>
+    }
+
+    @if (_testComplete)
+    {
+        <div style="margin-top: 35px;">
+
+            <h2>Results</h2>
+
+            <section style="
+                margin-bottom: 25px;
+                padding: 20px;
+                border: 1px solid #ccc;
+            ">
+
+                <h3>1. MongoDB account</h3>
+
+                <p>
+                    <strong>Found:</strong>
+                    @YesNo(_mongoFound)
+                </p>
+
+                @if (_mongoFound)
+                {
+                    <p>
+                        <strong>Mongo Identity User ID:</strong>
+                        @_mongoIdentityUserId
+                    </p>
+
+                    <p>
+                        <strong>Email:</strong>
+                        @_mongoEmail
+                    </p>
+
+                    <p>
+                        <strong>Normalized email:</strong>
+                        @_mongoNormalizedEmail
+                    </p>
+
+                    <p>
+                        <strong>Account type:</strong>
+                        @_mongoAccountType
+                    </p>
+
+                    <p>
+                        <strong>Password hash stored:</strong>
+                        @YesNo(_mongoHasPasswordHash)
+                    </p>
+                }
+
+            </section>
+
+            <section style="
+                margin-bottom: 25px;
+                padding: 20px;
+                border: 1px solid #ccc;
+            ">
+
+                <h3>2. ASP.NET Identity / SQLite account</h3>
+
+                <p>
+                    <strong>Found by UserManager:</strong>
+                    @YesNo(_identityFound)
+                </p>
+
+                @if (_identityFound)
+                {
+                    <p>
+                        <strong>Identity User ID:</strong>
+                        @_identityUserId
+                    </p>
+
+                    <p>
+                        <strong>Email:</strong>
+                        @_identityEmail
+                    </p>
+
+                    <p>
+                        <strong>Normalized email:</strong>
+                        @_identityNormalizedEmail
+                    </p>
+
+                    <p>
+                        <strong>Password hash stored:</strong>
+                        @YesNo(_identityHasPasswordHash)
+                    </p>
+                }
+
+            </section>
+
+            <section style="
+                margin-bottom: 25px;
+                padding: 20px;
+                border: 1px solid #ccc;
+            ">
+
+                <h3>3. Password test</h3>
+
+                @if (!_identityFound)
+                {
+                    <p style="color: #b00020;">
+                        Password could not be tested because ASP.NET
+                        Identity could not find this user.
+                    </p>
+                }
+                else
+                {
+                    <p>
+                        <strong>Password accepted by Identity:</strong>
+
+                        <span style="
+                            font-weight: bold;
+                            color: @(_passwordValid ? "green" : "red");
+                        ">
+                            @YesNo(_passwordValid)
+                        </span>
+                    </p>
+                }
+
+            </section>
+
+            <section style="
+                margin-bottom: 25px;
+                padding: 20px;
+                border: 1px solid #ccc;
+            ">
+
+                <h3>4. Mongo / Identity comparison</h3>
+
+                @if (_mongoFound && _identityFound)
+                {
+                    <p>
+                        <strong>User IDs match:</strong>
+                        @YesNo(_idsMatch)
+                    </p>
+
+                    <p>
+                        <strong>Password hashes are identical:</strong>
+                        @YesNo(_hashesMatch)
+                    </p>
+                }
+                else
+                {
+                    <p>
+                        Both records must exist before they can be compared.
+                    </p>
+                }
+
+            </section>
+
+            <section style="
+                padding: 20px;
+                border: 2px solid #1473e6;
+                background: #eef6ff;
+            ">
+
+                <h3>Diagnosis</h3>
+
+                <p style="font-size: 17px;">
+                    @_diagnosis
+                </p>
+
+            </section>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    private string _email =
+        "kimkbrown100@outlook.com";
+
+    private string _password =
+        string.Empty;
+
+    private bool _testing;
+    private bool _testComplete;
+
+    private string? _error;
+
+    private bool _mongoFound;
+    private string? _mongoIdentityUserId;
+    private string? _mongoEmail;
+    private string? _mongoNormalizedEmail;
+    private string? _mongoAccountType;
+    private bool _mongoHasPasswordHash;
+    private string? _mongoPasswordHash;
+
+    private bool _identityFound;
+    private string? _identityUserId;
+    private string? _identityEmail;
+    private string? _identityNormalizedEmail;
+    private bool _identityHasPasswordHash;
+    private string? _identityPasswordHash;
+
+    private bool _passwordValid;
+
+    private bool _idsMatch;
+    private bool _hashesMatch;
+
+    private string _diagnosis =
+        string.Empty;
+
+
+    private async Task RunTestAsync()
+    {
+        _testing = true;
+        _testComplete = false;
+        _error = null;
+
+        ResetResults();
+
+        try
+        {
+            var email =
+                _email.Trim();
+
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                _error =
+                    "Enter an email address.";
+
+                return;
+            }
+
+            // =====================================================
+            // TEST MONGODB
+            // =====================================================
+
+            var mongoCollection =
+                MongoDbContext
+                    .GetCollection<MongoUserAccount>(
+                        "userAccounts");
+
+            var normalizedEmail =
+                email.ToUpperInvariant();
+
+            var mongoAccount =
+                await mongoCollection
+                    .Find(
+                        account =>
+                            account.NormalizedEmail ==
+                            normalizedEmail)
+                    .FirstOrDefaultAsync();
+
+            if (mongoAccount is not null)
+            {
+                _mongoFound = true;
+
+                _mongoIdentityUserId =
+                    mongoAccount.IdentityUserId;
+
+                _mongoEmail =
+                    mongoAccount.Email;
+
+                _mongoNormalizedEmail =
+                    mongoAccount.NormalizedEmail;
+
+                _mongoAccountType =
+                    mongoAccount.AccountType;
+
+                _mongoPasswordHash =
+                    mongoAccount.PasswordHash;
+
+                _mongoHasPasswordHash =
+                    !string.IsNullOrWhiteSpace(
+                        mongoAccount.PasswordHash);
+            }
+
+            // =====================================================
+            // TEST ASP.NET IDENTITY / SQLITE
+            // =====================================================
+
+            var identityUser =
+                await UserManager
+                    .FindByEmailAsync(email);
+
+            if (identityUser is not null)
+            {
+                _identityFound = true;
+
+                _identityUserId =
+                    identityUser.Id;
+
+                _identityEmail =
+                    identityUser.Email;
+
+                _identityNormalizedEmail =
+                    identityUser.NormalizedEmail;
+
+                _identityPasswordHash =
+                    identityUser.PasswordHash;
+
+                _identityHasPasswordHash =
+                    !string.IsNullOrWhiteSpace(
+                        identityUser.PasswordHash);
+
+                // Only test if a password was entered.
+                if (!string.IsNullOrEmpty(_password))
+                {
+                    _passwordValid =
+                        await UserManager
+                            .CheckPasswordAsync(
+                                identityUser,
+                                _password);
+                }
+            }
+
+            // =====================================================
+            // COMPARE THE TWO RECORDS
+            // =====================================================
+
+            if (_mongoFound &&
+                _identityFound)
+            {
+                _idsMatch =
+                    string.Equals(
+                        _mongoIdentityUserId,
+                        _identityUserId,
+                        StringComparison.OrdinalIgnoreCase);
+
+                _hashesMatch =
+                    string.Equals(
+                        _mongoPasswordHash,
+                        _identityPasswordHash,
+                        StringComparison.Ordinal);
+            }
+
+            BuildDiagnosis();
+
+            _testComplete = true;
+        }
+        catch (Exception ex)
+        {
+            _error =
+                ex.ToString();
+        }
+        finally
+        {
+            _testing = false;
+        }
+    }
+
+
+    private void BuildDiagnosis()
+    {
+        if (_mongoFound &&
+            !_identityFound)
+        {
+            _diagnosis =
+                "The account exists in MongoDB, but it does NOT exist " +
+                "in the ASP.NET Identity database on this computer. " +
+                "This is why login fails. Your application authenticates " +
+                "users through the local SQLite Identity database, not " +
+                "directly through the MongoDB userAccounts collection.";
+
+            return;
+        }
+
+
+        if (!_mongoFound &&
+            _identityFound)
+        {
+            _diagnosis =
+                "The account exists in ASP.NET Identity / SQLite, " +
+                "but no matching MongoDB profile exists. Login may work, " +
+                "but account permissions/profile information may fail.";
+
+            return;
+        }
+
+
+        if (!_mongoFound &&
+            !_identityFound)
+        {
+            _diagnosis =
+                "The email address was not found in either MongoDB or " +
+                "ASP.NET Identity on this computer.";
+
+            return;
+        }
+
+
+        if (!_idsMatch)
+        {
+            _diagnosis =
+                "Both accounts exist, but their Identity User IDs do not " +
+                "match. The MongoDB profile appears to belong to a different " +
+                "ASP.NET Identity record.";
+
+            return;
+        }
+
+
+        if (!_hashesMatch)
+        {
+            _diagnosis =
+                "Both accounts exist and their user IDs match, but their " +
+                "stored password hashes are different. Your Mongo record and " +
+                "local ASP.NET Identity record are out of sync.";
+
+            return;
+        }
+
+
+        if (string.IsNullOrEmpty(_password))
+        {
+            _diagnosis =
+                "Both records exist and appear to match. Enter the password " +
+                "to test whether ASP.NET Identity accepts it.";
+
+            return;
+        }
+
+
+        if (!_passwordValid)
+        {
+            _diagnosis =
+                "The Identity account exists, but ASP.NET Identity rejected " +
+                "the supplied password. This means the stored Identity password " +
+                "hash does not validate against that password.";
+
+            return;
+        }
+
+
+        _diagnosis =
+            "The account exists in both stores, the IDs match, the hashes " +
+            "match, and ASP.NET Identity accepts the password. If the normal " +
+            "login page still fails, the problem is in the SignInManager/login " +
+            "page logic rather than the account data.";
+    }
+
+
+    private void ResetResults()
+    {
+        _mongoFound = false;
+        _mongoIdentityUserId = null;
+        _mongoEmail = null;
+        _mongoNormalizedEmail = null;
+        _mongoAccountType = null;
+        _mongoHasPasswordHash = false;
+        _mongoPasswordHash = null;
+
+        _identityFound = false;
+        _identityUserId = null;
+        _identityEmail = null;
+        _identityNormalizedEmail = null;
+        _identityHasPasswordHash = false;
+        _identityPasswordHash = null;
+
+        _passwordValid = false;
+
+        _idsMatch = false;
+        _hashesMatch = false;
+
+        _diagnosis =
+            string.Empty;
+    }
+
+
+    private static string YesNo(
+        bool value)
+    {
+        return value
+            ? "YES"
+            : "NO";
+    }
+}

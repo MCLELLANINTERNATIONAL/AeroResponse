@@ -8,6 +8,7 @@
 
 @inject PerformanceDashboardService DashboardService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject PilotReportAccessService PilotReportAccess
 
 <PageTitle>Flight Logs | AeroResponse</PageTitle>
 
@@ -67,38 +68,44 @@ else
         <nav class="reports-tabs">
 
             <NavLink
-                href="/reports"
+                href="@PilotReportHref("/reports")"
                 Match="NavLinkMatch.All">
                 ◉ Overview
             </NavLink>
 
-            <NavLink href="/reports/flight-logs">
+            <NavLink href="@PilotReportHref("/reports/flight-logs")">
                 ✈ Flight Logs
             </NavLink>
 
-            <NavLink href="/reports/scoring">
+            <NavLink href="@PilotReportHref("/reports/scoring")">
                 ⚙ Scoring
             </NavLink>
 
-            <NavLink href="/reports/analytics">
+            <NavLink href="@PilotReportHref("/reports/analytics")">
                 ▥ Analytics
             </NavLink>
 
-            <NavLink href="/reports/feedback">
+            <NavLink href="@PilotReportHref("/reports/feedback")">
                 ✪ Feedback
             </NavLink>
 
-            <NavLink href="/reports/badges">
+            <NavLink href="@PilotReportHref("/reports/badges")">
                 🏆 Badges
             </NavLink>
-
-            <NavLink href="/reports/instructor">
-                👨‍✈ Instructor Reports
-            </NavLink>
-
-            <NavLink href="/reports/admin">
-                ▦ Admin Reports
-            </NavLink>
+        <AuthorizeView Policy="@AccountPermissions.TrainerReports">
+            <Authorized>
+                <NavLink href="/reports/instructor">
+                    👨‍✈ Instructor Reports
+                </NavLink>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Policy="@AccountPermissions.AdminPages">
+            <Authorized>
+                <NavLink href="/reports/admin">
+                    ▦ Admin Reports
+                </NavLink>
+            </Authorized>
+        </AuthorizeView>
 
         </nav>
 
@@ -323,6 +330,9 @@ else
 
 @code {
 
+    [SupplyParameterFromQuery(Name = "pilotUserId")]
+    public string? PilotUserId { get; set; }
+
     /*
      * =====================================================================
      * CURRENT PILOT
@@ -377,9 +387,10 @@ else
          * Until full authentication is implemented, use debug-pilot.
          */
         _currentUserId =
-            principal.FindFirstValue(
-                ClaimTypes.NameIdentifier)
-            ?? "debug-pilot";
+            await PilotReportAccess.ResolvePilotUserIdAsync(
+                principal,
+                PilotUserId)
+            ?? string.Empty;
 
 
         /*
@@ -491,5 +502,13 @@ else
     {
         PerformanceFeed.ReportSaved -=
             OnReportSaved;
+    }
+
+
+    private string PilotReportHref(string path)
+    {
+        return string.IsNullOrWhiteSpace(PilotUserId)
+            ? path
+            : $"{path}?pilotUserId={Uri.EscapeDataString(PilotUserId)}";
     }
 }

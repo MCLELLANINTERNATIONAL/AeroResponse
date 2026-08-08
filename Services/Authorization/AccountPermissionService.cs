@@ -14,22 +14,26 @@ public sealed class AccountPermissionService
         _userAccounts = userAccounts;
     }
 
-    public async Task<string> GetAccountTypeAsync(
-        ClaimsPrincipal principal,
-        CancellationToken cancellationToken = default)
+    public async Task<string>
+        GetAccountTypeAsync(
+            ClaimsPrincipal principal,
+            CancellationToken cancellationToken = default)
     {
         if (principal.Identity?.IsAuthenticated != true)
         {
-            return MongoUserAccount.DefaultAccountType;
+            return MongoUserAccount
+                .DefaultAccountType;
         }
 
         var userId =
             principal.FindFirstValue(
                 ClaimTypes.NameIdentifier);
 
-        if (string.IsNullOrWhiteSpace(userId))
+        if (string.IsNullOrWhiteSpace(
+                userId))
         {
-            return MongoUserAccount.DefaultAccountType;
+            return MongoUserAccount
+                .DefaultAccountType;
         }
 
         try
@@ -45,16 +49,16 @@ public sealed class AccountPermissionService
         }
         catch
         {
-            // If account information cannot be loaded,
-            // fail closed and treat the user as a guest.
-            return MongoUserAccount.DefaultAccountType;
+            return MongoUserAccount
+                .DefaultAccountType;
         }
     }
 
-    public async Task<bool> HasPermissionAsync(
-        ClaimsPrincipal principal,
-        string permission,
-        CancellationToken cancellationToken = default)
+    public async Task<bool>
+        HasPermissionAsync(
+            ClaimsPrincipal principal,
+            string permission,
+            CancellationToken cancellationToken = default)
     {
         var accountType =
             await GetAccountTypeAsync(
@@ -71,10 +75,12 @@ public sealed class AccountPermissionService
         string permission)
     {
         var normalized =
-            NormalizeAccountType(accountType);
+            NormalizeAccountType(
+                accountType);
 
         return permission switch
         {
+            // Pilot reports + simulation
             AccountPermissions.PilotPages =>
                 normalized is
                     "pilot"
@@ -84,6 +90,7 @@ public sealed class AccountPermissionService
                     or "owner_large"
                     or "admin",
 
+            // Instructor / trainer reports
             AccountPermissions.TrainerReports =>
                 normalized is
                     "trainer"
@@ -92,6 +99,7 @@ public sealed class AccountPermissionService
                     or "owner_large"
                     or "admin",
 
+            // Admin report / aircraft / scenarios
             AccountPermissions.AdminPages =>
                 normalized == "admin",
 
@@ -125,7 +133,8 @@ public sealed class AccountPermissionService
                 "admin",
 
             _ =>
-                MongoUserAccount.DefaultAccountType
+                MongoUserAccount
+                    .DefaultAccountType
         };
     }
 }

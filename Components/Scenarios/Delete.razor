@@ -1,4 +1,5 @@
 @page "/scenarios/delete/{Id:int}"
+@attribute [Authorize(Policy = AccountPermissions.AdminPages)]
 @rendermode InteractiveServer
 
 @using AeroResponse.Models

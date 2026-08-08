@@ -1,5 +1,7 @@
 ﻿@page "/simulation"
 @page "/simulation/{AircraftKey}/{ScenarioType}"
+
+@attribute [Authorize(Policy = AccountPermissions.PilotPages)]
 @rendermode InteractiveServer
 
 @using AeroResponse.Components.Cockpit
@@ -351,9 +353,7 @@ Emergency Modal
             </button>
         </aside>
 
-/* ==================================================
-Database-driven top status bar
-================================================== */
+
 
         <section class="emergency-status-bar"
             aria-label="Current emergency status">
@@ -418,9 +418,7 @@ Database-driven top status bar
             </div>
         </section>
 
-    /* ==================================================
-       Main cockpit
-    ================================================== */
+
 
     <main class="simulation-main-panel">
         <div class="simulation-content-card">
@@ -662,9 +660,6 @@ Database-driven top status bar
         </div>
     </main>
 
-    /* ==================================================
-    Database-driven emergency panel
-    ================================================== */
 
     <aside class="emergency-checklist-panel"
         aria-label="Emergency checklist">

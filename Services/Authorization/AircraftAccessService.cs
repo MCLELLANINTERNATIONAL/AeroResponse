@@ -84,43 +84,50 @@ public sealed class AircraftAccessService
                 .NormalizeAccountType(
                     account.AccountType);
 
-        // =================================================
+        // -------------------------------------------------
         // ADMIN
-        // =================================================
         //
-        // Admin can see and use every aircraft.
-        // =================================================
+        // Administrators can use every aircraft.
+        // -------------------------------------------------
 
         if (accountType == "admin")
         {
             return AircraftAccessTier.All;
         }
 
-        // =================================================
+        // -------------------------------------------------
         // LARGE COMMERCIAL OWNER
-        // =================================================
+        //
+        // Large commercial owners can use every aircraft.
+        // -------------------------------------------------
 
         if (accountType == "owner_large")
         {
-            return AircraftAccessTier.LargeCommercial;
+            return AircraftAccessTier.All;
         }
 
-        // =================================================
+        // -------------------------------------------------
         // SMALL COMMERCIAL OWNER
-        // =================================================
+        //
+        // Small commercial owners get:
+        //
+        // Cessna
+        // Gulfstream
+        // De Havilland
+        // ATR
+        // -------------------------------------------------
 
         if (accountType == "owner_small")
         {
             return AircraftAccessTier.SmallCommercial;
         }
 
-        // =================================================
-        // COMPANY MEMBERS
-        // =================================================
+        // -------------------------------------------------
+        // COMPANY MEMBER
         //
         // Pilots and trainers inherit the aircraft tier
-        // from the company owner they are attached to.
-        // =================================================
+        // of the owner/company they are linked to.
+        // -------------------------------------------------
 
         if (!string.IsNullOrWhiteSpace(
                 account.OwnerIdentityUserId))
@@ -138,7 +145,7 @@ public sealed class AircraftAccessService
 
             if (ownerType == "owner_large")
             {
-                return AircraftAccessTier.LargeCommercial;
+                return AircraftAccessTier.All;
             }
 
             if (ownerType == "owner_small")
@@ -147,15 +154,15 @@ public sealed class AircraftAccessService
             }
         }
 
-        // =================================================
-        // STANDALONE PILOT
-        // =================================================
+        // -------------------------------------------------
+        // STANDALONE PILOT / TRAINER
         //
-        // No company:
+        // No linked company.
         //
+        // Only:
         // Cessna 172
         // Gulfstream G700
-        // =================================================
+        // -------------------------------------------------
 
         return AircraftAccessTier.Basic;
     }
@@ -164,114 +171,46 @@ public sealed class AircraftAccessService
         Aircraft aircraft,
         AircraftAccessTier tier)
     {
-        if (tier == AircraftAccessTier.None)
-        {
-            return false;
-        }
-
         if (tier == AircraftAccessTier.All)
         {
             return true;
         }
 
+        if (tier == AircraftAccessTier.None)
+        {
+            return false;
+        }
+
         var name =
             aircraft.Name.Trim();
 
-        // =================================================
-        // STANDALONE PILOT
-        // =================================================
-
-        if (tier == AircraftAccessTier.Basic)
+        // Base aircraft available to pilots.
+        if (name.Equals(
+                "Cessna 172",
+                StringComparison.OrdinalIgnoreCase) ||
+            name.Equals(
+                "Gulfstream G700",
+                StringComparison.OrdinalIgnoreCase))
         {
-            return
-                name.Equals(
-                    "Cessna 172",
-                    StringComparison.OrdinalIgnoreCase)
-                ||
-                name.Equals(
-                    "Gulfstream G700",
-                    StringComparison.OrdinalIgnoreCase);
+            return true;
         }
 
-        // =================================================
-        // SMALL COMMERCIAL
-        // =================================================
-        //
-        // IMPORTANT:
-        //
-        // Small Commercial no longer inherits the
-        // standalone pilot aircraft.
-        //
-        // It gets ONLY:
-        //
-        // ATR 72-600
-        // De Havilland Dash 8 Q400
-        // =================================================
-
+        // Additional aircraft for small-commercial
+        // companies and their members.
         if (tier == AircraftAccessTier.SmallCommercial)
         {
-            return
+            if (name.Equals(
+                    "De Havilland Dash 8 Q400",
+                    StringComparison.OrdinalIgnoreCase) ||
                 name.Equals(
                     "ATR 72-600",
-                    StringComparison.OrdinalIgnoreCase)
-                ||
-                name.Equals(
-                    "De Havilland Dash 8 Q400",
-                    StringComparison.OrdinalIgnoreCase);
-        }
-
-        // =================================================
-        // LARGE COMMERCIAL
-        // =================================================
-        //
-        // Large Commercial gets only the aircraft which
-        // are unique to that tier.
-        //
-        // Put the exact Large Commercial aircraft names
-        // from your Aircraft table in this block.
-        // =================================================
-
-        if (tier == AircraftAccessTier.LargeCommercial)
-        {
-            return IsLargeCommercialAircraft(
-                name);
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
         }
 
         return false;
-    }
-
-    private static bool IsLargeCommercialAircraft(
-        string aircraftName)
-    {
-        /*
-         * Replace / extend these names with the exact
-         * Large Commercial-only aircraft currently in your
-         * database.
-         *
-         * Do NOT include:
-         *
-         * Cessna 172
-         * Gulfstream G700
-         * ATR 72-600
-         * De Havilland Dash 8 Q400
-         */
-
-        return
-            aircraftName.Equals(
-                "Boeing 737",
-                StringComparison.OrdinalIgnoreCase)
-            ||
-            aircraftName.Equals(
-                "Airbus A320",
-                StringComparison.OrdinalIgnoreCase)
-            ||
-            aircraftName.Equals(
-                "Boeing 787",
-                StringComparison.OrdinalIgnoreCase)
-            ||
-            aircraftName.Equals(
-                "Airbus A350",
-                StringComparison.OrdinalIgnoreCase);
     }
 }
 
@@ -280,6 +219,5 @@ public enum AircraftAccessTier
     None,
     Basic,
     SmallCommercial,
-    LargeCommercial,
     All
 }

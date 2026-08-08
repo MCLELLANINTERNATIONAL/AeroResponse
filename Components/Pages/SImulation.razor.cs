@@ -1125,7 +1125,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                                         Emergency Trigger                                             |
      ===================================================================================================== */
 
-    private void EvaluateEmergencyTrigger(
+    private async void EvaluateEmergencyTrigger(
         string? pilotAction = null)
     {
         if (emergencyTriggered ||
@@ -1164,6 +1164,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             return;
         }
 
+        await JSRuntime.InvokeVoidAsync(
+            "aeroEmergencyAudio.playWarning");
         _emergencyModalHasBeenShown = true;
         _showEmergencyModal = true;
     }

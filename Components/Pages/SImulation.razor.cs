@@ -3035,7 +3035,28 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 $"Bank set to {cockpitState.Bank:0} degrees.",
                 "flight.attitude");
         }
+        // =========================================================
+        // BACKUP HYDRAULIC SYSTEM
+        // =========================================================
 
+        if (ContainsAny(
+                command,
+                "activate backup hydraulic system",
+                "activate backup hydraulics",
+                "enable backup hydraulic system",
+                "enable backup hydraulics",
+                "turn on backup hydraulic system",
+                "turn on backup hydraulics",
+                "backup hydraulic system on",
+                "backup hydraulics on"))
+        {
+            ActivateBackupHydraulicSystem();
+
+            return CockpitCommandResult.Success(
+                "Activate Backup Hydraulic System",
+                "Backup hydraulic system activated.",
+                "hydraulic.backup");
+        }
 
         // =========================================================
         // RUDDER
@@ -3460,31 +3481,47 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         // =========================================================
         // OXYGEN MASKS & SENDING RADIO CODES
         // =========================================================
-        if (command.Contains("oxygen mask") &&
-            ContainsAny(
-            command,
-            "oxygen",
-            "masks",
-            "mask"))
-        {
-            await HandlePilotActionAsync("Oxygen Masks");
-        }
-        if (command.Contains("transmit code") &&
-            ContainsAny(
+        if (ContainsAny(
                 command,
-                "radio",
-                "transit",
-                "code"))
+                "oxygen mask",
+                "oxygen masks",
+                "put on oxygen mask",
+                "put on oxygen masks",
+                "don oxygen mask",
+                "don oxygen masks",
+                "masks on"))
         {
-            if(cockpitState.RadioTransmitting)
-            {
-                await HandlePilotActionAsync("Set Emergency Code");
-            }
-            else
+            await HandlePilotActionAsync(
+                "Oxygen Masks");
+
+            return CockpitCommandResult.Success(
+                "Oxygen Masks",
+                "Oxygen masks deployed.",
+                "cabin.oxygen");
+        }
+        if (ContainsAny(
+                command,
+                "transmit code",
+                "transmit emergency code",
+                "set emergency code",
+                "send emergency code",
+                "squawk 7700",
+                "transponder 7700",
+                "set transponder 7700"))
+        {
+            if (!cockpitState.RadioPowered)
             {
                 return CockpitCommandResult.Failure(
-                    $"Radio Must be turned on to transmit emergency code.");
+                    "Radio must be powered on before transmitting the emergency code.");
             }
+
+            await HandlePilotActionAsync(
+                "Set Emergency Code");
+
+            return CockpitCommandResult.Success(
+                "Set Emergency Code",
+                "Emergency code 7700 transmitted.",
+                "communication.transponder");
         }
         // =========================================================
         // UNKNOWN COMMAND
@@ -3631,7 +3668,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             cockpitLayout.DefaultState;
 
         cockpitState.Altitude =
-            12000;
+            10500;
 
         cockpitState.Airspeed =
             defaults.CruiseAirspeed;

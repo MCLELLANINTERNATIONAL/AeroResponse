@@ -2585,7 +2585,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         string command)
     {
         /*
-        * Use the LAST number in the command.*
+        * Use the LAST number in the command.
+        *
         * Example:
         * "engine 1 power 100"
         *
@@ -2790,7 +2791,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             {
                 /*
                 * If this is a single-engine aircraft,
-                * "set throttle to 100" is unambiguous.*/
+                * "set throttle to 100" is unambiguous.
+                */
                 if (cockpitState.Engines.Count == 1)
                 {
                     var onlyEngine =
@@ -3030,7 +3032,28 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 $"Bank set to {cockpitState.Bank:0} degrees.",
                 "flight.attitude");
         }
+        // =========================================================
+        // BACKUP HYDRAULIC SYSTEM
+        // =========================================================
 
+        if (ContainsAny(
+                command,
+                "activate backup hydraulic system",
+                "activate backup hydraulics",
+                "enable backup hydraulic system",
+                "enable backup hydraulics",
+                "turn on backup hydraulic system",
+                "turn on backup hydraulics",
+                "backup hydraulic system on",
+                "backup hydraulics on"))
+        {
+            ActivateBackupHydraulicSystem();
+
+            return CockpitCommandResult.Success(
+                "Activate Backup Hydraulic System",
+                "Backup hydraulic system activated.",
+                "hydraulic.backup");
+        }
 
         // =========================================================
         // RUDDER
@@ -3291,7 +3314,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
             /*
             * Check disconnect before connect because
-            * "disconnect" contains "connect".*/
+            * "disconnect" contains "connect".
+            */
             if (command.Contains("disconnect"))
             {
                 SetSatelliteConnection(
@@ -3335,7 +3359,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 }
 
                 /*
-                * Keep using your existing communication behavior.*/
+                * Keep using your existing communication behavior.
+                */
                 await HandleSatelliteEmergency();
 
                 return CockpitCommandResult.Success(
@@ -3403,7 +3428,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         {
             /*
             * If an engine number was spoken, target that
-            * specific engine.*
+            * specific engine.
+            *
             * "Activate fire suppression engine 2"
             */
             if (engineNumber.HasValue)
@@ -3431,7 +3457,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             * "Activate engine fire suppression"
             *
             * Behave exactly like the physical button,
-            * which uses GetAffectedEngine().*/
+            * which uses GetAffectedEngine().
+            */
             await ActivateFireSuppression();
 
             var affectedEngine =
@@ -3447,7 +3474,52 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                     ? "engine.fire-suppression"
                     : $"engine.{affectedEngine.Number}.fire-suppression");
         }
+        
+        // =========================================================
+        // OXYGEN MASKS & SENDING RADIO CODES
+        // =========================================================
+        if (ContainsAny(
+                command,
+                "oxygen mask",
+                "oxygen masks",
+                "put on oxygen mask",
+                "put on oxygen masks",
+                "don oxygen mask",
+                "don oxygen masks",
+                "masks on"))
+        {
+            await HandlePilotActionAsync(
+                "Oxygen Masks");
 
+            return CockpitCommandResult.Success(
+                "Oxygen Masks",
+                "Oxygen masks deployed.",
+                "cabin.oxygen");
+        }
+        if (ContainsAny(
+                command,
+                "transmit code",
+                "transmit emergency code",
+                "set emergency code",
+                "send emergency code",
+                "squawk 7700",
+                "transponder 7700",
+                "set transponder 7700"))
+        {
+            if (!cockpitState.RadioPowered)
+            {
+                return CockpitCommandResult.Failure(
+                    "Radio must be powered on before transmitting the emergency code.");
+            }
+
+            await HandlePilotActionAsync(
+                "Set Emergency Code");
+
+            return CockpitCommandResult.Success(
+                "Set Emergency Code",
+                "Emergency code 7700 transmitted.",
+                "communication.transponder");
+        }
         // =========================================================
         // UNKNOWN COMMAND
         // =========================================================
@@ -3455,7 +3527,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         return CockpitCommandResult.Failure(
             $"Cockpit command '{transcript}' was not recognized.");
     }
-
+    
     /* ===================================================================================================
      |                                     Focus Commands and Helpers                                      |
      ==================================================================================================== */

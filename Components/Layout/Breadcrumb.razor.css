@@ -1,0 +1,117 @@
+.breadcrumb-shell {
+    width: 100%;
+    background: #f4f8ff;
+    border-bottom: 1px solid rgba(15, 58, 96, 0.10);
+}
+
+.breadcrumb-container {
+    width: min(100% - 2rem, 1320px);
+    margin: 0 auto;
+    padding: 0.8rem 0;
+}
+
+.breadcrumb-list {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.breadcrumb-item {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    color: #52677d;
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+/* Remove Bootstrap's automatic breadcrumb "/" separator */
+.breadcrumb-item + .breadcrumb-item::before {
+    content: none !important;
+    display: none !important;
+    padding: 0 !important;
+}
+
+.breadcrumb-separator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.8rem;
+    margin-right: 0.8rem;
+    color: #9aaabd;
+    font-size: 0.62rem;
+}
+
+.breadcrumb-link,
+.breadcrumb-current {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    min-width: 0;
+}
+
+.breadcrumb-link i,
+.breadcrumb-current i {
+    flex: 0 0 auto;
+    font-size: 0.82rem;
+    margin-right: 0.5rem;
+}
+
+.breadcrumb-link {
+    color: #1a70ad;
+    text-decoration: none;
+
+    transition:
+        color 0.18s ease,
+        opacity 0.18s ease;
+}
+
+.breadcrumb-link:hover,
+.breadcrumb-link:focus-visible {
+    color: #154d77;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.breadcrumb-current {
+    color: #1e3449;
+    font-weight: 700;
+}
+
+.breadcrumb-link span,
+.breadcrumb-current span {
+    overflow-wrap: anywhere;
+}
+
+.breadcrumb-link i,
+.breadcrumb-current i {
+    flex: 0 0 auto;
+    font-size: 0.82rem;
+}
+
+
+/* ================================================================
+    MOBILE
+   ================================================================ */
+
+@media (max-width: 700px) {
+
+    .breadcrumb-container {
+        width: min(100% - 1.25rem, 1320px);
+        padding: 0.68rem 0;
+    }
+
+    .breadcrumb-item {
+        font-size: 0.8rem;
+    }
+
+    .breadcrumb-separator {
+        margin: 0 0.48rem;
+        font-size: 0.55rem;
+    }
+}

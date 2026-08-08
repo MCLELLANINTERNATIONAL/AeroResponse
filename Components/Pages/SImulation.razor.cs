@@ -3665,7 +3665,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             cockpitLayout.DefaultState;
 
         cockpitState.Altitude =
-            12000;
+            10500;
 
         cockpitState.Airspeed =
             defaults.CruiseAirspeed;

@@ -51,10 +51,11 @@ public sealed class PilotReportAccessService
                 .NormalizeAccountType(
                     currentAccount.AccountType);
 
-        // =====================================================
+        // =================================================
         // PILOT
-        // A pilot can only view their own reports.
-        // =====================================================
+        //
+        // A pilot can only see their own reports.
+        // =================================================
 
         if (accountType == "pilot")
         {
@@ -72,10 +73,11 @@ public sealed class PilotReportAccessService
                 : null;
         }
 
-        // =====================================================
+        // =================================================
         // ADMIN
-        // An admin can view the report of any pilot.
-        // =====================================================
+        //
+        // Admin can inspect any pilot.
+        // =================================================
 
         if (accountType == "admin")
         {
@@ -96,28 +98,28 @@ public sealed class PilotReportAccessService
                 return null;
             }
 
-            var requestedAccountType =
+            var requestedType =
                 AccountPermissionService
                     .NormalizeAccountType(
                         requestedAccount.AccountType);
 
-            return requestedAccountType == "pilot"
+            return requestedType == "pilot"
                 ? requestedAccount.IdentityUserId
                 : null;
         }
 
-        // =====================================================
-        // OWNER / TRAINER
+        // =================================================
+        // TRAINER / OWNER
         //
-        // Owners can inspect pilots linked to themselves.
-        // Trainers can inspect pilots linked to the same owner.
-        // =====================================================
+        // Work out which company owner controls access.
+        // =================================================
 
         string? ownerIdentityUserId =
             accountType switch
             {
                 "trainer" =>
-                    currentAccount.OwnerIdentityUserId,
+                    currentAccount
+                        .OwnerIdentityUserId,
 
                 "owner" =>
                     currentUserId,
@@ -138,6 +140,10 @@ public sealed class PilotReportAccessService
             return null;
         }
 
+        // =================================================
+        // LOAD ALL MEMBERS OF THAT COMPANY
+        // =================================================
+
         var linkedMembers =
             await _userAccounts
                 .FindLinkedMembersAsync(
@@ -147,14 +153,21 @@ public sealed class PilotReportAccessService
         var linkedPilots =
             linkedMembers
                 .Where(member =>
-                    string.Equals(
-                        member.AccountType,
-                        "pilot",
-                        StringComparison.OrdinalIgnoreCase))
+                    AccountPermissionService
+                        .NormalizeAccountType(
+                            member.AccountType)
+                    == "pilot")
+                .Where(member =>
+                    !string.IsNullOrWhiteSpace(
+                        member.IdentityUserId))
                 .ToArray();
 
-        // No requested pilot:
-        // use the first linked pilot if available.
+        // =================================================
+        // NO PILOT REQUESTED
+        //
+        // Default to first linked pilot.
+        // =================================================
+
         if (string.IsNullOrWhiteSpace(
                 requestedPilotUserId))
         {
@@ -163,7 +176,13 @@ public sealed class PilotReportAccessService
                 ?.IdentityUserId;
         }
 
-        var pilotIsLinked =
+        // =================================================
+        // SPECIFIC PILOT REQUESTED
+        //
+        // Ensure that pilot belongs to this company.
+        // =================================================
+
+        var allowed =
             linkedPilots.Any(
                 pilot =>
                     string.Equals(
@@ -171,7 +190,7 @@ public sealed class PilotReportAccessService
                         requestedPilotUserId,
                         StringComparison.OrdinalIgnoreCase));
 
-        return pilotIsLinked
+        return allowed
             ? requestedPilotUserId
             : null;
     }

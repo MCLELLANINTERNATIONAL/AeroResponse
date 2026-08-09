@@ -21,6 +21,9 @@ using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Required so Blazor static web assets are available in Production/Render
+builder.WebHost.UseStaticWebAssets();
+
 // =========================================================
 // RAZOR COMPONENTS
 // =========================================================

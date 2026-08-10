@@ -7,41 +7,35 @@
 
 @if (!SelectorOnly || _canSelectPilot)
 {
-<div class="pilot-selector-shell">
-    <span class="pilot-avatar" aria-hidden="true">✈</span>
+    <div class="pilot-selector-shell">
+        <span class="pilot-avatar" aria-hidden="true">✈</span>
 
-    @if (_canSelectPilot)
-    {
-        <label class="pilot-select-wrap" aria-label="Select pilot report">
-            <span class="pilot-select-label">Pilot</span>
-            <select class="pilot-select"
-                    value="@SelectedPilotUserId"
-                    @onchange="ChangePilotAsync">
-                @foreach (var pilot in _pilots)
-                {
-                    <option value="@pilot.IdentityUserId">@pilot.DisplayName</option>
-                }
-            </select>
-            <small>Professional Pilot</small>
-        </label>
-    }
-    else
-    {
-        <div class="pilot-copy">
-            <strong>@PilotName</strong>
-            <small>Professional Pilot</small>
-        </div>
-    }
-</div>
+        @if (_canSelectPilot)
+        {
+            <label class="pilot-select-wrap" aria-label="Select pilot report">
+                <span class="pilot-select-label">Pilot</span>
+                <select class="pilot-select"
+                        value="@_selectedPilotUserId"
+                        @onchange="ChangePilotAsync">
+                    @foreach (var pilot in _pilots)
+                    {
+                        <option value="@pilot.IdentityUserId">@pilot.DisplayName</option>
+                    }
+                </select>
+                <small>Professional Pilot</small>
+            </label>
+        }
+        else
+        {
+            <div class="pilot-copy">
+                <strong>@_selectedPilotName</strong>
+                <small>Professional Pilot</small>
+            </div>
+        }
+    </div>
 }
 
 @code {
-    [Parameter]
-    public string PilotName { get; set; } = "Pilot";
-
-    [Parameter]
-    public string? SelectedPilotUserId { get; set; }
-
     [Parameter]
     public bool SelectorOnly { get; set; }
 
@@ -49,11 +43,16 @@
         Array.Empty<AeroResponse.Data.Mongo.Accounts.CompanyMemberSummary>();
 
     private bool _canSelectPilot;
+    private string? _selectedPilotUserId;
+    private string _selectedPilotName = "Pilot";
 
     protected override async Task OnInitializedAsync()
     {
-        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var context = await PilotReportAccess.GetPilotSelectionContextAsync(authenticationState.User);
+        var authenticationState =
+            await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        var context =
+            await PilotReportAccess.GetPilotSelectionContextAsync(authenticationState.User);
 
         if (context is null)
         {
@@ -62,23 +61,91 @@
 
         _canSelectPilot = context.CanSelectPilot;
         _pilots = context.Pilots;
+
+        if (!_canSelectPilot)
+        {
+            _selectedPilotUserId = context.CurrentUserId;
+            _selectedPilotName = context.CurrentUserDisplayName;
+            return;
+        }
+
+        var requestedPilotUserId = GetPilotUserIdFromQuery();
+
+        _selectedPilotUserId =
+            await PilotReportAccess.ResolvePilotUserIdAsync(
+                authenticationState.User,
+                requestedPilotUserId);
+
+        var selectedPilot = _pilots.FirstOrDefault(
+            pilot => string.Equals(
+                pilot.IdentityUserId,
+                _selectedPilotUserId,
+                StringComparison.OrdinalIgnoreCase));
+
+        if (selectedPilot is not null)
+        {
+            _selectedPilotName = selectedPilot.DisplayName;
+        }
+    }
+
+    private string? GetPilotUserIdFromQuery()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = uri.Query;
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return null;
+        }
+
+        foreach (var pair in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = pair.Split('=', 2);
+            var key = Uri.UnescapeDataString(parts[0].Replace('+', ' '));
+
+            if (!string.Equals(key, "pilotUserId", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return parts.Length > 1
+                ? Uri.UnescapeDataString(parts[1].Replace('+', ' '))
+                : null;
+        }
+
+        return null;
     }
 
     private Task ChangePilotAsync(ChangeEventArgs args)
     {
         var pilotUserId = args.Value?.ToString();
+
         if (string.IsNullOrWhiteSpace(pilotUserId) ||
-            string.Equals(pilotUserId, SelectedPilotUserId, StringComparison.OrdinalIgnoreCase))
+            string.Equals(
+                pilotUserId,
+                _selectedPilotUserId,
+                StringComparison.OrdinalIgnoreCase))
         {
             return Task.CompletedTask;
+        }
+
+        _selectedPilotUserId = pilotUserId;
+
+        var selectedPilot = _pilots.FirstOrDefault(
+            pilot => string.Equals(
+                pilot.IdentityUserId,
+                pilotUserId,
+                StringComparison.OrdinalIgnoreCase));
+
+        if (selectedPilot is not null)
+        {
+            _selectedPilotName = selectedPilot.DisplayName;
         }
 
         var targetUri = NavigationManager.GetUriWithQueryParameter(
             "pilotUserId",
             pilotUserId);
 
-        // Force a reload so every report page immediately resolves and loads
-        // the newly selected pilot using its existing access checks.
         NavigationManager.NavigateTo(targetUri, forceLoad: true);
         return Task.CompletedTask;
     }

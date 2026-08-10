@@ -81,6 +81,7 @@ public sealed class PilotReportAccessService
         {
             return new PilotReportSelectionContext(
                 currentUserId,
+                GetDisplayName(currentAccount),
                 accountType,
                 Array.Empty<CompanyMemberSummary>());
         }
@@ -88,7 +89,11 @@ public sealed class PilotReportAccessService
         if (accountType == "admin")
         {
             var allPilots = await _userAccounts.FindAllPilotsAsync(cancellationToken);
-            return new PilotReportSelectionContext(currentUserId, accountType, allPilots);
+            return new PilotReportSelectionContext(
+                currentUserId,
+                GetDisplayName(currentAccount),
+                accountType,
+                allPilots);
         }
 
         string? ownerIdentityUserId = accountType switch
@@ -104,6 +109,7 @@ public sealed class PilotReportAccessService
         {
             return new PilotReportSelectionContext(
                 currentUserId,
+                GetDisplayName(currentAccount),
                 accountType,
                 Array.Empty<CompanyMemberSummary>());
         }
@@ -120,12 +126,29 @@ public sealed class PilotReportAccessService
             .ThenBy(member => member.FirstName)
             .ToArray();
 
-        return new PilotReportSelectionContext(currentUserId, accountType, linkedPilots);
+        return new PilotReportSelectionContext(
+            currentUserId,
+            GetDisplayName(currentAccount),
+            accountType,
+            linkedPilots);
+    }
+
+    private static string GetDisplayName(MongoUserAccount account)
+    {
+        var fullName = string.Join(
+            " ",
+            new[] { account.FirstName?.Trim(), account.Surname?.Trim() }
+                .Where(value => !string.IsNullOrWhiteSpace(value)));
+
+        return string.IsNullOrWhiteSpace(fullName)
+            ? account.Email
+            : fullName;
     }
 }
 
 public sealed record PilotReportSelectionContext(
     string CurrentUserId,
+    string CurrentUserDisplayName,
     string AccountType,
     IReadOnlyList<CompanyMemberSummary> Pilots)
 {

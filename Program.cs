@@ -6,6 +6,7 @@ using AeroResponse.Data.Mongo.Accounts;
 using AeroResponse.Data.Mongo.Memberships;
 using AeroResponse.Data.Mongo.Payments;
 using AeroResponse.Data.Mongo.Referrals;
+using AeroResponse.Data.Mongo.Reports;
 using AeroResponse.Hubs;
 using AeroResponse.Repositories;
 using AeroResponse.Services;
@@ -198,6 +199,9 @@ builder.Services.AddSingleton<
 builder.Services.AddSingleton<
     MongoOwnerReferralCodeRepository>();
 
+builder.Services.AddSingleton<
+    MongoPilotReportRepository>();
+
 // =========================================================
 // ASP.NET CORE IDENTITY
 // =========================================================
@@ -337,10 +341,18 @@ using (var scope =
             .GetRequiredService<
                 MongoOwnerReferralCodeRepository>();
 
+    var pilotReportRepository =
+        scope.ServiceProvider
+            .GetRequiredService<
+                MongoPilotReportRepository>();
+
     await userAccountRepository
         .EnsureIndexesAsync();
 
     await referralCodeRepository
+        .EnsureIndexesAsync();
+
+    await pilotReportRepository
         .EnsureIndexesAsync();
 
     await userAccountRepository

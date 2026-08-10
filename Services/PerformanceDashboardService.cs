@@ -1,22 +1,50 @@
 using AeroResponse.Data;
+using AeroResponse.Data.Mongo.Reports;
 using AeroResponse.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace AeroResponse.Services;
 
-public sealed class PerformanceDashboardService(ApplicationDbContext context)
+public sealed class PerformanceDashboardService(
+    ApplicationDbContext context,
+    MongoPilotReportRepository mongoReports)
 {
     public async Task<PerformanceDashboardVm> GetDashboardAsync(string userId)
     {
-        var reports = await context.SimulationReports.AsNoTracking()
-            .Where(x => x.UserId == userId)
-            .OrderBy(x => x.CreatedAt)
-            .ToListAsync();
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
 
-        var achievements = await context.PilotAchievements.AsNoTracking()
-            .Where(x => x.UserId == userId)
-            .OrderBy(x => x.EarnedAt)
-            .ToListAsync();
+        // MongoDB is the primary read source. SQL remains the secondary copy and
+        // is only consulted to detect/backfill historical rows that pre-date the
+        // MongoDB report store. The view model is always built from MongoDB.
+        var reports = (await mongoReports.GetReportsForUserAsync(userId)).ToList();
+        var sqlReportCount = await context.SimulationReports.AsNoTracking()
+            .CountAsync(x => x.UserId == userId);
+
+        if (sqlReportCount > reports.Count)
+        {
+            var sqlReports = await context.SimulationReports.AsNoTracking()
+                .Where(x => x.UserId == userId)
+                .OrderBy(x => x.CreatedAt)
+                .ToListAsync();
+
+            await mongoReports.UpsertReportsAsync(sqlReports);
+            reports = (await mongoReports.GetReportsForUserAsync(userId)).ToList();
+        }
+
+        var achievements = (await mongoReports.GetAchievementsForUserAsync(userId)).ToList();
+        var sqlAchievementCount = await context.PilotAchievements.AsNoTracking()
+            .CountAsync(x => x.UserId == userId);
+
+        if (sqlAchievementCount > achievements.Count)
+        {
+            var sqlAchievements = await context.PilotAchievements.AsNoTracking()
+                .Where(x => x.UserId == userId)
+                .OrderBy(x => x.EarnedAt)
+                .ToListAsync();
+
+            await mongoReports.UpsertAchievementsAsync(sqlAchievements);
+            achievements = (await mongoReports.GetAchievementsForUserAsync(userId)).ToList();
+        }
 
         var latest = reports.LastOrDefault();
         var recent = reports.TakeLast(10).ToList();
@@ -57,6 +85,17 @@ public sealed class PerformanceDashboardService(ApplicationDbContext context)
         await context.SaveChangesAsync();
 
         await UnlockAchievementsAsync(report);
+
+        // Keep the relational record as the durable secondary copy, while all
+        // report reads use MongoDB first. Upserts make retries safe.
+        await mongoReports.UpsertReportAsync(report);
+
+        var achievements = await context.PilotAchievements.AsNoTracking()
+            .Where(x => x.UserId == report.UserId)
+            .OrderBy(x => x.EarnedAt)
+            .ToListAsync();
+
+        await mongoReports.UpsertAchievementsAsync(achievements);
 
         PerformanceFeed.Notify(report.UserId);
 

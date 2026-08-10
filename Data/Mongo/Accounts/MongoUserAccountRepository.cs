@@ -110,6 +110,29 @@ public sealed class MongoUserAccountRepository
     }
 
     public async Task<IReadOnlyList<CompanyMemberSummary>>
+        FindAllPilotsAsync(
+            CancellationToken cancellationToken = default)
+    {
+        var accounts =
+            await _accounts
+                .Find(account => account.AccountType == "pilot")
+                .SortBy(account => account.Surname)
+                .ThenBy(account => account.FirstName)
+                .ToListAsync(cancellationToken);
+
+        return accounts
+            .Select(account =>
+                new CompanyMemberSummary(
+                    account.IdentityUserId,
+                    account.FirstName,
+                    account.Surname,
+                    account.Email,
+                    account.AccountType,
+                    account.CreatedAtUtc))
+            .ToArray();
+    }
+
+    public async Task<IReadOnlyList<CompanyMemberSummary>>
         FindLinkedMembersAsync(
             string ownerIdentityUserId,
             CancellationToken cancellationToken = default)

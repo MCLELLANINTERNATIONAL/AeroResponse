@@ -1,0 +1,104 @@
+.pilot-selector-shell {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 250px;
+}
+
+.pilot-avatar {
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #8dace6;
+    color: #071a31;
+    font-size: 1.45rem;
+}
+
+.pilot-copy,
+.pilot-select-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.pilot-copy strong,
+.pilot-select-label {
+    color: #8dace6;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+.pilot-copy small,
+.pilot-select-wrap small {
+    color: #ffffff;
+    font-size: 0.95rem;
+    margin-top: 3px;
+}
+
+.pilot-select-wrap {
+    position: relative;
+}
+
+.pilot-select-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.pilot-select {
+    appearance: none;
+    min-width: 205px;
+    max-width: 320px;
+    padding: 5px 34px 5px 10px;
+    border: 1px solid rgba(141, 172, 230, 0.7);
+    border-radius: 8px;
+    background-color: rgba(9, 47, 88, 0.34);
+    background-image:
+        linear-gradient(45deg, transparent 50%, #8dace6 50%),
+        linear-gradient(135deg, #8dace6 50%, transparent 50%);
+    background-position:
+        calc(100% - 15px) 50%,
+        calc(100% - 10px) 50%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    color: #8dace6;
+    font: inherit;
+    font-size: 1.35rem;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+}
+
+.pilot-select:hover,
+.pilot-select:focus-visible {
+    border-color: #b8cff6;
+    background-color: rgba(9, 47, 88, 0.55);
+}
+
+.pilot-select option {
+    color: #172b46;
+    background: #ffffff;
+    font-size: 1rem;
+}
+
+@media (max-width: 760px) {
+    .pilot-selector-shell {
+        min-width: 0;
+    }
+
+    .pilot-select {
+        min-width: 170px;
+        max-width: 220px;
+        font-size: 1.05rem;
+    }
+}

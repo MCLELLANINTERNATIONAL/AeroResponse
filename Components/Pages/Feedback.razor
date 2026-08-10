@@ -30,6 +30,8 @@ else if (_dashboard?.Latest is null)
             Complete a practice scenario to receive performance feedback.
         </p>
 
+        <PilotReportSelector />
+
     </div>
 }
 else
@@ -52,25 +54,7 @@ else
 
             </div>
 
-            <div class="pilot-chip">
-
-                <span class="pilot-avatar">
-                    ✈
-                </span>
-
-                <div>
-
-                    <strong>
-                        @report.PilotName
-                    </strong>
-
-                    <small>
-                        Professional Pilot
-                    </small>
-
-                </div>
-
-            </div>
+            <PilotReportSelector />
 
         </header>
 

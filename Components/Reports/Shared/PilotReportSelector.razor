@@ -1,0 +1,85 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using AeroResponse.Services.Authorization
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject PilotReportAccessService PilotReportAccess
+@inject NavigationManager NavigationManager
+
+@if (!SelectorOnly || _canSelectPilot)
+{
+<div class="pilot-selector-shell">
+    <span class="pilot-avatar" aria-hidden="true">✈</span>
+
+    @if (_canSelectPilot)
+    {
+        <label class="pilot-select-wrap" aria-label="Select pilot report">
+            <span class="pilot-select-label">Pilot</span>
+            <select class="pilot-select"
+                    value="@SelectedPilotUserId"
+                    @onchange="ChangePilotAsync">
+                @foreach (var pilot in _pilots)
+                {
+                    <option value="@pilot.IdentityUserId">@pilot.DisplayName</option>
+                }
+            </select>
+            <small>Professional Pilot</small>
+        </label>
+    }
+    else
+    {
+        <div class="pilot-copy">
+            <strong>@PilotName</strong>
+            <small>Professional Pilot</small>
+        </div>
+    }
+</div>
+}
+
+@code {
+    [Parameter]
+    public string PilotName { get; set; } = "Pilot";
+
+    [Parameter]
+    public string? SelectedPilotUserId { get; set; }
+
+    [Parameter]
+    public bool SelectorOnly { get; set; }
+
+    private IReadOnlyList<AeroResponse.Data.Mongo.Accounts.CompanyMemberSummary> _pilots =
+        Array.Empty<AeroResponse.Data.Mongo.Accounts.CompanyMemberSummary>();
+
+    private bool _canSelectPilot;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var context = await PilotReportAccess.GetPilotSelectionContextAsync(authenticationState.User);
+
+        if (context is null)
+        {
+            return;
+        }
+
+        _canSelectPilot = context.CanSelectPilot;
+        _pilots = context.Pilots;
+    }
+
+    private Task ChangePilotAsync(ChangeEventArgs args)
+    {
+        var pilotUserId = args.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(pilotUserId) ||
+            string.Equals(pilotUserId, SelectedPilotUserId, StringComparison.OrdinalIgnoreCase))
+        {
+            return Task.CompletedTask;
+        }
+
+        var targetUri = NavigationManager.GetUriWithQueryParameter(
+            "pilotUserId",
+            pilotUserId);
+
+        // Force a reload so every report page immediately resolves and loads
+        // the newly selected pilot using its existing access checks.
+        NavigationManager.NavigateTo(targetUri, forceLoad: true);
+        return Task.CompletedTask;
+    }
+}

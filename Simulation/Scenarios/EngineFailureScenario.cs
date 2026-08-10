@@ -129,7 +129,7 @@ public class EngineFailureScenario : ISimulationScenario
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 4,
-                Instruction = "Declare emergency",
+                Instruction = "Declare emergency with air traffic control. (Satellite Power On, Satelite Connect, Declare Emergency)",
                 CorrectAction = "Declare Emergency",
                 ValidationType =
                     ProcedureValidationType.PilotAction,

@@ -83,7 +83,7 @@ public class CabinDepressurizationScenario
                 StepOrder = 3,
 
                 Instruction =
-                    "Declare emergency with air traffic control",
+                    "Declare emergency with air traffic control. (Satellite Power On, Satelite Connect, Declare Emergency)",
 
                 CorrectAction =
                     "Declare Emergency",

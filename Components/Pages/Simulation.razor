@@ -551,7 +551,7 @@ Emergency Modal
                                         <button type="button"
                                                 class="btn btn-warning"
                                                 @onclick="DebugSetCruiseAltitude">
-                                            DEBUG: Jump to 12,000 ft
+                                            QuickStart: Jump to 10,500 ft
                                         </button>
                                     </div>
                                     <button type="button"
@@ -624,10 +624,15 @@ Emergency Modal
                     </div>
                     <!-- EMERGENCY -->
                     <div class="control-card" id="emergency-feedback">
-
-                        <FireDetection
-                            Status="@GetFireStatus()"
-                            Label="@GetFireLabel()" />
+                        <div id="fireDetectionPanel"
+                            tabindex="0"
+                            role="button"
+                            aria-label="Inspect fire detection panel"
+                            @onfocus="IdentifySmokeOrFireAsync">
+                            <FireDetection
+                                Status="@GetFireStatus()"
+                                Label="@GetFireLabel()" />
+                        </div>
 
                         <button type="button"
                                 class="btn btn-danger fire-suppression-control"

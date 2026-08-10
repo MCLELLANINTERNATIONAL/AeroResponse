@@ -58,7 +58,7 @@ public class WindShearScenario : ISimulationScenario
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 1,
-                Instruction = "Apply maximum available thrust",
+                Instruction = "Apply maximum available thrust. (All Engine Power above 95%)",
                 CorrectAction = "Maximum Thrust",
                 ValidationType =
                     ProcedureValidationType.CockpitState,
@@ -71,7 +71,7 @@ public class WindShearScenario : ISimulationScenario
                 AircraftType = aircraft.Name,
                 StepOrder = 2,
                 Instruction =
-                    "Establish and maintain the windshear escape pitch",
+                    "Establish and maintain the windshear escape pitch. (A pitch between 10 and 18 degrees)",
                 CorrectAction = "Maintain Pitch",
                 ValidationType =
                     ProcedureValidationType.CockpitState,
@@ -84,7 +84,7 @@ public class WindShearScenario : ISimulationScenario
                 AircraftType = aircraft.Name,
                 StepOrder = 3,
                 Instruction =
-                    "Maintain the current aircraft configuration until clear",
+                    "Maintain the current aircraft configuration until clear. (Have Engine Power greater than 95% and maintain a pitch between 10 and 18 degrees.)",
                 CorrectAction = "Hold Configuration",
                 ValidationType =
                     ProcedureValidationType.CockpitState,
@@ -97,7 +97,7 @@ public class WindShearScenario : ISimulationScenario
                 AircraftType = aircraft.Name,
                 StepOrder = 4,
                 Instruction =
-                    "Monitor vertical speed and altitude trend",
+                    "Monitor vertical speed and altitude trend. (Maintain a Verticle Speed Greater than 300 while airborne)",
                 CorrectAction = "Monitor Flight Path",
                 ValidationType =
                     ProcedureValidationType.CockpitState,
@@ -109,7 +109,7 @@ public class WindShearScenario : ISimulationScenario
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 5,
-                Instruction = "Advise ATC when workload permits",
+                Instruction = "Declare emergency with air traffic control. (Satellite Power On, Satelite Connect, Declare Emergency)",
                 CorrectAction = "Declare Emergency",
                 ValidationType =
                     ProcedureValidationType.PilotAction,

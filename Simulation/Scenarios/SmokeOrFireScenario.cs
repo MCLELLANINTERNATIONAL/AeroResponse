@@ -57,7 +57,7 @@ public class SmokeOrFireScenario : ISimulationScenario
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 2,
-                Instruction = "Identify the smoke or fire source",
+                Instruction = "Identify the smoke or fire source. (Interact with the fire detection Readout Light)",
                 CorrectAction = "Identify Smoke Source",
                 ValidationType =
                     ProcedureValidationType.PilotAction,
@@ -70,7 +70,7 @@ public class SmokeOrFireScenario : ISimulationScenario
                 AircraftType = aircraft.Name,
                 StepOrder = 3,
                 Instruction =
-                    "Isolate the affected system or activate appropriate suppression",
+                    "Isolate the affected system by activating cabin fire suppression",
                 CorrectAction = "Activate Fire Suppression",
                 ValidationType =
                     ProcedureValidationType.CockpitState,
@@ -82,7 +82,7 @@ public class SmokeOrFireScenario : ISimulationScenario
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 4,
-                Instruction = "Declare emergency",
+                Instruction = "Declare emergency with air traffic control. (Satellite Power On, Satelite Connect, Declare Emergency)",
                 CorrectAction = "Declare Emergency",
                 ValidationType =
                     ProcedureValidationType.PilotAction,
@@ -94,7 +94,7 @@ public class SmokeOrFireScenario : ISimulationScenario
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 5,
-                Instruction = "Prepare for an immediate landing",
+                Instruction = "Prepare for an immediate landing. (Reduce pitch and vertical speed to a descending position)",
                 CorrectAction = "Prepare Landing",
                 ValidationType =
                     ProcedureValidationType.CockpitState,

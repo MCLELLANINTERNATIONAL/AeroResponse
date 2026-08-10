@@ -75,7 +75,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
     private bool simulationStarted = false;
     private bool isOnGround = false;
     private bool _showEmergencyModal;
-
+    public bool _quickStartUsed = false;
 
     private EmergencyScenario
         selectedScenarioRecord = default!;
@@ -2277,11 +2277,11 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         if (nextStep is not null &&
             string.Equals(
                 nextStep.CorrectAction,
-                "Transmit Emergency",
+                "Set Emergency Code",
                 StringComparison.OrdinalIgnoreCase))
         {
             await HandlePilotActionAsync(
-                "Transmit Emergency");
+                "Set Emergency Code");
         }
 
         await Task.Delay(750);
@@ -2435,6 +2435,25 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
         await InvokeAsync(
             StateHasChanged);
+    }
+    private async Task IdentifySmokeOrFireAsync(){
+        if (!emergencyTriggered)
+        {
+            return;
+        }
+
+        var nextStep =
+            GetNextIncompleteProcedureStep();
+
+        if (nextStep is null ||
+            !string.Equals(
+                nextStep.CorrectAction,
+                "Identify Smoke Source",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+        await HandlePilotActionAsync("Identify Smoke Source");
     }
     private void ActivateBackupHydraulicSystem()
     {
@@ -2659,8 +2678,8 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         // ENGINE READING FOCUS
         // =========================================================
 
-        if (command.Contains("focus") &&
-            command.Contains("engine"))
+        if (command.Contains("engine") &&
+            ContainsAny("focus", "assess", "record", "view", "check", "confirm"))
         {
             if (!engineNumber.HasValue)
             {
@@ -3675,6 +3694,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         cockpitState.Pitch = 0;
         cockpitState.Bank = 0;
         cockpitState.FlightPhase = "Cruise";
+        _quickStartUsed = true;
 
         foreach (var engine in cockpitState.Engines)
         {

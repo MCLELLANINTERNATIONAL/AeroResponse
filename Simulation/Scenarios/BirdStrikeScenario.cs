@@ -70,17 +70,17 @@ public class BirdStrikeScenario : ISimulationScenario
     {
         var engineAssessmentInstruction =
             aircraft.EngineCount == 1
-                ? "Assess engine performance"
-                : $"Assess engine {AffectedEngineNumber} performance";
+                ? "Check Engine Status. (Interact with the Engine Power Instrument/Readout)"
+                : $"Assess engine {AffectedEngineNumber} performanc (Interact with the Engine Power Instrument/Readout)";
 
         var throttleInstruction =
             aircraft.EngineCount == 1
-                ? "Reduce engine power if operation is unstable"
-                : $"Reduce engine {AffectedEngineNumber} thrust if unstable";
+                ? "Reduce engine power."
+                : $"Reduce engine {AffectedEngineNumber} thrust.";
 
         var landingInstruction =
             aircraft.EngineCount == 1
-                ? "Prepare for an immediate return or forced landing"
+                ? "Prepare for an immediate return or forced landing. (Reduce pitch and increase vertical speed past 300 hundreds of feet per minute, to a descending position)"
                 : "Return or divert for inspection";
 
         return
@@ -123,7 +123,7 @@ public class BirdStrikeScenario : ISimulationScenario
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
                 StepOrder = 4,
-                Instruction = "Declare emergency",
+                Instruction = "Declare emergency with air traffic control. (Satellite Power On, Satelite Connect, Declare Emergency)",
                 CorrectAction = "Declare Emergency",
                 ValidationType = ProcedureValidationType.PilotAction,
                 IsSafetyCritical = false

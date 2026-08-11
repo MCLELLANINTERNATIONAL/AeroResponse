@@ -109,26 +109,49 @@ public sealed class MongoUserAccountRepository
                 cancellationToken);
     }
 
+    /// <summary>
+    /// Returns the number of registered user accounts
+    /// stored in MongoDB.
+    /// </summary>
+    public Task<long> CountAllAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return _accounts.CountDocumentsAsync(
+            Builders<MongoUserAccount>
+                .Filter
+                .Empty,
+            cancellationToken:
+                cancellationToken);
+    }
+
     public async Task<IReadOnlyList<CompanyMemberSummary>>
         FindAllPilotsAsync(
             CancellationToken cancellationToken = default)
     {
         var accounts =
             await _accounts
-                .Find(account => account.AccountType == "pilot")
-                .SortBy(account => account.Surname)
-                .ThenBy(account => account.FirstName)
-                .ToListAsync(cancellationToken);
+                .Find(
+                    account =>
+                        account.AccountType == "pilot")
+                .SortBy(
+                    account =>
+                        account.Surname)
+                .ThenBy(
+                    account =>
+                        account.FirstName)
+                .ToListAsync(
+                    cancellationToken);
 
         return accounts
-            .Select(account =>
-                new CompanyMemberSummary(
-                    account.IdentityUserId,
-                    account.FirstName,
-                    account.Surname,
-                    account.Email,
-                    account.AccountType,
-                    account.CreatedAtUtc))
+            .Select(
+                account =>
+                    new CompanyMemberSummary(
+                        account.IdentityUserId,
+                        account.FirstName,
+                        account.Surname,
+                        account.Email,
+                        account.AccountType,
+                        account.CreatedAtUtc))
             .ToArray();
     }
 
@@ -792,11 +815,13 @@ public sealed class MongoUserAccountRepository
                 .Set(
                     account =>
                         account.LinkedPilotCount,
-                    ConvertCountToInt(pilotCount))
+                    ConvertCountToInt(
+                        pilotCount))
                 .Set(
                     account =>
                         account.LinkedTrainerCount,
-                    ConvertCountToInt(trainerCount));
+                    ConvertCountToInt(
+                        trainerCount));
 
         await _accounts.UpdateOneAsync(
             filter,

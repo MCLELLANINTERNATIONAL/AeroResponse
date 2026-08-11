@@ -1,9 +1,14 @@
 using AeroResponse.Data;
+using AeroResponse.Data.Mongo.Accounts;
+using AeroResponse.Data.Mongo.Reports;
 using Microsoft.EntityFrameworkCore;
 
 namespace AeroResponse.Services;
 
-public sealed class AdminDashboardService(ApplicationDbContext context)
+public sealed class AdminDashboardService(
+    ApplicationDbContext context,
+    MongoPilotReportRepository pilotReportRepository,
+    MongoUserAccountRepository userAccountRepository)
 {
     public async Task<AdminDashboardVm> GetDashboardAsync(
         int days = 30,
@@ -16,26 +21,16 @@ public sealed class AdminDashboardService(ApplicationDbContext context)
                 ? toUtc.AddDays(-days)
                 : null;
 
-        var reportQuery = context.SimulationReports
-            .AsNoTracking()
-            .AsQueryable();
+        // Training/reporting data lives in MongoDB. Keep the SQL context only
+        // for the scenario catalogue, which is still managed by EF Core.
+        var reports = await pilotReportRepository.GetReportsAsync(
+            fromUtc,
+            toUtc,
+            cancellationToken);
 
-        if (fromUtc.HasValue)
-        {
-            reportQuery = reportQuery.Where(
-                report =>
-                    report.CompletedAt >= fromUtc.Value);
-        }
-
-        var reports = await reportQuery
-            .OrderByDescending(
-                report => report.CompletedAt)
-            .ToListAsync(cancellationToken);
-
-        var totalRegisteredUsers =
-            await context.Users
-                .AsNoTracking()
-                .CountAsync(cancellationToken);
+        var totalRegisteredUsers = checked(
+            (int)await userAccountRepository.CountAllAsync(
+                cancellationToken));
 
         var totalScenarios =
             await context.EmergencyScenarios

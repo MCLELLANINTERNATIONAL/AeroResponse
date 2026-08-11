@@ -1,0 +1,54 @@
+.fire-detection-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.fire-circle {
+    stroke: #d8d8d8;
+    stroke-width: 4;
+    transition:
+        fill 0.2s ease,
+        stroke 0.2s ease;
+}
+
+.engine-status {
+    max-height: 300px;
+}
+
+.fire-circle.normal {
+    fill: #2e7d32;
+}
+
+.fire-circle.caution {
+    fill: #f9a825;
+}
+
+.fire-circle.warning {
+    fill: #d32f2f;
+}
+
+.fire-circle.suppressed {
+    fill: #616161;
+}
+
+.fire-circle.extinguished {
+    fill: #424242;
+}
+
+.fire-main-text,
+.fire-subtext {
+    font-family: Arial, sans-serif;
+    fill: white;
+}
+
+.fire-main-text {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.fire-subtext {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}

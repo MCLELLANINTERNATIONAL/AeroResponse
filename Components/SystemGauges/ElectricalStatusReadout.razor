@@ -1,0 +1,66 @@
+<div class="engine-status">
+
+    <svg viewBox="0 0 300 300"
+         class="fire-detection-svg"
+         role="img"
+         aria-label="@GetStatusText(Status)">
+
+        <text x="75"
+              y="30"
+              text-anchor="middle"
+              class="fire-subtext">
+            @DisplayLabel
+        </text>
+
+        <circle cx="75"
+                cy="65"
+                r="27"
+                class="@GetCircleClass(Status)" />
+
+        <text x="75"
+              y="107"
+              text-anchor="middle"
+              class="fire-subtext">
+            @GetStatusText(Status)
+        </text>
+
+    </svg>
+
+</div>
+
+@code {
+    [Parameter]
+    public bool Status { get; set; } = false;
+    private int engineNumber;
+
+    [Parameter]
+    public int EngineNumber
+    {
+        get => engineNumber;
+        set => engineNumber = value;
+    }
+
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    private string DisplayLabel =>
+        !string.IsNullOrWhiteSpace(Label)
+            ? Label
+            : engineNumber > 0
+                ? $"Engine {engineNumber} Status"
+                : "Engine Status";
+
+    private static string GetCircleClass(
+        bool status) => status switch
+    {
+        true => "fire-circle normal",
+        false => "fire-circle warning"
+    };
+
+    private static string GetStatusText(
+        bool status) => status switch
+    {
+        true => "NORMAL",
+        false => "WARNING!"
+    };
+}

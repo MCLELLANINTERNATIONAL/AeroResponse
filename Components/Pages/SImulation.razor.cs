@@ -897,26 +897,68 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
         return "Cruise";
     }
-
-    private void UpdatePerformance(double elapsedSeconds)
+    private double GetEffectivePowerPercentage()
     {
-        var engineCount = cockpitState.Engines.Count;
+        var engines =
+            cockpitState.Engines;
+
+        if (engines.Count == 0)
+        {
+            return 0;
+        }
+
+        var totalEffectivePower =
+            engines.Sum(
+                engine =>
+                    engine.Running &&
+                    !engine.FuelCutoff
+                        ? Math.Clamp(
+                            engine.Power,
+                            0,
+                            100)
+                        : 0);
+
+        var maximumAvailablePower =
+            engines.Count * 100.0;
+
+        return Math.Clamp(
+            totalEffectivePower /
+            maximumAvailablePower,
+            0,
+            1);
+    }
+    private void UpdatePerformance(
+        double elapsedSeconds)
+    {
+        var engineCount =
+            cockpitState.Engines.Count;
+
         if (engineCount == 0)
         {
             return;
         }
-        if (cockpitState.Altitude <= 0)
-        {
-            isOnGround = true;
-        }
-        else
-        {
-            isOnGround = false;
-        }
 
-        var averagePower = cockpitState.Engines.Average(engine => engine.Power);
-        var powerPct = Math.Clamp(averagePower / 100.0, 0, 1);
-        var pitchPct = Math.Clamp(cockpitState.Pitch / 15.0, -1, 1);
+        isOnGround =
+            cockpitState.Altitude <= 0;
+
+        var runningEngineCount =
+            cockpitState.Engines.Count(
+                engine =>
+                    engine.Running &&
+                    !engine.FuelCutoff);
+
+        var runningEngineRatio =
+            (double)runningEngineCount /
+            engineCount;
+
+        var powerPct =
+            GetEffectivePowerPercentage();
+
+        var pitchPct =
+            Math.Clamp(
+                cockpitState.Pitch / 15.0,
+                -1,
+                1);
 
         var baseTargetSpeed =
             GetTargetAirspeed();
@@ -933,33 +975,56 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 0,
                 cockpitLayout.Airspeed.MaximumSpeed);
 
-        var rudderInput = cockpitState.RudderPosition; // -1 to 1
-        var brakeDiff = (cockpitState.BrakePressure) / 100.0;
-        var yawInput = rudderInput + brakeDiff;
+        var rudderInput =
+            cockpitState.RudderPosition;
 
-        var turnRate = 0.0;
+        var brakeDiff =
+            cockpitState.BrakePressure /
+            100.0;
+
+        var yawInput =
+            rudderInput +
+            brakeDiff;
+
+        var turnRate =
+            0.0;
 
         if (isOnGround)
         {
-            turnRate = yawInput * (cockpitState.Airspeed < 20 ? 6 : 2);
+            turnRate =
+                yawInput *
+                (cockpitState.Airspeed < 20
+                    ? 6
+                    : 2);
         }
         else
         {
-            var bankFactor = cockpitState.Bank / 30.0;
-            turnRate = (bankFactor * 3.0) + (rudderInput * 1.5);
+            var bankFactor =
+                cockpitState.Bank /
+                30.0;
+
+            turnRate =
+                (bankFactor * 3.0) +
+                (rudderInput * 1.5);
         }
 
-        cockpitState.TurnRate = turnRate;
-        cockpitState.Heading = NormalizeHeading(cockpitState.Heading + turnRate * elapsedSeconds);
+        cockpitState.TurnRate =
+            turnRate;
 
-        if (cockpitState.Altitude <= 0 && cockpitState.Airspeed <= 1)
+        cockpitState.Heading =
+            NormalizeHeading(
+                cockpitState.Heading +
+                turnRate *
+                elapsedSeconds);
+
+        if (cockpitState.Altitude <= 0 &&
+            cockpitState.Airspeed <= 1 &&
+            runningEngineCount == 0)
         {
-            if (cockpitState.Engines.All(e => e.Power <= 5))
-            {
-                cockpitState.Airspeed = 0;
-                cockpitState.VerticalSpeed = 0;
-                return;
-            }
+            cockpitState.Airspeed = 0;
+            cockpitState.VerticalSpeed = 0;
+
+            return;
         }
 
         cockpitState.Airspeed =
@@ -969,19 +1034,31 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 GetAirspeedResponseRate() *
                 elapsedSeconds);
 
+        var engineOutPenalty =
+            (1.0 - runningEngineRatio) *
+            900;
+
         var vsiTarget =
             (pitchPct * 1200) +
-            ((powerPct - 0.5) * 500) -
-            ((cockpitState.Airspeed - targetAirspeed) * 2);
+            ((powerPct - 0.5) * 900) -
+            engineOutPenalty -
+            ((cockpitState.Airspeed -
+            targetAirspeed) * 2);
 
-        cockpitState.VerticalSpeed = MoveToward(
-            cockpitState.VerticalSpeed,
-            vsiTarget,
-            300 * elapsedSeconds);
+        cockpitState.VerticalSpeed =
+            MoveToward(
+                cockpitState.VerticalSpeed,
+                vsiTarget,
+                300 *
+                elapsedSeconds);
 
-        cockpitState.Altitude = Math.Max(
-            0,
-            cockpitState.Altitude + cockpitState.VerticalSpeed / 60.0 * elapsedSeconds);
+        cockpitState.Altitude =
+            Math.Max(
+                0,
+                cockpitState.Altitude +
+                cockpitState.VerticalSpeed /
+                60.0 *
+                elapsedSeconds);
     }
     private double GetAirspeedResponseRate()
     {
@@ -2214,9 +2291,11 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         EngineState engine,
         double power)
     {
-        SetEnginePower(
-            engine,
-            power);
+        if(engine.Running || !emergencyTriggered) {
+            SetEnginePower(
+                engine,
+                power);
+        }
     }
 
     private void HandleFuelControlChanged(
@@ -2455,6 +2534,25 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         }
         await HandlePilotActionAsync("Identify Smoke Source");
     }
+    private async Task IdentifyEngineFailureAsync(){
+        if (!emergencyTriggered)
+        {
+            return;
+        }
+
+        var nextStep =
+            GetNextIncompleteProcedureStep();
+
+        if (nextStep is null ||
+            !string.Equals(
+                nextStep.CorrectAction,
+                "Confirm Engine Failure",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+        await HandlePilotActionAsync("Confirm Engine Failure");
+    }
     private void ActivateBackupHydraulicSystem()
     {
         cockpitState.HydraulicPumpOnline = true;
@@ -2471,31 +2569,29 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             return 0;
         }
 
-        var averagePower =
-            cockpitState.Engines
-                .Average(engine => engine.Power);
+        var effectivePower =
+            GetEffectivePowerPercentage();
 
-        if (averagePower <= 0)
+        if (effectivePower <= 0)
         {
             return 0;
         }
 
         /*
-        * Our aircraft definitions use roughly 75%
-        * engine power as normal cruise power.*
-        * Therefore:
-        *
-        * 75% throttle -> aircraft cruise speed
-        * 100% throttle -> above cruise speed
+        * Aircraft definitions treat roughly 75%
+        * total installed power as normal cruise power.
         */
         var powerRatio =
-            averagePower / 75.0;
+            effectivePower /
+            0.75;
 
         var maximumTarget =
-            selectedAircraft.CruiseSpeed * 1.20;
+            selectedAircraft.CruiseSpeed *
+            1.20;
 
         return Math.Clamp(
-            selectedAircraft.CruiseSpeed * powerRatio,
+            selectedAircraft.CruiseSpeed *
+            powerRatio,
             0,
             maximumTarget);
     }
@@ -2678,13 +2774,17 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         // ENGINE READING FOCUS
         // =========================================================
 
-        if (command.Contains("engine") &&
-            ContainsAny("focus", "assess", "record", "view", "check", "confirm"))
+        if (ContainsAny(command, "focus", "assess", "record", "view", "check", "confirm") &&
+            command.Contains("engine"))
         {
             if (!engineNumber.HasValue)
             {
-                return CockpitCommandResult.Failure(
-                    "Specify which engine to focus.");
+                if(cockpitState.Engines.Count > 1)
+                {
+                    return CockpitCommandResult.Failure(
+                    "Specify which engine to focus.");   
+                }
+                engineNumber = 1;
             }
 
             var engine =
@@ -2793,6 +2893,13 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 * "Increase all engines to 100 percent"
                 * "All throttles 100 percent"
                 */
+                foreach(var engine in cockpitState.Engines)
+                {
+                    if(!engine.Running && emergencyTriggered)
+                    {
+                        return CockpitCommandResult.Failure("Engines not fully operational.");
+                    }
+                }
                 SetAllEnginePower(
                     requestedPower);
 
@@ -2832,9 +2939,16 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                     }
                     else
                     {
-                        SetEnginePower(
-                            onlyEngine,
-                            requestedPower);
+                        if(!onlyEngine.Running && emergencyTriggered)
+                        {
+                            return CockpitCommandResult.Failure("Engine not operational");
+                        }
+                        else
+                        {
+                            SetEnginePower(
+                                onlyEngine,
+                                requestedPower);
+                        }
                     }
 
                     return CockpitCommandResult.Success(
@@ -2863,6 +2977,10 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                     $"on this aircraft.");
             }
 
+            if(!selectedEngine.Running && emergencyTriggered)
+            {
+                return CockpitCommandResult.Failure("Engines not fully operational.");
+            }
 
             /*
             * Relative:
@@ -3295,6 +3413,32 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             }
         }
 
+        if (ContainsAny(
+                command,
+                "transmit code",
+                "transmit emergency code",
+                "set emergency code",
+                "send emergency code",
+                "squawk 7700",
+                "transponder 7700",
+                "set transponder 7700",
+                "send transponder code 7700"))
+        {
+            if (!cockpitState.RadioPowered)
+            {
+                return CockpitCommandResult.Failure(
+                    "Radio must be powered on before transmitting the emergency code.");
+            }
+
+            await HandlePilotActionAsync(
+                "Set Emergency Code");
+
+            return CockpitCommandResult.Success(
+                "Set Emergency Code",
+                "Emergency code 7700 transmitted.",
+                "communication.transponder");
+        }
+
 
         // =========================================================
         // SATELLITE PHONE
@@ -3348,7 +3492,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                     "communication.satellite.connection");
             }
 
-            if (command.Contains("connect"))
+            if (ContainsAny(command, "connect", "link"))
             {
                 if (!cockpitState.SatellitePhonePowered)
                 {
@@ -3364,7 +3508,6 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                     "Satellite connection established.",
                     "communication.satellite.connection");
             }
-
             if (command.Contains("emergency"))
             {
                 if (!cockpitState.SatellitePhonePowered)
@@ -3390,6 +3533,30 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                     "communication.satellite.emergency");
             }
         }
+        if (ContainsAny(command, "declare emergency", "send emergency"))
+            {
+                if (!cockpitState.SatellitePhonePowered)
+                {
+                    return CockpitCommandResult.Failure(
+                        "Satellite phone must be powered on first.");
+                }
+
+                if (!cockpitState.SatellitePhoneConnected)
+                {
+                    return CockpitCommandResult.Failure(
+                        "Satellite phone must be connected first.");
+                }
+
+                /*
+                * Keep using your existing communication behavior.
+                */
+                await HandleSatelliteEmergency();
+
+                return CockpitCommandResult.Success(
+                    "Satellite Emergency",
+                    "Satellite emergency message transmitted.",
+                    "communication.satellite.emergency");
+            }
 
         // =========================================================
         // BACKUP ELECTRICAL POWER
@@ -3398,9 +3565,13 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         if (ContainsAny(
                 command,
                 "activate backup power",
+                "activate backup electrical power",
                 "backup power",
+                "backup electrical power",
                 "emergency power",
-                "switch to backup power"))
+                "emergency electrical power",
+                "switch to backup power",
+                "switch to backup electrical power"))
         {
             await HandlePilotActionAsync(
                 "Activate Backup Power");
@@ -3422,7 +3593,12 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 "shed electrical load",
                 "shed non-essential load",
                 "shed non essential load",
+                "reduce non-essential load",
                 "reduce power load",
+                "shed non-essential electrical load",
+                "shed non essential electrical load",
+                "reduce non-essential electrical load",
+                "reduce power electrical load",
                 "disconnect non-essential systems",
                 "disconnect non essential systems"))
         {
@@ -3497,7 +3673,7 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
         }
         
         // =========================================================
-        // OXYGEN MASKS & SENDING RADIO CODES
+        // OXYGEN MASKS
         // =========================================================
         if (ContainsAny(
                 command,
@@ -3517,29 +3693,13 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 "Oxygen masks deployed.",
                 "cabin.oxygen");
         }
-        if (ContainsAny(
-                command,
-                "transmit code",
-                "transmit emergency code",
-                "set emergency code",
-                "send emergency code",
-                "squawk 7700",
-                "transponder 7700",
-                "set transponder 7700"))
+        // =========================================================
+        // PREPARE LANDING
+        // =========================================================
+        if (ContainsAny(command, "prepare landing", "crash landing", "immediate landing", "prepare to land", "start landing"))
         {
-            if (!cockpitState.RadioPowered)
-            {
-                return CockpitCommandResult.Failure(
-                    "Radio must be powered on before transmitting the emergency code.");
-            }
-
-            await HandlePilotActionAsync(
-                "Set Emergency Code");
-
-            return CockpitCommandResult.Success(
-                "Set Emergency Code",
-                "Emergency code 7700 transmitted.",
-                "communication.transponder");
+            await HandlePilotActionAsync("Prepare Landing");
+            return CockpitCommandResult.Success("Prepare Landing", "Landing Procedure Initialized.", "aircraft.landing");
         }
         // =========================================================
         // UNKNOWN COMMAND

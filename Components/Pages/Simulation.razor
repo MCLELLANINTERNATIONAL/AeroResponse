@@ -633,6 +633,18 @@ Emergency Modal
                                 Status="@GetFireStatus()"
                                 Label="@GetFireLabel()" />
                         </div>
+                        <div id="electricalStatusPanel"
+                            tabindex="0"
+                            role="button"
+                            aria-label="Inspect fire detection panel"
+                            @onfocus="IdentifyEngineFailureAsync">
+                            @foreach (var engine in cockpitState.Engines)
+                            {
+                                <ElectricalStatusReadout
+                                    Status="@engine.Running"
+                                    EngineNumber="@engine.Number" />
+                            }
+                        </div>
 
                         <button type="button"
                                 class="btn btn-danger fire-suppression-control"

@@ -100,22 +100,7 @@ public class EngineFailureScenario : ISimulationScenario
                 StepOrder = 2,
                 Instruction =
                     aircraft.EngineCount >= 2
-                        ? $"Confirm engine {failedEngineNumber} failure"
-                        : "Confirm total engine power loss",
-                CorrectAction = "Confirm Engine Failure",
-                ValidationType =
-                    ProcedureValidationType.PilotAction,
-                IsSafetyCritical = true
-            },
-
-            new ScenarioProcedureStep
-            {
-                EmergencyScenarioId = scenarioId,
-                AircraftType = aircraft.Name,
-                StepOrder = 3,
-                Instruction =
-                    aircraft.EngineCount >= 2
-                        ? $"Shut down engine {failedEngineNumber}"
+                        ? $"Shut down failed engine."
                         : "Secure the failed engine and fuel source",
                 CorrectAction =
                     $"Engine Shutdown {failedEngineNumber}",
@@ -128,7 +113,7 @@ public class EngineFailureScenario : ISimulationScenario
             {
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
-                StepOrder = 4,
+                StepOrder = 3,
                 Instruction = "Declare emergency with air traffic control. (Satellite Power On, Satelite Connect, Declare Emergency)",
                 CorrectAction = "Declare Emergency",
                 ValidationType =
@@ -140,7 +125,7 @@ public class EngineFailureScenario : ISimulationScenario
             {
                 EmergencyScenarioId = scenarioId,
                 AircraftType = aircraft.Name,
-                StepOrder = 5,
+                StepOrder = 4,
                 Instruction =
                     aircraft.EngineCount >= 2
                         ? "Prepare for a single-engine landing"
@@ -239,17 +224,17 @@ public class EngineFailureScenario : ISimulationScenario
                 Math.Abs(state.Pitch) <= 8 &&
                 state.Airspeed >= 55,
 
-            3 =>
+            2 =>
                 failedEngine is not null &&
                 failedEngine.Power <= 0 &&
                 !failedEngine.Running &&
                 failedEngine.FuelCutoff,
             
-            5 =>
-                state.Engines.Count <= 1 &&
-                state.VerticalSpeed < 0 &&
-                state.Airspeed >= 60 &&
-                state.Airspeed <= 80,
+            4 =>
+                state.FlightPhase is
+                    "Descent" or
+                    "Approach" or
+                    "Landing",
 
             _ => false
         };

@@ -510,9 +510,7 @@ else
                                     </small>
 
                                     <small>
-                                        @activity.CompletedAt
-                                            .ToLocalTime()
-                                            .ToString("dd MMM yyyy, HH:mm")
+                                        @(activity.CompletedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"))
                                     </small>
 
                                 </div>
@@ -560,7 +558,7 @@ else
         _dashboard?.FromUtc is null
             ? "All recorded platform activity"
             : $"{_dashboard.FromUtc.Value.ToLocalTime():dd MMM yyyy} " +
-              $"to {_dashboard.ToUtc.ToLocalTime():dd MMM yyyy}";
+            $"to {_dashboard.ToUtc.ToLocalTime():dd MMM yyyy}";
 
     protected override async Task OnInitializedAsync()
     {

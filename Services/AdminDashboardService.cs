@@ -1,154 +1,280 @@
 using AeroResponse.Data;
-using AeroResponse.Data.Mongo.Accounts;
-using AeroResponse.Data.Mongo.Reports;
 using Microsoft.EntityFrameworkCore;
 
 namespace AeroResponse.Services;
 
 public sealed class AdminDashboardService(
-    ApplicationDbContext context,
-    MongoPilotReportRepository pilotReportRepository,
-    MongoUserAccountRepository userAccountRepository)
+    ApplicationDbContext context)
 {
     public async Task<AdminDashboardVm> GetDashboardAsync(
         int days = 30,
         CancellationToken cancellationToken = default)
     {
-        var toUtc = DateTime.UtcNow;
+        var toUtc =
+            DateTime.UtcNow;
 
         DateTime? fromUtc =
             days > 0
                 ? toUtc.AddDays(-days)
                 : null;
 
-        // Training/reporting data lives in MongoDB. Keep the SQL context only
-        // for the scenario catalogue, which is still managed by EF Core.
-        var reports = await pilotReportRepository.GetReportsAsync(
-            fromUtc,
-            toUtc,
-            cancellationToken);
+        // =========================================================
+        // LOAD SIMULATION REPORTS
+        // =========================================================
 
-        var totalRegisteredUsers = checked(
-            (int)await userAccountRepository.CountAllAsync(
-                cancellationToken));
+        var reportQuery =
+            context.SimulationReports
+                .AsNoTracking()
+                .AsQueryable();
+
+        if (fromUtc.HasValue)
+        {
+            reportQuery =
+                reportQuery.Where(
+                    report =>
+                        report.CompletedAt >=
+                        fromUtc.Value);
+        }
+
+        var reports =
+            await reportQuery
+                .OrderByDescending(
+                    report =>
+                        report.CompletedAt)
+                .ToListAsync(
+                    cancellationToken);
+
+        // =========================================================
+        // RESOLVE REGISTERED PILOT NAMES
+        // =========================================================
+        //
+        // Historical SimulationReports may contain an email address
+        // in PilotName.
+        //
+        // The UserId on each report is the reliable link back to the
+        // registered ASP.NET Identity ApplicationUser.
+        //
+        // Therefore the Admin Dashboard displays ApplicationUser.FullName
+        // instead of relying on the old PilotName saved in the report.
+        // =========================================================
+
+        var reportUserIds =
+            reports
+                .Select(report =>
+                    report.UserId)
+                .Where(userId =>
+                    !string.IsNullOrWhiteSpace(
+                        userId))
+                .Distinct(
+                    StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+        var registeredUsers =
+            await context.Users
+                .AsNoTracking()
+                .Where(user =>
+                    reportUserIds.Contains(
+                        user.Id))
+                .ToListAsync(
+                    cancellationToken);
+
+        var pilotNameLookup =
+            registeredUsers
+                .ToDictionary(
+                    user =>
+                        user.Id,
+
+                    user =>
+                        !string.IsNullOrWhiteSpace(
+                            user.FullName)
+                            ? user.FullName
+                            : !string.IsNullOrWhiteSpace(
+                                user.UserName)
+                                ? user.UserName
+                                : "Unknown pilot",
+
+                    StringComparer.OrdinalIgnoreCase);
+
+        // =========================================================
+        // PLATFORM TOTALS
+        // =========================================================
+
+        var totalRegisteredUsers =
+            await context.Users
+                .AsNoTracking()
+                .CountAsync(
+                    cancellationToken);
 
         var totalScenarios =
             await context.EmergencyScenarios
                 .AsNoTracking()
-                .CountAsync(cancellationToken);
+                .CountAsync(
+                    cancellationToken);
 
         var activeScenarios =
             await context.EmergencyScenarios
                 .AsNoTracking()
                 .CountAsync(
-                    scenario => scenario.IsActive,
+                    scenario =>
+                        scenario.IsActive,
                     cancellationToken);
 
         var passCount =
-            reports.Count(report => report.Passed);
+            reports.Count(
+                report =>
+                    report.Passed);
 
         var failCount =
-            reports.Count - passCount;
+            reports.Count -
+            passCount;
 
-        var scenarioPopularity = reports
-            .GroupBy(report =>
-                string.IsNullOrWhiteSpace(
-                    report.ScenarioName)
-                    ? "Unknown scenario"
-                    : report.ScenarioName)
-            .Select(group =>
-                new ScenarioSummaryVm
-                {
-                    ScenarioName = group.Key,
+        // =========================================================
+        // SCENARIO POPULARITY / EFFECTIVENESS
+        // =========================================================
 
-                    Attempts = group.Count(),
-
-                    Passes = group.Count(
-                        report => report.Passed),
-
-                    AverageScore =
-                        (int)Math.Round(
-                            group.Average(
-                                report =>
-                                    report.OverallScore))
-                })
-            .OrderByDescending(
-                item => item.Attempts)
-            .ThenBy(
-                item => item.ScenarioName)
-            .ToList();
-
-        var usageByDay = reports
-            .GroupBy(
-                report =>
-                    report.CompletedAt.Date)
-            .Select(group =>
-                new DailyUsageVm
-                {
-                    Date = group.Key,
-
-                    Attempts = group.Count(),
-
-                    UniquePilots = group
-                        .Select(
-                            report =>
-                                report.UserId)
-                        .Where(
-                            userId =>
-                                !string.IsNullOrWhiteSpace(
-                                    userId))
-                        .Distinct()
-                        .Count()
-                })
-            .OrderBy(item => item.Date)
-            .ToList();
-
-        var recentActivity = reports
-            .Take(8)
-            .Select(report =>
-                new RecentTrainingVm
-                {
-                    PilotName =
+        var scenarioPopularity =
+            reports
+                .GroupBy(
+                    report =>
                         string.IsNullOrWhiteSpace(
-                            report.PilotName)
-                            ? "Unknown pilot"
-                            : report.PilotName,
+                            report.ScenarioName)
+                            ? "Unknown scenario"
+                            : report.ScenarioName)
+                .Select(
+                    group =>
+                        new ScenarioSummaryVm
+                        {
+                            ScenarioName =
+                                group.Key,
 
-                    ScenarioName =
-                        report.ScenarioName,
+                            Attempts =
+                                group.Count(),
 
-                    AircraftName =
-                        report.AircraftName,
+                            Passes =
+                                group.Count(
+                                    report =>
+                                        report.Passed),
 
-                    CompletedAt =
-                        report.CompletedAt,
+                            AverageScore =
+                                (int)Math.Round(
+                                    group.Average(
+                                        report =>
+                                            report.OverallScore))
+                        })
+                .OrderByDescending(
+                    item =>
+                        item.Attempts)
+                .ThenBy(
+                    item =>
+                        item.ScenarioName)
+                .ToList();
 
-                    OverallScore =
-                        report.OverallScore,
+        // =========================================================
+        // DAILY PLATFORM USAGE
+        // =========================================================
 
-                    Passed =
-                        report.Passed
-                })
-            .ToList();
+        var usageByDay =
+            reports
+                .GroupBy(
+                    report =>
+                        report.CompletedAt.Date)
+                .Select(
+                    group =>
+                        new DailyUsageVm
+                        {
+                            Date =
+                                group.Key,
+
+                            Attempts =
+                                group.Count(),
+
+                            UniquePilots =
+                                group
+                                    .Select(
+                                        report =>
+                                            report.UserId)
+                                    .Where(
+                                        userId =>
+                                            !string.IsNullOrWhiteSpace(
+                                                userId))
+                                    .Distinct()
+                                    .Count()
+                        })
+                .OrderBy(
+                    item =>
+                        item.Date)
+                .ToList();
+
+        // =========================================================
+        // RECENT PLATFORM ACTIVITY
+        // =========================================================
+
+        var recentActivity =
+            reports
+                .Take(8)
+                .Select(
+                    report =>
+                    {
+                        var resolvedPilotName =
+                            pilotNameLookup.TryGetValue(
+                                report.UserId,
+                                out var registeredPilotName)
+                                ? registeredPilotName
+                                : ResolveFallbackPilotName(
+                                    report.PilotName);
+
+                        return new RecentTrainingVm
+                        {
+                            PilotName =
+                                resolvedPilotName,
+
+                            ScenarioName =
+                                report.ScenarioName,
+
+                            AircraftName =
+                                report.AircraftName,
+
+                            CompletedAt =
+                                report.CompletedAt,
+
+                            OverallScore =
+                                report.OverallScore,
+
+                            Passed =
+                                report.Passed
+                        };
+                    })
+                .ToList();
+
+        // =========================================================
+        // BUILD DASHBOARD
+        // =========================================================
 
         return new AdminDashboardVm
         {
-            FromUtc = fromUtc,
-            ToUtc = toUtc,
-            SelectedDays = days,
+            FromUtc =
+                fromUtc,
+
+            ToUtc =
+                toUtc,
+
+            SelectedDays =
+                days,
 
             TotalRegisteredUsers =
                 totalRegisteredUsers,
 
-            ActivePilots = reports
-                .Select(
-                    report => report.UserId)
-                .Where(
-                    userId =>
-                        !string.IsNullOrWhiteSpace(
-                            userId))
-                .Distinct()
-                .Count(),
+            ActivePilots =
+                reports
+                    .Select(
+                        report =>
+                            report.UserId)
+                    .Where(
+                        userId =>
+                            !string.IsNullOrWhiteSpace(
+                                userId))
+                    .Distinct()
+                    .Count(),
 
             TotalAttempts =
                 reports.Count,
@@ -171,7 +297,8 @@ public sealed class AdminDashboardService(
                 reports.Count == 0
                     ? 0
                     : (int)Math.Round(
-                        passCount * 100d /
+                        passCount *
+                        100d /
                         reports.Count),
 
             TotalScenarios =
@@ -190,7 +317,42 @@ public sealed class AdminDashboardService(
                 recentActivity
         };
     }
+
+    // =============================================================
+    // PILOT NAME FALLBACK
+    // =============================================================
+    //
+    // Normally the registered ApplicationUser.FullName is used.
+    //
+    // If an old report no longer has a matching Identity user,
+    // avoid deliberately displaying an email address in the
+    // Admin Dashboard.
+    // =============================================================
+
+    private static string ResolveFallbackPilotName(
+        string? storedPilotName)
+    {
+        if (string.IsNullOrWhiteSpace(
+                storedPilotName))
+        {
+            return "Unknown pilot";
+        }
+
+        if (storedPilotName.Contains(
+                '@',
+                StringComparison.Ordinal))
+        {
+            return "Unknown pilot";
+        }
+
+        return storedPilotName.Trim();
+    }
 }
+
+
+// =================================================================
+// ADMIN DASHBOARD VIEW MODEL
+// =================================================================
 
 public sealed class AdminDashboardVm
 {
@@ -219,29 +381,32 @@ public sealed class AdminDashboardVm
     public int ActiveScenarios { get; init; }
 
     public IReadOnlyList<ScenarioSummaryVm>
-        ScenarioPopularity
-    { get; init; } = [];
+        ScenarioPopularity { get; init; } = [];
 
     public IReadOnlyList<DailyUsageVm>
-        UsageByDay
-    { get; init; } = [];
+        UsageByDay { get; init; } = [];
 
     public IReadOnlyList<RecentTrainingVm>
-        RecentActivity
-    { get; init; } = [];
+        RecentActivity { get; init; } = [];
 }
+
+
+// =================================================================
+// SCENARIO SUMMARY VIEW MODEL
+// =================================================================
 
 public sealed class ScenarioSummaryVm
 {
-    public string ScenarioName { get; init; }
-        = string.Empty;
+    public string ScenarioName { get; init; } =
+        string.Empty;
 
     public int Attempts { get; init; }
 
     public int Passes { get; init; }
 
     public int Failures =>
-        Attempts - Passes;
+        Attempts -
+        Passes;
 
     public int AverageScore { get; init; }
 
@@ -249,9 +414,15 @@ public sealed class ScenarioSummaryVm
         Attempts == 0
             ? 0
             : (int)Math.Round(
-                Passes * 100d /
+                Passes *
+                100d /
                 Attempts);
 }
+
+
+// =================================================================
+// DAILY USAGE VIEW MODEL
+// =================================================================
 
 public sealed class DailyUsageVm
 {
@@ -262,16 +433,21 @@ public sealed class DailyUsageVm
     public int UniquePilots { get; init; }
 }
 
+
+// =================================================================
+// RECENT TRAINING VIEW MODEL
+// =================================================================
+
 public sealed class RecentTrainingVm
 {
-    public string PilotName { get; init; }
-        = string.Empty;
+    public string PilotName { get; init; } =
+        string.Empty;
 
-    public string ScenarioName { get; init; }
-        = string.Empty;
+    public string ScenarioName { get; init; } =
+        string.Empty;
 
-    public string AircraftName { get; init; }
-        = string.Empty;
+    public string AircraftName { get; init; } =
+        string.Empty;
 
     public DateTime CompletedAt { get; init; }
 

@@ -1,6 +1,8 @@
 using System.Security.Claims;
+using AeroResponse.Data;
 using AeroResponse.Models;
 using AeroResponse.Services;
+using AeroResponse.Services.Authorization;
 using AeroResponse.Simulation;
 using AeroResponse.Simulation.Controls;
 using AeroResponse.Simulation.Layouts;
@@ -9,11 +11,9 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
-using AeroResponse.Services.Authorization;
-
+using Microsoft.AspNetCore.Identity;
 using SimulationSelectionModel =
     AeroResponse.Models.SimulationSelection;
-
 using VSIMath =
     AeroResponse.Simulation.Instruments
         .VerticalSpeedIndicator.VSIMath;
@@ -36,8 +36,12 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
     } = default!;
 
     [Inject]
-    private ICockpitLayoutProvider LayoutProvider { get; set; } = default!;
+private UserManager<ApplicationUser> UserManager { get; set; } = default!;
 
+
+    [Inject]
+    private ICockpitLayoutProvider LayoutProvider { get; set; } = default!;
+    
     [Inject]
     private SimulationEngine SimulationEngine { get; set; } = default!;
 
@@ -235,30 +239,20 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 "Authenticated user does not have a usable identifier.");
         }
 
-        var firstName =
-            principal.FindFirstValue(
-                ClaimTypes.GivenName);
+        var applicationUser =
+            await UserManager.GetUserAsync(principal);
 
-        var surname =
-            principal.FindFirstValue(
-                ClaimTypes.Surname);
-
-        var fullName =
-            string.Join(
-                " ",
-                new[]
-                {
-                    firstName,
-                    surname
-                }
-                .Where(value =>
-                    !string.IsNullOrWhiteSpace(value)));
-
-        _currentPilotName =
-            !string.IsNullOrWhiteSpace(fullName)
-                ? fullName
-                : principal.Identity?.Name
-                    ?? "Pilot";
+        if (applicationUser is not null &&
+            !string.IsNullOrWhiteSpace(
+                applicationUser.FullName))
+        {
+            _currentPilotName =
+                applicationUser.FullName;
+        }
+        else
+        {
+            _currentPilotName = "Pilot";
+        }
 
         var allAircraft =
             await AircraftService.GetAllAsync();

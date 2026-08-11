@@ -1,6 +1,8 @@
 using System.Security.Claims;
+using AeroResponse.Data;
 using AeroResponse.Models;
 using AeroResponse.Services;
+using AeroResponse.Services.Authorization;
 using AeroResponse.Simulation;
 using AeroResponse.Simulation.Controls;
 using AeroResponse.Simulation.Layouts;
@@ -9,10 +11,9 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
-
+using Microsoft.AspNetCore.Identity;
 using SimulationSelectionModel =
     AeroResponse.Models.SimulationSelection;
-
 using VSIMath =
     AeroResponse.Simulation.Instruments
         .VerticalSpeedIndicator.VSIMath;
@@ -35,8 +36,12 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
     } = default!;
 
     [Inject]
-    private ICockpitLayoutProvider LayoutProvider { get; set; } = default!;
+private UserManager<ApplicationUser> UserManager { get; set; } = default!;
 
+
+    [Inject]
+    private ICockpitLayoutProvider LayoutProvider { get; set; } = default!;
+    
     [Inject]
     private SimulationEngine SimulationEngine { get; set; } = default!;
 
@@ -51,6 +56,9 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
 
     [Inject]
     private AircraftService AircraftService { get; set; } = default!;
+
+    [Inject]
+    private AircraftAccessService AircraftAccessService { get; set; } = default!;
 
     [Inject]
     private ScenarioTriggerEvaluator TriggerEvaluator { get; set; } = default!;
@@ -231,30 +239,20 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 "Authenticated user does not have a usable identifier.");
         }
 
-        var firstName =
-            principal.FindFirstValue(
-                ClaimTypes.GivenName);
+        var applicationUser =
+            await UserManager.GetUserAsync(principal);
 
-        var surname =
-            principal.FindFirstValue(
-                ClaimTypes.Surname);
-
-        var fullName =
-            string.Join(
-                " ",
-                new[]
-                {
-                    firstName,
-                    surname
-                }
-                .Where(value =>
-                    !string.IsNullOrWhiteSpace(value)));
-
-        _currentPilotName =
-            !string.IsNullOrWhiteSpace(fullName)
-                ? fullName
-                : principal.Identity?.Name
-                    ?? "Pilot";
+        if (applicationUser is not null &&
+            !string.IsNullOrWhiteSpace(
+                applicationUser.FullName))
+        {
+            _currentPilotName =
+                applicationUser.FullName;
+        }
+        else
+        {
+            _currentPilotName = "Pilot";
+        }
 
         var allAircraft =
             await AircraftService.GetAllAsync();
@@ -264,13 +262,18 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
                 .Select(layout => layout.Key)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        _aircraftOptions = allAircraft
+        var aircraftWithLayouts = allAircraft
             .Where(aircraft =>
                 !string.IsNullOrWhiteSpace(
                     aircraft.CockpitLayoutKey) &&
                 availableLayoutKeys.Contains(
                     aircraft.CockpitLayoutKey))
             .ToArray();
+
+        _aircraftOptions =
+            await AircraftAccessService.FilterAllowedAircraftAsync(
+                principal,
+                aircraftWithLayouts);
 
         _scenarioRecords =
             await ScenarioDataService
@@ -369,16 +372,20 @@ public partial class Simulation : ComponentBase, IAsyncDisposable
             }
 
             var requestedAircraft =
-                await AircraftService.GetByIdWithLandingGearAsync(aircraftId);
+                _aircraftOptions.FirstOrDefault(
+                    aircraft => aircraft.Id == aircraftId);
 
             if (requestedAircraft is null)
             {
-                requestedAircraft = _aircraftOptions.FirstOrDefault() // Gracefully defaulting when Server Conflicts with Local 
+                requestedAircraft = _aircraftOptions.FirstOrDefault()
                     ?? throw new KeyNotFoundException(
-                        "No aircraft are available to simulate.");
+                        "No aircraft are available for this account.");
             }
 
-            selectedAircraft = requestedAircraft;
+            // Reload the allowed aircraft with its landing gear configuration.
+            selectedAircraft =
+                await AircraftService.GetByIdWithLandingGearAsync(requestedAircraft.Id)
+                ?? requestedAircraft;
 
             cockpitLayout =
                 await LayoutProvider.GetLayout(

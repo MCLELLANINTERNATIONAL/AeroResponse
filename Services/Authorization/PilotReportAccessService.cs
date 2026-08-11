@@ -5,174 +5,152 @@ namespace AeroResponse.Services.Authorization;
 
 public sealed class PilotReportAccessService
 {
-    private readonly MongoUserAccountRepository
-        _userAccounts;
+    private readonly MongoUserAccountRepository _userAccounts;
 
-    public PilotReportAccessService(
-        MongoUserAccountRepository userAccounts)
+    public PilotReportAccessService(MongoUserAccountRepository userAccounts)
     {
         _userAccounts = userAccounts;
     }
 
-    public async Task<string?>
-        ResolvePilotUserIdAsync(
-            ClaimsPrincipal principal,
-            string? requestedPilotUserId,
-            CancellationToken cancellationToken = default)
+    public async Task<string?> ResolvePilotUserIdAsync(
+        ClaimsPrincipal principal,
+        string? requestedPilotUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var context = await GetPilotSelectionContextAsync(principal, cancellationToken);
+        if (context is null)
+        {
+            return null;
+        }
+
+        if (context.AccountType == "pilot")
+        {
+            if (string.IsNullOrWhiteSpace(requestedPilotUserId))
+            {
+                return context.CurrentUserId;
+            }
+
+            return string.Equals(
+                requestedPilotUserId,
+                context.CurrentUserId,
+                StringComparison.OrdinalIgnoreCase)
+                ? context.CurrentUserId
+                : null;
+        }
+
+        var pilots = context.Pilots;
+        if (string.IsNullOrWhiteSpace(requestedPilotUserId))
+        {
+            return pilots.FirstOrDefault()?.IdentityUserId;
+        }
+
+        return pilots.Any(pilot => string.Equals(
+                pilot.IdentityUserId,
+                requestedPilotUserId,
+                StringComparison.OrdinalIgnoreCase))
+            ? requestedPilotUserId
+            : null;
+    }
+
+    public async Task<PilotReportSelectionContext?> GetPilotSelectionContextAsync(
+        ClaimsPrincipal principal,
+        CancellationToken cancellationToken = default)
     {
         if (principal.Identity?.IsAuthenticated != true)
         {
             return null;
         }
 
-        var currentUserId =
-            principal.FindFirstValue(
-                ClaimTypes.NameIdentifier);
-
-        if (string.IsNullOrWhiteSpace(
-                currentUserId))
+        var currentUserId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(currentUserId))
         {
             return null;
         }
 
-        var currentAccount =
-            await _userAccounts
-                .FindByIdentityUserIdAsync(
-                    currentUserId,
-                    cancellationToken);
-
+        var currentAccount = await _userAccounts.FindByIdentityUserIdAsync(
+            currentUserId,
+            cancellationToken);
         if (currentAccount is null)
         {
             return null;
         }
 
-        var accountType =
-            AccountPermissionService
-                .NormalizeAccountType(
-                    currentAccount.AccountType);
-
-        // =====================================================
-        // PILOT
-        // A pilot can only view their own reports.
-        // =====================================================
+        var accountType = AccountPermissionService.NormalizeAccountType(currentAccount.AccountType);
 
         if (accountType == "pilot")
         {
-            if (string.IsNullOrWhiteSpace(
-                    requestedPilotUserId))
-            {
-                return currentUserId;
-            }
-
-            return string.Equals(
-                    requestedPilotUserId,
-                    currentUserId,
-                    StringComparison.OrdinalIgnoreCase)
-                ? currentUserId
-                : null;
+            return new PilotReportSelectionContext(
+                currentUserId,
+                GetDisplayName(currentAccount),
+                accountType,
+                Array.Empty<CompanyMemberSummary>());
         }
-
-        // =====================================================
-        // ADMIN
-        // An admin can view the report of any pilot.
-        // =====================================================
 
         if (accountType == "admin")
         {
-            if (string.IsNullOrWhiteSpace(
-                    requestedPilotUserId))
-            {
-                return null;
-            }
-
-            var requestedAccount =
-                await _userAccounts
-                    .FindByIdentityUserIdAsync(
-                        requestedPilotUserId,
-                        cancellationToken);
-
-            if (requestedAccount is null)
-            {
-                return null;
-            }
-
-            var requestedAccountType =
-                AccountPermissionService
-                    .NormalizeAccountType(
-                        requestedAccount.AccountType);
-
-            return requestedAccountType == "pilot"
-                ? requestedAccount.IdentityUserId
-                : null;
+            var allPilots = await _userAccounts.FindAllPilotsAsync(cancellationToken);
+            return new PilotReportSelectionContext(
+                currentUserId,
+                GetDisplayName(currentAccount),
+                accountType,
+                allPilots);
         }
 
-        // =====================================================
-        // OWNER / TRAINER
-        //
-        // Owners can inspect pilots linked to themselves.
-        // Trainers can inspect pilots linked to the same owner.
-        // =====================================================
-
-        string? ownerIdentityUserId =
-            accountType switch
-            {
-                "trainer" =>
-                    currentAccount.OwnerIdentityUserId,
-
-                "owner" =>
-                    currentUserId,
-
-                "owner_small" =>
-                    currentUserId,
-
-                "owner_large" =>
-                    currentUserId,
-
-                _ =>
-                    null
-            };
-
-        if (string.IsNullOrWhiteSpace(
-                ownerIdentityUserId))
+        string? ownerIdentityUserId = accountType switch
         {
-            return null;
-        }
+            "trainer" => currentAccount.OwnerIdentityUserId,
+            "owner" => currentUserId,
+            "owner_small" => currentUserId,
+            "owner_large" => currentUserId,
+            _ => null
+        };
 
-        var linkedMembers =
-            await _userAccounts
-                .FindLinkedMembersAsync(
-                    ownerIdentityUserId,
-                    cancellationToken);
-
-        var linkedPilots =
-            linkedMembers
-                .Where(member =>
-                    string.Equals(
-                        member.AccountType,
-                        "pilot",
-                        StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-
-        // No requested pilot:
-        // use the first linked pilot if available.
-        if (string.IsNullOrWhiteSpace(
-                requestedPilotUserId))
+        if (string.IsNullOrWhiteSpace(ownerIdentityUserId))
         {
-            return linkedPilots
-                .FirstOrDefault()
-                ?.IdentityUserId;
+            return new PilotReportSelectionContext(
+                currentUserId,
+                GetDisplayName(currentAccount),
+                accountType,
+                Array.Empty<CompanyMemberSummary>());
         }
 
-        var pilotIsLinked =
-            linkedPilots.Any(
-                pilot =>
-                    string.Equals(
-                        pilot.IdentityUserId,
-                        requestedPilotUserId,
-                        StringComparison.OrdinalIgnoreCase));
+        var linkedMembers = await _userAccounts.FindLinkedMembersAsync(
+            ownerIdentityUserId,
+            cancellationToken);
 
-        return pilotIsLinked
-            ? requestedPilotUserId
-            : null;
+        var linkedPilots = linkedMembers
+            .Where(member =>
+                AccountPermissionService.NormalizeAccountType(member.AccountType) == "pilot")
+            .Where(member => !string.IsNullOrWhiteSpace(member.IdentityUserId))
+            .OrderBy(member => member.Surname)
+            .ThenBy(member => member.FirstName)
+            .ToArray();
+
+        return new PilotReportSelectionContext(
+            currentUserId,
+            GetDisplayName(currentAccount),
+            accountType,
+            linkedPilots);
     }
+
+    private static string GetDisplayName(MongoUserAccount account)
+    {
+        var fullName = string.Join(
+            " ",
+            new[] { account.FirstName?.Trim(), account.Surname?.Trim() }
+                .Where(value => !string.IsNullOrWhiteSpace(value)));
+
+        return string.IsNullOrWhiteSpace(fullName)
+            ? account.Email
+            : fullName;
+    }
+}
+
+public sealed record PilotReportSelectionContext(
+    string CurrentUserId,
+    string CurrentUserDisplayName,
+    string AccountType,
+    IReadOnlyList<CompanyMemberSummary> Pilots)
+{
+    public bool CanSelectPilot => AccountType is "trainer" or "admin";
 }

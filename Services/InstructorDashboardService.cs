@@ -1,24 +1,24 @@
-using AeroResponse.Data;
 using AeroResponse.Data.Mongo.Accounts;
+using AeroResponse.Data.Mongo.Reports;
 using AeroResponse.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace AeroResponse.Services;
 
 public sealed class InstructorDashboardService
 {
-    private readonly ApplicationDbContext _context;
-
     private readonly MongoUserAccountRepository
         _userAccounts;
 
+    private readonly MongoPilotReportRepository
+        _pilotReports;
+
 
     public InstructorDashboardService(
-        ApplicationDbContext context,
-        MongoUserAccountRepository userAccounts)
+        MongoUserAccountRepository userAccounts,
+        MongoPilotReportRepository pilotReports)
     {
-        _context = context;
         _userAccounts = userAccounts;
+        _pilotReports = pilotReports;
     }
 
 
@@ -183,42 +183,21 @@ public sealed class InstructorDashboardService
         /*
          * Production query:
          *
-         * ONLY reports for pilots connected to this
-         * instructor/company.
+         * Training reports are stored in MongoDB. Only reports
+         * belonging to pilots linked to this instructor/company
+         * are returned.
          */
-        var query =
-            _context.SimulationReports
-                .AsNoTracking()
-                .Where(report =>
-                    pilotIds.Contains(
-                        report.UserId));
-
-
-        if (!string.IsNullOrWhiteSpace(
-                selectedPilotUserId))
-        {
-            query =
-                query.Where(report =>
-                    report.UserId ==
-                    selectedPilotUserId);
-        }
-
-
-        if (fromUtc.HasValue)
-        {
-            query =
-                query.Where(report =>
-                    report.CompletedAt >=
-                    fromUtc.Value);
-        }
-
+        IReadOnlyCollection<string> reportPilotIds =
+            !string.IsNullOrWhiteSpace(selectedPilotUserId)
+                ? new[] { selectedPilotUserId! }
+                : pilotIds;
 
         var reports =
-            await query
-                .OrderBy(report =>
-                    report.CompletedAt)
-                .ToListAsync(
-                    cancellationToken);
+            await _pilotReports.GetReportsForUsersAsync(
+                reportPilotIds,
+                fromUtc,
+                toUtc,
+                cancellationToken);
 
 
         return BuildDashboard(
@@ -239,7 +218,7 @@ public sealed class InstructorDashboardService
        This method exists only so the dashboard can be viewed
        while authentication is temporarily disabled.
 
-       It intentionally uses all available SimulationReports.
+       It intentionally uses all available MongoDB simulation reports.
 
        DO NOT use this method as the final security model.
        ========================================================= */
@@ -275,57 +254,31 @@ public sealed class InstructorDashboardService
 
 
         /*
-         * Determine available pilots from reports already
-         * stored in the relational database.
+         * Pilot accounts are stored in MongoDB. Build the
+         * system-wide selector from Mongo user accounts rather
+         * than deriving it from the legacy SQL reports table.
          */
-        var pilotQuery =
-            _context.SimulationReports
-                .AsNoTracking()
-                .Where(report =>
-                    !string.IsNullOrWhiteSpace(
-                        report.UserId));
-
-
-        var pilotRecords =
-            await pilotQuery
-                .Select(report =>
-                    new
-                    {
-                        report.UserId,
-                        report.PilotName
-                    })
-                .ToListAsync(
-                    cancellationToken);
-
+        var allPilotAccounts =
+            await _userAccounts.FindAllPilotsAsync(
+                cancellationToken);
 
         var pilots =
-            pilotRecords
-                .GroupBy(
-                    record =>
-                        record.UserId,
-                    StringComparer.OrdinalIgnoreCase)
-                .Select(group =>
-                {
-                    var pilotName =
-                        group
-                            .Select(record =>
-                                record.PilotName)
-                            .FirstOrDefault(name =>
-                                !string.IsNullOrWhiteSpace(
-                                    name));
-
-                    return new InstructorPilotOptionVm
+            allPilotAccounts
+                .Where(pilot =>
+                    !string.IsNullOrWhiteSpace(
+                        pilot.IdentityUserId))
+                .Select(pilot =>
+                    new InstructorPilotOptionVm
                     {
                         UserId =
-                            group.Key,
+                            pilot.IdentityUserId,
 
                         Name =
                             string.IsNullOrWhiteSpace(
-                                pilotName)
-                                ? group.Key
-                                : pilotName
-                    };
-                })
+                                pilot.DisplayName)
+                                ? pilot.IdentityUserId
+                                : pilot.DisplayName
+                    })
                 .OrderBy(pilot =>
                     pilot.Name)
                 .ToArray();
@@ -348,37 +301,32 @@ public sealed class InstructorDashboardService
         }
 
 
-        var query =
-            _context.SimulationReports
-                .AsNoTracking()
-                .AsQueryable();
-
+        IReadOnlyList<SimulationReport> reports;
 
         if (!string.IsNullOrWhiteSpace(
                 selectedPilotUserId))
         {
-            query =
-                query.Where(report =>
-                    report.UserId ==
-                    selectedPilotUserId);
-        }
-
-
-        if (fromUtc.HasValue)
-        {
-            query =
-                query.Where(report =>
-                    report.CompletedAt >=
-                    fromUtc.Value);
-        }
-
-
-        var reports =
-            await query
-                .OrderBy(report =>
-                    report.CompletedAt)
-                .ToListAsync(
+            reports =
+                await _pilotReports.GetReportsForUsersAsync(
+                    new[] { selectedPilotUserId! },
+                    fromUtc,
+                    toUtc,
                     cancellationToken);
+        }
+        else
+        {
+            reports =
+                await _pilotReports.GetReportsAsync(
+                    fromUtc,
+                    toUtc,
+                    cancellationToken);
+
+            reports =
+                reports
+                    .OrderBy(report =>
+                        report.CompletedAt)
+                    .ToArray();
+        }
 
 
         return BuildDashboard(

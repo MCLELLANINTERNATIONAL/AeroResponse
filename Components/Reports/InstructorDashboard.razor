@@ -84,1110 +84,1106 @@ else if (!_dashboard.IsAuthorised)
 else
 {
     <main id="instructor-performance-report"
-        class="reports-page instructor-dashboard-page">
+    class="reports-page instructor-dashboard-page">
 
-        @* =====================================================
-            HEADER
-           ===================================================== *@
+    @* =====================================================
+    HEADER
+    ===================================================== *@
 
-        <header class="reports-header">
+    <header class="reports-header">
 
-            <div class="reports-heading">
+        <div class="reports-heading">
 
-                <span class="reports-eyebrow">
-                    AERORESPONSE TRAINING ANALYTICS
-                </span>
+            <span class="reports-eyebrow">
+                AERORESPONSE TRAINING ANALYTICS
+            </span>
 
-                <h1>
-                    INSTRUCTOR PILOTS RESULTS DASHBOARD
-                </h1>
+            <h1>
+                INSTRUCTOR PILOTS RESULTS DASHBOARD
+            </h1>
 
-                <p>
-                    Monitor pilot performance trends,
-                    scenario outcomes and training priorities
-                    at both individual and organisational level.
-                </p>
+            <p>
+                Monitor pilot performance trends,
+                scenario outcomes and training priorities
+                at both individual and organisational level.
+            </p>
 
-            </div>
+        </div>
 
-            <div class="instructor-chip">
+        <div class="instructor-chip">
 
-                <span class="instructor-avatar">
-                    👨‍✈
-                </span>
+            <span class="instructor-avatar">
+                👨‍✈
+            </span>
 
-                <div>
+            <div>
 
-                    <strong>
-                        Instructor View
-                    </strong>
+                <strong>
+                    Instructor View
+                </strong>
 
-                    <small>
-                        @CurrentScopeLabel
-                    </small>
-
-                </div>
+                <small>
+                    @CurrentScopeLabel
+                </small>
 
             </div>
 
-        </header>
+        </div>
+
+    </header>
 
 
-        @* =====================================================
-            NAVIGATION
-           ===================================================== *@
+    @* =====================================================
+    NAVIGATION
+    ===================================================== *@
 
-        <nav class="reports-tabs"
-            aria-label="Performance report navigation">
+    <nav class="reports-tabs"
+    aria-label="Performance report navigation">
 
-            <NavLink href="/reports"
-                     Match="NavLinkMatch.All">
-                <span>◉</span>
-                Overview
-            </NavLink>
+    <NavLink href="/reports"
+    Match="NavLinkMatch.All">
+    <span>◉</span>
+    Overview
+</NavLink>
 
-            <NavLink href="/reports/flight-logs">
-                <span>✈</span>
-                Flight Logs
-            </NavLink>
+<NavLink href="/reports/flight-logs">
+    <span>✈</span>
+    Flight Logs
+</NavLink>
 
-            <NavLink href="/reports/scoring">
-                <span>⚙</span>
-                Scoring
-            </NavLink>
+<NavLink href="/reports/scoring">
+    <span>⚙</span>
+    Scoring
+</NavLink>
 
-            <NavLink href="/reports/analytics">
-                <span>▥</span>
-                Analytics
-            </NavLink>
+<NavLink href="/reports/analytics">
+    <span>▥</span>
+    Analytics
+</NavLink>
 
-            <NavLink href="/reports/feedback">
-                <span>✪</span>
-                Feedback
-            </NavLink>
+<NavLink href="/reports/feedback">
+    <span>✪</span>
+    Feedback
+</NavLink>
 
-            <NavLink href="/reports/badges">
-                <span>🏆</span>
-                Badges
-            </NavLink>
+<NavLink href="/reports/badges">
+    <span>🏆</span>
+    Badges
+</NavLink>
 
-            <AuthorizeView Policy="@AccountPermissions.TrainerReports">
-
-
-                <Authorized>
+<AuthorizeView Policy="@AccountPermissions.TrainerReports">
 
 
-                    <NavLink href="/reports/instructor">
-                <span>👨‍✈</span>
-                Instructor Reports
-            </NavLink>
+    <Authorized>
 
 
-                </Authorized>
+        <NavLink href="/reports/instructor">
+            <span>👨‍✈</span>
+            Instructor Reports
+        </NavLink>
 
 
-            </AuthorizeView>
-
-            <AuthorizeView Policy="@AccountPermissions.AdminPages">
+    </Authorized>
 
 
-                <Authorized>
+</AuthorizeView>
+
+<AuthorizeView Policy="@AccountPermissions.AdminPages">
 
 
-                    <NavLink href="/reports/admin">
-                <span>▦</span>
-                Admin Reports
-            </NavLink>
+    <Authorized>
 
 
-                </Authorized>
+        <NavLink href="/reports/admin">
+            <span>▦</span>
+            Admin Reports
+        </NavLink>
 
 
-            </AuthorizeView>
-
-            <button id="download-instructor-report-button"
-                    class="download-report-button"
-                    type="button"
-                    @onclick="DownloadReportAsync">
-
-                <span>⬇</span>
-                Download PDF
-
-            </button>
-
-        </nav>
+    </Authorized>
 
 
-        @if (_dashboard.IsDevelopmentPreview)
+</AuthorizeView>
+
+<button id="download-instructor-report-button"
+class="download-report-button"
+type="button"
+@onclick="DownloadReportAsync">
+
+<span>⬇</span>
+Download PDF
+
+</button>
+
+</nav>
+
+
+@if (_dashboard.IsDevelopmentPreview)
+{
+    <section class="development-notice">
+
+        <span class="development-notice-icon">
+            ⚙
+        </span>
+
+        <div>
+
+            <strong>
+                Development Preview
+            </strong>
+
+            <span>
+                Authentication is temporarily bypassed.
+                Preview data includes all available simulation reports.
+            </span>
+
+        </div>
+
+    </section>
+}
+
+
+@* =====================================================
+FILTERS
+===================================================== *@
+
+<section class="dashboard-filter-card">
+
+    <div class="filter-heading">
+
+        <span class="filter-icon">
+            ▥
+        </span>
+
+        <div>
+
+            <strong>
+                Training Performance
+            </strong>
+
+            <small>
+                @PeriodDescription
+            </small>
+
+        </div>
+
+    </div>
+
+    <div class="filter-controls">
+
+        <label class="filter-control">
+
+            <span>
+                Pilot
+            </span>
+
+            <select value="@(_selectedPilotUserId ?? string.Empty)"
+            @onchange="ChangePilotAsync">
+
+            <option value="">
+                All Pilots
+            </option>
+
+            @foreach (var pilot in _dashboard.Pilots)
+            {
+                <option value="@pilot.UserId">
+                    @pilot.Name
+                </option>
+            }
+
+        </select>
+
+    </label>
+
+    <label class="filter-control">
+
+        <span>
+            Reporting Period
+        </span>
+
+        <select value="@_selectedDays"
+        @onchange="ChangePeriodAsync">
+
+        <option value="7">
+            Last 7 days
+        </option>
+
+        <option value="30">
+            Last 30 days
+        </option>
+
+        <option value="90">
+            Last 90 days
+        </option>
+
+        <option value="0">
+            All time
+        </option>
+
+    </select>
+
+</label>
+
+</div>
+
+</section>
+
+
+@* =====================================================
+KPI SUMMARY
+===================================================== *@
+
+<section class="kpi-grid"
+aria-label="Instructor training summary">
+
+<article class="kpi-card">
+
+    <div class="kpi-top">
+
+        <span class="kpi-icon">
+            👥
+        </span>
+
+        <span class="kpi-label">
+            Linked Pilots
+        </span>
+
+    </div>
+
+    <strong class="kpi-value">
+        @_dashboard.TotalPilots
+    </strong>
+
+    <small>
+        @_dashboard.ActivePilots active in
+        selected results
+    </small>
+
+</article>
+
+
+<article class="kpi-card">
+
+    <div class="kpi-top">
+
+        <span class="kpi-icon">
+            ✈
+        </span>
+
+        <span class="kpi-label">
+            Training Attempts
+        </span>
+
+    </div>
+
+    <strong class="kpi-value">
+        @_dashboard.TotalAttempts
+    </strong>
+
+    <small>
+        Completed simulations
+    </small>
+
+</article>
+
+
+<article class="kpi-card">
+
+    <div class="kpi-top">
+
+        <span class="kpi-icon">
+            ★
+        </span>
+
+        <span class="kpi-label">
+            Average Score
+        </span>
+
+    </div>
+
+    <strong class="kpi-value">
+        @($"{_dashboard.AverageScore}%")
+    </strong>
+
+    <small>
+        Across selected training
+    </small>
+
+</article>
+
+
+<article class="kpi-card">
+
+    <div class="kpi-top">
+
+        <span class="kpi-icon">
+            ✓
+        </span>
+
+        <span class="kpi-label">
+            Pass Rate
+        </span>
+
+    </div>
+
+    <strong class="kpi-value">
+        @($"{_dashboard.PassRate}%")
+    </strong>
+
+    <small>
+        @_dashboard.PassCount passed ·
+        @_dashboard.FailCount failed
+    </small>
+
+</article>
+
+
+<article class="kpi-card">
+
+    <div class="kpi-top">
+
+        <span class="kpi-icon">
+            ⏱
+        </span>
+
+        <span class="kpi-label">
+            Avg. Reaction
+        </span>
+
+    </div>
+
+    <strong class="kpi-value">
+        @_dashboard.AverageReactionTime s
+    </strong>
+
+    <small>
+        Emergency response time
+    </small>
+
+</article>
+
+
+<article class="kpi-card">
+
+    <div class="kpi-top">
+
+        <span class="kpi-icon warning">
+            ⚠
+        </span>
+
+        <span class="kpi-label">
+            Critical Errors
+        </span>
+
+    </div>
+
+    <strong class="kpi-value">
+        @_dashboard.SafetyCriticalErrors
+    </strong>
+
+    <small>
+        Safety-critical mistakes
+    </small>
+
+</article>
+
+</section>
+
+
+@* =====================================================
+PERFORMANCE TREND + OUTCOMES
+===================================================== *@
+
+<section class="dashboard-primary-grid">
+
+    <article class="dashboard-card trend-card">
+
+        <div class="card-heading">
+
+            <div>
+
+                <span class="card-eyebrow">
+                    PERFORMANCE
+                </span>
+
+                <h2>
+                    Pilot Performance Trend
+                </h2>
+
+            </div>
+
+            <span class="card-stat">
+                @_dashboard.TotalAttempts attempts
+            </span>
+
+        </div>
+
+        @if (_dashboard.PerformanceTrend.Count == 0)
         {
-            <section class="development-notice">
+            <div class="no-data">
 
-                <span class="development-notice-icon">
-                    ⚙
-                </span>
-
-                <div>
-
-                    <strong>
-                        Development Preview
-                    </strong>
-
-                    <span>
-                        Authentication is temporarily bypassed.
-                        Preview data includes all available simulation reports.
-                    </span>
-
-                </div>
-
-            </section>
-        }
-
-
-        @* =====================================================
-            FILTERS
-           ===================================================== *@
-
-        <section class="dashboard-filter-card">
-
-            <div class="filter-heading">
-
-                <span class="filter-icon">
+                <span>
                     ▥
                 </span>
 
-                <div>
+                <strong>
+                    No performance data
+                </strong>
 
-                    <strong>
-                        Training Performance
-                    </strong>
+                <small>
+                    Complete pilot simulations to
+                    generate performance trends.
+                </small>
 
-                    <small>
-                        @PeriodDescription
-                    </small>
+            </div>
+        }
+        else
+        {
+            <div class="usage-chart"
+            aria-label="Pilot performance trend">
 
+            @foreach (var day in _dashboard.PerformanceTrend)
+            {
+                var height =
+                Math.Clamp(
+                day.AverageScore,
+                8,
+                100);
+
+                <div class="usage-column"
+                title="@($"{day.Date:dd MMM}: {day.AverageScore}% average score from {day.Attempts} attempt(s)")">
+
+                <strong>
+                    @($"{day.AverageScore}%")
+                </strong>
+
+                <div class="usage-bar-track">
+
+                    <div class="usage-bar"
+                    style="@($"height:{height}%")">
                 </div>
 
             </div>
 
-            <div class="filter-controls">
+            <small>
+                @day.Date.ToString("dd MMM")
+            </small>
 
-                <label class="filter-control">
+        </div>
+    }
 
-                    <span>
-                        Pilot
-                    </span>
+</div>
+}
 
-                    <select value="@(_selectedPilotUserId ?? string.Empty)"
-                            @onchange="ChangePilotAsync">
+</article>
 
-                        <option value="">
-                            All Pilots
-                        </option>
 
-                        @foreach (var pilot in _dashboard.Pilots)
-                        {
-                            <option value="@pilot.UserId">
-                                @pilot.Name
-                            </option>
-                        }
+<article class="dashboard-card outcomes-card">
 
-                    </select>
+    <div class="card-heading">
 
-                </label>
+        <div>
 
-                <label class="filter-control">
+            <span class="card-eyebrow">
+                OUTCOMES
+            </span>
 
-                    <span>
-                        Reporting Period
-                    </span>
+            <h2>
+                Training Outcomes
+            </h2>
 
-                    <select value="@_selectedDays"
-                            @onchange="ChangePeriodAsync">
+        </div>
 
-                        <option value="7">
-                            Last 7 days
-                        </option>
+    </div>
 
-                        <option value="30">
-                            Last 30 days
-                        </option>
+    <div class="outcome-content">
 
-                        <option value="90">
-                            Last 90 days
-                        </option>
+        <div class="outcome-ring"
+        style="@($"--pass-rate:{_dashboard.PassRate}")">
 
-                        <option value="0">
-                            All time
-                        </option>
+        <div>
 
-                    </select>
+            <strong>
+                @($"{_dashboard.PassRate}%")
+            </strong>
 
-                </label>
+            <small>
+                Pass Rate
+            </small>
+
+        </div>
+
+    </div>
+
+    <div class="outcome-legend">
+
+        <div class="outcome-row">
+
+            <span class="legend-dot passed">
+            </span>
+
+            <span>
+                Passed
+            </span>
+
+            <strong>
+                @_dashboard.PassCount
+            </strong>
+
+        </div>
+
+        <div class="outcome-row">
+
+            <span class="legend-dot failed">
+            </span>
+
+            <span>
+                Failed
+            </span>
+
+            <strong>
+                @_dashboard.FailCount
+            </strong>
+
+        </div>
+
+    </div>
+
+</div>
+
+</article>
+
+</section>
+
+
+@* =====================================================
+TRAINING AREA PERFORMANCE
+===================================================== *@
+
+<section class="dashboard-secondary-grid">
+
+    <article class="dashboard-card">
+
+        <div class="card-heading">
+
+            <div>
+
+                <span class="card-eyebrow">
+                    COACHING PRIORITIES
+                </span>
+
+                <h2>
+                    Training Area Performance
+                </h2>
 
             </div>
 
-        </section>
+        </div>
 
 
-        @* =====================================================
-            KPI SUMMARY
-           ===================================================== *@
+        <div class="metric-list">
 
-        <section class="kpi-grid"
-                aria-label="Instructor training summary">
+            <div class="metric">
 
-            <article class="kpi-card">
+                <div class="metric-result">
 
-                <div class="kpi-top">
+                    <span>
+                        Procedural Accuracy
+                    </span>
 
-                    <span class="kpi-icon">
+                    <strong>
+                        @($"{_dashboard.ScoreBreakdown.ProcedureAccuracy}%")
+                    </strong>
+
+                </div>
+
+                <div class="metric-track">
+
+                    <div class="metric-fill"
+                    style="@($"width:{_dashboard.ScoreBreakdown.ProcedureAccuracy}%")">
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-result">
+
+                <span>
+                    Decision Making
+                </span>
+
+                <strong>
+                    @($"{_dashboard.ScoreBreakdown.DecisionMaking}%")
+                </strong>
+
+            </div>
+
+            <div class="metric-track">
+
+                <div class="metric-fill"
+                style="@($"width:{_dashboard.ScoreBreakdown.DecisionMaking}%")">
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="metric">
+
+        <div class="metric-result">
+
+            <span>
+                Checklist Usage
+            </span>
+
+            <strong>
+                @($"{_dashboard.ScoreBreakdown.ChecklistUsage}%")
+            </strong>
+
+        </div>
+
+        <div class="metric-track">
+
+            <div class="metric-fill"
+            style="@($"width:{_dashboard.ScoreBreakdown.ChecklistUsage}%")">
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="metric">
+
+    <div class="metric-result">
+
+        <span>
+            Time Management
+        </span>
+
+        <strong>
+            @($"{_dashboard.ScoreBreakdown.TimeManagement}%")
+        </strong>
+
+    </div>
+
+    <div class="metric-track">
+
+        <div class="metric-fill"
+        style="@($"width:{_dashboard.ScoreBreakdown.TimeManagement}%")">
+    </div>
+
+</div>
+
+</div>
+
+
+<div class="metric">
+
+    <div class="metric-result">
+
+        <span>
+            Communication
+        </span>
+
+        <strong>
+            @($"{_dashboard.ScoreBreakdown.Communication}%")
+        </strong>
+
+    </div>
+
+    <div class="metric-track">
+
+        <div class="metric-fill"
+        style="@($"width:{_dashboard.ScoreBreakdown.Communication}%")">
+    </div>
+
+</div>
+
+</div>
+
+</div>
+
+</article>
+
+
+@* =================================================
+SCENARIO OUTCOMES
+================================================= *@
+
+<article class="dashboard-card scenario-card">
+
+    <div class="card-heading">
+
+        <div>
+
+            <span class="card-eyebrow">
+                SCENARIO ANALYSIS
+            </span>
+
+            <h2>
+                Scenario Outcomes
+            </h2>
+
+        </div>
+
+        <span class="card-stat">
+            @_dashboard.ScenarioOutcomes.Count scenarios
+        </span>
+
+    </div>
+
+    @if (_dashboard.ScenarioOutcomes.Count == 0)
+    {
+        <div class="no-data">
+
+            <span>
+                ✈
+            </span>
+
+            <strong>
+                No scenario results
+            </strong>
+
+            <small>
+                Scenario outcomes will appear
+                after simulations are completed.
+            </small>
+
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+
+            <table class="dashboard-table">
+
+                <thead>
+
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Attempts</th>
+                        <th>Avg. Score</th>
+                        <th>Pass Rate</th>
+                        <th>Reaction</th>
+                        <th>Outcome</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @foreach (var scenario in _dashboard.ScenarioOutcomes)
+                    {
+                        <tr>
+
+                            <td>
+
+                                <strong>
+                                    @scenario.ScenarioName
+                                </strong>
+
+                            </td>
+
+                            <td>
+                                @scenario.Attempts
+                            </td>
+
+                            <td>
+                                @($"{scenario.AverageScore}%")
+                            </td>
+
+                            <td>
+                                @($"{scenario.PassRate}%")
+                            </td>
+
+                            <td>
+                                @scenario.AverageReactionTime s
+                            </td>
+
+                            <td>
+
+                                <span class="status-pill @(scenario.PassRate >= 70 ? "passed" : "failed")">
+
+                                @scenario.Passes passed /
+                                @scenario.Failures failed
+
+                            </span>
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+}
+
+</article>
+
+</section>
+
+
+@* =====================================================
+INDIVIDUAL PILOT PERFORMANCE
+===================================================== *@
+
+@if (string.IsNullOrWhiteSpace(
+_dashboard.SelectedPilotUserId))
+{
+    <section class="dashboard-full-width">
+
+        <article class="dashboard-card">
+
+            <div class="card-heading">
+
+                <div>
+
+                    <span class="card-eyebrow">
+                        INDIVIDUAL ANALYSIS
+                    </span>
+
+                    <h2>
+                        Pilot Performance
+                    </h2>
+
+                </div>
+
+                <span class="card-stat">
+                    @_dashboard.PilotPerformance.Count pilots
+                </span>
+
+            </div>
+
+            @if (_dashboard.PilotPerformance.Count == 0)
+            {
+                <div class="no-data">
+
+                    <span>
                         👥
                     </span>
 
-                    <span class="kpi-label">
-                        Linked Pilots
-                    </span>
+                    <strong>
+                        No pilots available
+                    </strong>
+
+                    <small>
+                        Linked pilots will appear here.
+                    </small>
 
                 </div>
+            }
+            else
+            {
+                <div class="table-responsive">
 
-                <strong class="kpi-value">
-                    @_dashboard.TotalPilots
-                </strong>
+                    <table class="dashboard-table pilot-table">
 
-                <small>
-                    @_dashboard.ActivePilots active in
-                    selected results
-                </small>
+                        <thead>
 
-            </article>
+                            <tr>
+                                <th>Pilot</th>
+                                <th>Attempts</th>
+                                <th>Avg. Score</th>
+                                <th>Pass Rate</th>
+                                <th>Reaction Time</th>
+                                <th>Latest Training</th>
+                            </tr>
 
+                        </thead>
 
-            <article class="kpi-card">
+                        <tbody>
 
-                <div class="kpi-top">
+                            @foreach (var pilot in _dashboard.PilotPerformance)
+                            {
+                                <tr>
 
-                    <span class="kpi-icon">
-                        ✈
-                    </span>
+                                    <td>
 
-                    <span class="kpi-label">
-                        Training Attempts
-                    </span>
+                                        <div class="pilot-cell">
 
-                </div>
+                                            <span class="pilot-avatar">
+                                                👨‍✈
+                                            </span>
 
-                <strong class="kpi-value">
-                    @_dashboard.TotalAttempts
-                </strong>
+                                            <strong>
+                                                <NavLink href="@($"/reports?pilotUserId={Uri.EscapeDataString(pilot.PilotUserId)}")">
+                                                    @pilot.PilotName
+                                                </NavLink>
+                                            </strong>
 
-                <small>
-                    Completed simulations
-                </small>
+                                        </div>
 
-            </article>
+                                    </td>
 
+                                    <td>
+                                        @pilot.Attempts
+                                    </td>
 
-            <article class="kpi-card">
+                                    <td>
+                                        @($"{pilot.AverageScore}%")
+                                    </td>
 
-                <div class="kpi-top">
+                                    <td>
 
-                    <span class="kpi-icon">
-                        ★
-                    </span>
+                                        <span class="status-pill @(pilot.PassRate >= 70 ? "passed" : "failed")">
+                                        @($"{pilot.PassRate}%")
+                                    </span>
 
-                    <span class="kpi-label">
-                        Average Score
-                    </span>
+                                </td>
 
-                </div>
+                                <td>
+                                    @pilot.AverageReactionTime s
+                                </td>
 
-                <strong class="kpi-value">
-                    @($"{_dashboard.AverageScore}%")
-                </strong>
+                                <td>
+                                    @(pilot.LatestAttempt.HasValue
+                                    ? pilot.LatestAttempt.Value
+                                    .ToLocalTime()
+                                    .ToString("dd MMM yyyy")
+                                    : "No training")
+                                </td>
 
-                <small>
-                    Across selected training
-                </small>
-
-            </article>
-
-
-            <article class="kpi-card">
-
-                <div class="kpi-top">
-
-                    <span class="kpi-icon">
-                        ✓
-                    </span>
-
-                    <span class="kpi-label">
-                        Pass Rate
-                    </span>
-
-                </div>
-
-                <strong class="kpi-value">
-                    @($"{_dashboard.PassRate}%")
-                </strong>
-
-                <small>
-                    @_dashboard.PassCount passed ·
-                    @_dashboard.FailCount failed
-                </small>
-
-            </article>
-
-
-            <article class="kpi-card">
-
-                <div class="kpi-top">
-
-                    <span class="kpi-icon">
-                        ⏱
-                    </span>
-
-                    <span class="kpi-label">
-                        Avg. Reaction
-                    </span>
-
-                </div>
-
-                <strong class="kpi-value">
-                    @_dashboard.AverageReactionTime s
-                </strong>
-
-                <small>
-                    Emergency response time
-                </small>
-
-            </article>
-
-
-            <article class="kpi-card">
-
-                <div class="kpi-top">
-
-                    <span class="kpi-icon warning">
-                        ⚠
-                    </span>
-
-                    <span class="kpi-label">
-                        Critical Errors
-                    </span>
-
-                </div>
-
-                <strong class="kpi-value">
-                    @_dashboard.SafetyCriticalErrors
-                </strong>
-
-                <small>
-                    Safety-critical mistakes
-                </small>
-
-            </article>
-
-        </section>
-
-
-        @* =====================================================
-            PERFORMANCE TREND + OUTCOMES
-           ===================================================== *@
-
-        <section class="dashboard-primary-grid">
-
-            <article class="dashboard-card trend-card">
-
-                <div class="card-heading">
-
-                    <div>
-
-                        <span class="card-eyebrow">
-                            PERFORMANCE
-                        </span>
-
-                        <h2>
-                            Pilot Performance Trend
-                        </h2>
-
-                    </div>
-
-                    <span class="card-stat">
-                        @_dashboard.TotalAttempts attempts
-                    </span>
-
-                </div>
-
-                @if (_dashboard.PerformanceTrend.Count == 0)
-                {
-                    <div class="no-data">
-
-                        <span>
-                            ▥
-                        </span>
-
-                        <strong>
-                            No performance data
-                        </strong>
-
-                        <small>
-                            Complete pilot simulations to
-                            generate performance trends.
-                        </small>
-
-                    </div>
-                }
-                else
-                {
-                    <div class="usage-chart"
-                        aria-label="Pilot performance trend">
-
-                        @foreach (var day in _dashboard.PerformanceTrend)
-                        {
-                            var height =
-                                Math.Clamp(
-                                    day.AverageScore,
-                                    8,
-                                    100);
-
-                            <div class="usage-column"
-                                 title="@($"{day.Date:dd MMM}: {day.AverageScore}% average score from {day.Attempts} attempt(s)")">
-
-                                <strong>
-                                    @($"{day.AverageScore}%")
-                                </strong>
-
-                                <div class="usage-bar-track">
-
-                                    <div class="usage-bar"
-                                         style="@($"height:{height}%")">
-                                    </div>
-
-                                </div>
-
-                                <small>
-                                    @day.Date.ToString("dd MMM")
-                                </small>
-
-                            </div>
+                            </tr>
                         }
 
-                    </div>
-                }
+                    </tbody>
 
-            </article>
+                </table>
 
+            </div>
+        }
 
-            <article class="dashboard-card outcomes-card">
+    </article>
 
-                <div class="card-heading">
+</section>
+}
 
-                    <div>
 
-                        <span class="card-eyebrow">
-                            OUTCOMES
-                        </span>
+@* =====================================================
+RECENT TRAINING
+===================================================== *@
 
-                        <h2>
-                            Training Outcomes
-                        </h2>
+<section class="dashboard-full-width">
 
-                    </div>
+    <article class="dashboard-card">
 
-                </div>
+        <div class="card-heading">
 
-                <div class="outcome-content">
+            <div>
 
-                    <div class="outcome-ring"
-                         style="@($"--pass-rate:{_dashboard.PassRate}")">
+                <span class="card-eyebrow">
+                    RECENT ACTIVITY
+                </span>
 
-                        <div>
+                <h2>
+                    Recent Pilot Training
+                </h2>
 
-                            <strong>
-                                @($"{_dashboard.PassRate}%")
-                            </strong>
+            </div>
 
-                            <small>
-                                Pass Rate
-                            </small>
+            <span class="card-stat">
+                Latest @_dashboard.RecentActivity.Count
+            </span>
 
-                        </div>
+        </div>
 
-                    </div>
+        @if (_dashboard.RecentActivity.Count == 0)
+        {
+            <div class="no-data">
 
-                    <div class="outcome-legend">
+                <span>
+                    ◷
+                </span>
 
-                        <div class="outcome-row">
+                <strong>
+                    No recent training
+                </strong>
 
-                            <span class="legend-dot passed">
-                            </span>
+                <small>
+                    Recent simulation results
+                    will appear here.
+                </small>
 
-                            <span>
-                                Passed
-                            </span>
+            </div>
+        }
+        else
+        {
+            <div class="recent-activity-list">
 
-                            <strong>
-                                @_dashboard.PassCount
-                            </strong>
-
-                        </div>
-
-                        <div class="outcome-row">
-
-                            <span class="legend-dot failed">
-                            </span>
-
-                            <span>
-                                Failed
-                            </span>
-
-                            <strong>
-                                @_dashboard.FailCount
-                            </strong>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </article>
-
-        </section>
-
-
-        @* =====================================================
-            TRAINING AREA PERFORMANCE
-           ===================================================== *@
-
-        <section class="dashboard-secondary-grid">
-
-            <article class="dashboard-card">
-
-                <div class="card-heading">
-
-                    <div>
-
-                        <span class="card-eyebrow">
-                            COACHING PRIORITIES
-                        </span>
-
-                        <h2>
-                            Training Area Performance
-                        </h2>
-
-                    </div>
-
-                </div>
-
-
-                <div class="metric-list">
-
-                    <div class="metric">
-
-                        <div class="metric-result">
-
-                            <span>
-                                Procedural Accuracy
-                            </span>
-
-                            <strong>
-                                @($"{_dashboard.ScoreBreakdown.ProcedureAccuracy}%")
-                            </strong>
-
-                        </div>
-
-                        <div class="metric-track">
-
-                            <div class="metric-fill"
-                                 style="@($"width:{_dashboard.ScoreBreakdown.ProcedureAccuracy}%")">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="metric">
-
-                        <div class="metric-result">
-
-                            <span>
-                                Decision Making
-                            </span>
-
-                            <strong>
-                                @($"{_dashboard.ScoreBreakdown.DecisionMaking}%")
-                            </strong>
-
-                        </div>
-
-                        <div class="metric-track">
-
-                            <div class="metric-fill"
-                                 style="@($"width:{_dashboard.ScoreBreakdown.DecisionMaking}%")">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="metric">
-
-                        <div class="metric-result">
-
-                            <span>
-                                Checklist Usage
-                            </span>
-
-                            <strong>
-                                @($"{_dashboard.ScoreBreakdown.ChecklistUsage}%")
-                            </strong>
-
-                        </div>
-
-                        <div class="metric-track">
-
-                            <div class="metric-fill"
-                                 style="@($"width:{_dashboard.ScoreBreakdown.ChecklistUsage}%")">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="metric">
-
-                        <div class="metric-result">
-
-                            <span>
-                                Time Management
-                            </span>
-
-                            <strong>
-                                @($"{_dashboard.ScoreBreakdown.TimeManagement}%")
-                            </strong>
-
-                        </div>
-
-                        <div class="metric-track">
-
-                            <div class="metric-fill"
-                                 style="@($"width:{_dashboard.ScoreBreakdown.TimeManagement}%")">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="metric">
-
-                        <div class="metric-result">
-
-                            <span>
-                                Communication
-                            </span>
-
-                            <strong>
-                                @($"{_dashboard.ScoreBreakdown.Communication}%")
-                            </strong>
-
-                        </div>
-
-                        <div class="metric-track">
-
-                            <div class="metric-fill"
-                                 style="@($"width:{_dashboard.ScoreBreakdown.Communication}%")">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </article>
-
-
-            @* =================================================
-                SCENARIO OUTCOMES
-               ================================================= *@
-
-            <article class="dashboard-card scenario-card">
-
-                <div class="card-heading">
-
-                    <div>
-
-                        <span class="card-eyebrow">
-                            SCENARIO ANALYSIS
-                        </span>
-
-                        <h2>
-                            Scenario Outcomes
-                        </h2>
-
-                    </div>
-
-                    <span class="card-stat">
-                        @_dashboard.ScenarioOutcomes.Count scenarios
-                    </span>
-
-                </div>
-
-                @if (_dashboard.ScenarioOutcomes.Count == 0)
+                @foreach (var activity in _dashboard.RecentActivity)
                 {
-                    <div class="no-data">
+                    <div class="recent-activity-item">
 
-                        <span>
+                        <span class="activity-icon">
                             ✈
                         </span>
 
-                        <strong>
-                            No scenario results
-                        </strong>
-
-                        <small>
-                            Scenario outcomes will appear
-                            after simulations are completed.
-                        </small>
-
-                    </div>
-                }
-                else
-                {
-                    <div class="table-responsive">
-
-                        <table class="dashboard-table">
-
-                            <thead>
-
-                                <tr>
-                                    <th>Scenario</th>
-                                    <th>Attempts</th>
-                                    <th>Avg. Score</th>
-                                    <th>Pass Rate</th>
-                                    <th>Reaction</th>
-                                    <th>Outcome</th>
-                                </tr>
-
-                            </thead>
-
-                            <tbody>
-
-                                @foreach (var scenario in _dashboard.ScenarioOutcomes)
-                                {
-                                    <tr>
-
-                                        <td>
-
-                                            <strong>
-                                                @scenario.ScenarioName
-                                            </strong>
-
-                                        </td>
-
-                                        <td>
-                                            @scenario.Attempts
-                                        </td>
-
-                                        <td>
-                                            @($"{scenario.AverageScore}%")
-                                        </td>
-
-                                        <td>
-                                            @($"{scenario.PassRate}%")
-                                        </td>
-
-                                        <td>
-                                            @scenario.AverageReactionTime s
-                                        </td>
-
-                                        <td>
-
-                                            <span class="status-pill @(scenario.PassRate >= 70 ? "passed" : "failed")">
-
-                                                @scenario.Passes passed /
-                                                @scenario.Failures failed
-
-                                            </span>
-
-                                        </td>
-
-                                    </tr>
-                                }
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-                }
-
-            </article>
-
-        </section>
-
-
-        @* =====================================================
-            INDIVIDUAL PILOT PERFORMANCE
-           ===================================================== *@
-
-        @if (string.IsNullOrWhiteSpace(
-            _dashboard.SelectedPilotUserId))
-        {
-            <section class="dashboard-full-width">
-
-                <article class="dashboard-card">
-
-                    <div class="card-heading">
-
-                        <div>
-
-                            <span class="card-eyebrow">
-                                INDIVIDUAL ANALYSIS
-                            </span>
-
-                            <h2>
-                                Pilot Performance
-                            </h2>
-
-                        </div>
-
-                        <span class="card-stat">
-                            @_dashboard.PilotPerformance.Count pilots
-                        </span>
-
-                    </div>
-
-                    @if (_dashboard.PilotPerformance.Count == 0)
-                    {
-                        <div class="no-data">
-
-                            <span>
-                                👥
-                            </span>
+                        <div class="activity-details">
 
                             <strong>
-                                No pilots available
+                                @activity.PilotName
                             </strong>
 
+                            <span>
+                                @activity.ScenarioName
+                                ·
+                                @activity.AircraftName
+                            </span>
+
                             <small>
-                                Linked pilots will appear here.
+                                @(activity.CompletedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"))
                             </small>
 
                         </div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
 
-                            <table class="dashboard-table pilot-table">
+                        <div class="activity-result">
 
-                                <thead>
+                            <strong>
+                                @($"{activity.OverallScore}%")
+                            </strong>
 
-                                    <tr>
-                                        <th>Pilot</th>
-                                        <th>Attempts</th>
-                                        <th>Avg. Score</th>
-                                        <th>Pass Rate</th>
-                                        <th>Reaction Time</th>
-                                        <th>Latest Training</th>
-                                    </tr>
+                            <span class="status-pill @(activity.Passed ? "passed" : "failed")">
 
-                                </thead>
+                                @(activity.Passed
+                                ? "Passed"
+                                : "Failed")
 
-                                <tbody>
-
-                                    @foreach (var pilot in _dashboard.PilotPerformance)
-                                    {
-                                        <tr>
-
-                                            <td>
-
-                                                <div class="pilot-cell">
-
-                                                    <span class="pilot-avatar">
-                                                        👨‍✈
-                                                    </span>
-
-                                                    <strong>
-                                                        <NavLink href="@($"/reports?pilotUserId={Uri.EscapeDataString(pilot.PilotUserId)}")">
-                                                            @pilot.PilotName
-                                                        </NavLink>
-                                                    </strong>
-
-                                                </div>
-
-                                            </td>
-
-                                            <td>
-                                                @pilot.Attempts
-                                            </td>
-
-                                            <td>
-                                                @($"{pilot.AverageScore}%")
-                                            </td>
-
-                                            <td>
-
-                                                <span class="status-pill @(pilot.PassRate >= 70 ? "passed" : "failed")">
-                                                    @($"{pilot.PassRate}%")
-                                                </span>
-
-                                            </td>
-
-                                            <td>
-                                                @pilot.AverageReactionTime s
-                                            </td>
-
-                                            <td>
-                                                @(pilot.LatestAttempt.HasValue
-                                                    ? pilot.LatestAttempt.Value
-                                                        .ToLocalTime()
-                                                        .ToString("dd MMM yyyy")
-                                                    : "No training")
-                                            </td>
-
-                                        </tr>
-                                    }
-
-                                </tbody>
-
-                            </table>
+                            </span>
 
                         </div>
-                    }
 
-                </article>
+                    </div>
+                }
 
-            </section>
+            </div>
         }
 
+    </article>
 
-        @* =====================================================
-            RECENT TRAINING
-           ===================================================== *@
-
-        <section class="dashboard-full-width">
-
-            <article class="dashboard-card">
-
-                <div class="card-heading">
-
-                    <div>
-
-                        <span class="card-eyebrow">
-                            RECENT ACTIVITY
-                        </span>
-
-                        <h2>
-                            Recent Pilot Training
-                        </h2>
-
-                    </div>
-
-                    <span class="card-stat">
-                        Latest @_dashboard.RecentActivity.Count
-                    </span>
-
-                </div>
-
-                @if (_dashboard.RecentActivity.Count == 0)
-                {
-                    <div class="no-data">
-
-                        <span>
-                            ◷
-                        </span>
-
-                        <strong>
-                            No recent training
-                        </strong>
-
-                        <small>
-                            Recent simulation results
-                            will appear here.
-                        </small>
-
-                    </div>
-                }
-                else
-                {
-                    <div class="recent-activity-list">
-
-                        @foreach (var activity in _dashboard.RecentActivity)
-                        {
-                            <div class="recent-activity-item">
-
-                                <span class="activity-icon">
-                                    ✈
-                                </span>
-
-                                <div class="activity-details">
-
-                                    <strong>
-                                        @activity.PilotName
-                                    </strong>
-
-                                    <span>
-                                        @activity.ScenarioName
-                                        ·
-                                        @activity.AircraftName
-                                    </span>
-
-                                    <small>
-                                        @activity.CompletedAt
-                                            .ToLocalTime()
-                                            .ToString(
-                                                "dd MMM yyyy, HH:mm")
-                                    </small>
-
-                                </div>
-
-                                <div class="activity-result">
-
-                                    <strong>
-                                        @($"{activity.OverallScore}%")
-                                    </strong>
-
-                                    <span class="status-pill @(activity.Passed ? "passed" : "failed")">
-
-                                        @(activity.Passed
-                                            ? "Passed"
-                                            : "Failed")
-
-                                    </span>
-
-                                </div>
-
-                            </div>
-                        }
-
-                    </div>
-                }
-
-            </article>
-
-        </section>
+</section>
 
 
-        <footer class="dashboard-footer">
+<footer class="dashboard-footer">
 
-            <span class="live-indicator">
-            </span>
+    <span class="live-indicator">
+    </span>
 
-            Dashboard values are calculated from
-            recorded AeroResponse simulation results.
+    Dashboard values are calculated from
+    recorded AeroResponse simulation results.
 
-        </footer>
+</footer>
 
-    </main>
+</main>
 }
-
 
 @code {
 

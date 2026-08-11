@@ -1,82 +1,88 @@
 @implements IDisposable
 @inject NavigationManager Navigation
 @inject ScenarioService ScenarioService
+@inject AircraftService AircraftService
 
 @if (Items.Count > 0)
 {
     <nav class="breadcrumb-shell"
-        aria-label="Breadcrumb">
+    aria-label="Breadcrumb">
 
-        <div class="breadcrumb-container">
+    <div class="breadcrumb-container">
 
-            <ol class="breadcrumb-list">
+        <ol class="breadcrumb-list">
 
-                @for (var index = 0; index < Items.Count; index++)
-                {
-                    var item = Items[index];
-                    var isLast = index == Items.Count - 1;
+            @for (var index = 0; index < Items.Count; index++)
+            {
+                var item = Items[index];
+                var isLast = index == Items.Count - 1;
 
-                    <li class="breadcrumb-item">
+                <li class="breadcrumb-item">
 
-                        @if (index > 0)
-                        {
-                            <span class="breadcrumb-separator"
-                                aria-hidden="true">
+                    @if (index > 0)
+                    {
+                        <span class="breadcrumb-separator"
+                        aria-hidden="true">
 
-                                <i class="fa-solid fa-chevron-right"></i>
+                        <i class="fa-solid fa-chevron-right"></i>
 
-                            </span>
-                        }
-
-                        @if (!isLast &&
-                            !string.IsNullOrWhiteSpace(item.Href))
-                        {
-                            <NavLink href="@item.Href"
-                                    class="breadcrumb-link">
-
-                                @if (item.IsHome)
-                                {
-                                    <i class="fa-solid fa-house"
-                                    aria-hidden="true"></i>
-                                }
-
-                                <span>
-                                    @item.Label
-                                </span>
-
-                            </NavLink>
-                        }
-                        else
-                        {
-                            <span class="breadcrumb-current"
-                                aria-current="@(isLast ? "page" : null)">
-
-                                @if (item.IsHome)
-                                {
-                                    <i class="fa-solid fa-house"
-                                    aria-hidden="true"></i>
-                                }
-
-                                <span>
-                                    @item.Label
-                                </span>
-
-                            </span>
-                        }
-
-                    </li>
+                    </span>
                 }
 
-            </ol>
+                @if (!isLast &&
+                !string.IsNullOrWhiteSpace(item.Href))
+                {
+                    <NavLink href="@item.Href"
+                    class="breadcrumb-link">
 
-        </div>
+                    @if (item.IsHome)
+                    {
+                        <i class="fa-solid fa-house"
+                        aria-hidden="true"></i>
+                    }
 
-    </nav>
+                    <span>
+                        @item.Label
+                    </span>
+
+                </NavLink>
+            }
+            else
+            {
+                <span class="breadcrumb-current"
+                aria-current="@(isLast ? "page" : null)">
+
+                @if (item.IsHome)
+                {
+                    <i class="fa-solid fa-house"
+                    aria-hidden="true"></i>
+                }
+
+                <span>
+                    @item.Label
+                </span>
+
+            </span>
+        }
+
+    </li>
+}
+
+</ol>
+
+</div>
+
+</nav>
 }
 
 @code {
 
     private readonly List<BreadcrumbItem> Items = new();
+
+
+    /* ============================================================
+        INITIALISATION
+       ============================================================ */
 
     protected override async Task OnInitializedAsync()
     {
@@ -84,6 +90,11 @@
 
         await BuildBreadcrumbAsync();
     }
+
+
+    /* ============================================================
+        NAVIGATION CHANGE
+       ============================================================ */
 
     private async void HandleLocationChanged(
         object? sender,
@@ -96,6 +107,11 @@
             StateHasChanged();
         });
     }
+
+
+    /* ============================================================
+        BUILD BREADCRUMB
+       ============================================================ */
 
     private async Task BuildBreadcrumbAsync()
     {
@@ -219,7 +235,7 @@
                 /*
                  * Future pages that are not explicitly
                  * configured will still receive
-                 * an automatically generated breadcrumb.
+                 * automatically generated breadcrumbs.
                  */
                 BuildGenericBreadcrumb(
                     segments);
@@ -394,6 +410,9 @@
     private async Task BuildSimulationBreadcrumbAsync(
         string[] segments)
     {
+        /*
+         * /simulation
+         */
         if (segments.Length == 1)
         {
             Items.Add(
@@ -406,6 +425,12 @@
 
         /*
          * /simulation/select
+         *
+         * Do not display:
+         * Select Training Session
+         *
+         * Just display:
+         * Home > Simulation
          */
         if (segments[1].Equals(
                 "select",
@@ -416,27 +441,35 @@
                     "Simulation",
                     null));
 
-            Items.Add(
-                new BreadcrumbItem(
-                    "Select Training Session",
-                    null));
-
             return;
         }
 
         /*
-         * Example:
+         * Example route:
          *
-         * /simulation/Boeing737/EngineFire
+         * /simulation/2/BirdStrike
+         *
+         * Result:
+         *
+         * Home > Simulation > Gulfstream > Bird Strike
          */
 
         Items.Add(
             new BreadcrumbItem(
-                "Select Training Session",
+                "Simulation",
                 "/simulation/select"));
 
+        /*
+         * Aircraft route value may be an ID,
+         * for example:
+         *
+         * 2
+         *
+         * Resolve that ID against AircraftService
+         * and display the actual aircraft name.
+         */
         var aircraftLabel =
-            ToDisplayText(
+            await ResolveAircraftNameAsync(
                 segments[1]);
 
         Items.Add(
@@ -444,6 +477,9 @@
                 aircraftLabel,
                 null));
 
+        /*
+         * Resolve the scenario title.
+         */
         if (segments.Length >= 3)
         {
             var scenarioLabel =
@@ -457,6 +493,67 @@
                             segments[2]),
                     null));
         }
+    }
+
+
+    /* ============================================================
+        AIRCRAFT DATABASE LOOKUP
+       ============================================================ */
+
+    private async Task<string> ResolveAircraftNameAsync(
+        string aircraftValue)
+    {
+        /*
+         * If the URL contains an aircraft ID:
+         *
+         * /simulation/2/BirdStrike
+         *
+         * convert "2" to an integer and retrieve
+         * the corresponding aircraft.
+         */
+        if (int.TryParse(
+                aircraftValue,
+                out var aircraftId))
+        {
+            try
+            {
+                var aircraft =
+                    await AircraftService
+                        .GetByIdAsync(
+                            aircraftId);
+
+                if (aircraft is not null)
+                {
+                    /*
+                     * Display the aircraft name
+                     * stored in your database.
+                     *
+                     * Example:
+                     *
+                     * Gulfstream
+                     * Boeing 737
+                     * Airbus A320
+                     */
+                    return aircraft.Name;
+                }
+            }
+            catch
+            {
+                /*
+                 * Breadcrumb lookup failure should
+                 * never stop the simulation page.
+                 */
+            }
+        }
+
+        /*
+         * Fallback:
+         *
+         * If the route contains an aircraft name
+         * rather than an ID, format that value.
+         */
+        return ToDisplayText(
+            aircraftValue);
     }
 
 
@@ -591,8 +688,6 @@
          * EngineFire
          * becomes
          * Engine Fire
-         *
-         * Boeing737 remains Boeing737.
          */
         for (
             var index = 0;
@@ -612,12 +707,12 @@
             }
 
             /*
-             * Add a space between a letter
-             * and a number.
+             * Add a space between
+             * a letter and a number.
              *
              * Boeing737
              * becomes
-             * Boeing 737.
+             * Boeing 737
              */
             if (
                 index > 0 &&

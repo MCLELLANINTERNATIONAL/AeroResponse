@@ -1,0 +1,235 @@
+/* =========================================================
+    PILOT PROFILE / PILOT SELECTOR
+   ========================================================= */
+
+.pilot-chip {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.pilot-chip div {
+    display: flex;
+    flex-direction: column;
+}
+
+.pilot-chip small {
+    color: #ffffff;
+}
+
+
+/* ==========================================
+    PILOT SELECTOR SHELL
+   ========================================== */
+
+.pilot-selector-shell {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 250px;
+}
+
+
+/* ==========================================
+    PILOT AVATAR
+   ========================================== */
+
+.pilot-avatar {
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
+
+    border-radius: 50%;
+
+    display: grid;
+    place-items: center;
+
+    background: #8dace6;
+    color: #071a31;
+
+    font-size: 1.45rem;
+}
+
+
+/* ==========================================
+    PILOT NAME / COPY
+   ========================================== */
+
+.pilot-copy,
+.pilot-select-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.pilot-chip strong,
+.pilot-copy strong {
+    color: #0edf31;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+.pilot-copy small,
+.pilot-select-wrap small {
+    color: #ffffff;
+    font-size: 0.95rem;
+    margin-top: 3px;
+}
+
+
+/* ==========================================
+    PILOT SELECT WRAPPER
+   ========================================== */
+
+.pilot-select-wrap {
+    position: relative;
+}
+
+
+/* ==========================================
+    ACCESSIBLE PILOT SELECT LABEL
+   ========================================== */
+
+.pilot-select-label {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    padding: 0;
+    margin: -1px;
+
+    overflow: hidden;
+
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+
+    white-space: nowrap;
+
+    border: 0;
+}
+
+
+/* ==========================================
+    PILOT SELECT DROPDOWN
+   ========================================== */
+
+.pilot-select {
+    -webkit-appearance: none;
+    appearance: none;
+
+    min-width: 205px;
+    max-width: 320px;
+
+    padding: 8px 38px 8px 12px;
+
+    border: 2px solid #8dace6;
+    border-radius: 8px;
+
+    /*
+        White background makes the dropdown clearly
+        visible against the blue reports header.
+    */
+    background-color: #ffffff;
+
+    /*
+        Custom blue dropdown arrow.
+    */
+    background-image:
+        linear-gradient(
+            45deg,
+            transparent 50%,
+            #255fc9 50%
+        ),
+        linear-gradient(
+            135deg,
+            #255fc9 50%,
+            transparent 50%
+        );
+
+    background-position:
+        calc(100% - 16px) 50%,
+        calc(100% - 11px) 50%;
+
+    background-size:
+        5px 5px,
+        5px 5px;
+
+    background-repeat: no-repeat;
+
+    color: #255fc9;
+
+    font: inherit;
+    font-size: 1.15rem;
+    font-weight: 800;
+
+    cursor: pointer;
+    outline: none;
+}
+
+
+/* ==========================================
+    PILOT SELECT HOVER
+   ========================================== */
+
+.pilot-select:hover {
+    border-color: #0edf31;
+    background-color: #f4fff6;
+}
+
+
+/* ==========================================
+    PILOT SELECT FOCUS
+   ========================================== */
+
+.pilot-select:focus,
+.pilot-select:focus-visible {
+    border-color: #0edf31;
+    background-color: #ffffff;
+
+    box-shadow:
+        0 0 0 3px rgba(14, 223, 49, 0.20);
+}
+
+
+/* ==========================================
+    PILOT SELECT OPTIONS
+   ========================================== */
+
+.pilot-select option {
+    color: #172b46;
+    background-color: #ffffff;
+
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+
+/* ==========================================
+    ADMIN PLATFORM OVERVIEW
+   ========================================== */
+
+.admin-chip strong {
+    color: #0edf31;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+
+/* ==========================================
+    MOBILE PILOT SELECTOR
+   ========================================== */
+
+@media (max-width: 760px) {
+
+    .pilot-selector-shell {
+        min-width: 0;
+    }
+
+    .pilot-select {
+        min-width: 170px;
+        max-width: 220px;
+        font-size: 1.05rem;
+    }
+}

@@ -6,6 +6,7 @@ using AeroResponse.Data.Mongo.Accounts;
 using AeroResponse.Data.Mongo.Memberships;
 using AeroResponse.Data.Mongo.Payments;
 using AeroResponse.Data.Mongo.Referrals;
+using AeroResponse.Data.Mongo.Reports;
 using AeroResponse.Hubs;
 using AeroResponse.Repositories;
 using AeroResponse.Services;
@@ -20,6 +21,9 @@ using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Required so Blazor static web assets are available in Production/Render
+builder.WebHost.UseStaticWebAssets();
 
 // =========================================================
 // RAZOR COMPONENTS
@@ -40,28 +44,44 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(
         AccountPermissions.PilotPages,
-        policy => policy.Requirements.Add(
-            new AccountPermissionRequirement(
-                AccountPermissions.PilotPages)));
+        policy =>
+            policy.Requirements.Add(
+                new AccountPermissionRequirement(
+                    AccountPermissions.PilotPages)));
 
     options.AddPolicy(
         AccountPermissions.TrainerReports,
-        policy => policy.Requirements.Add(
-            new AccountPermissionRequirement(
-                AccountPermissions.TrainerReports)));
+        policy =>
+            policy.Requirements.Add(
+                new AccountPermissionRequirement(
+                    AccountPermissions.TrainerReports)));
 
     options.AddPolicy(
         AccountPermissions.AdminPages,
-        policy => policy.Requirements.Add(
-            new AccountPermissionRequirement(
-                AccountPermissions.AdminPages)));
+        policy =>
+            policy.Requirements.Add(
+                new AccountPermissionRequirement(
+                    AccountPermissions.AdminPages)));
 });
-builder.Services.AddCascadingAuthenticationState();
 
-builder.Services.AddScoped<IdentityRedirectManager>();
-builder.Services.AddScoped<AccountPermissionService>();
-builder.Services.AddScoped<PilotReportAccessService>();
-builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, AccountPermissionHandler>();
+builder.Services
+    .AddCascadingAuthenticationState();
+
+builder.Services.AddScoped<
+    IdentityRedirectManager>();
+
+builder.Services.AddScoped<
+    AccountPermissionService>();
+
+builder.Services.AddScoped<
+    PilotReportAccessService>();
+
+builder.Services.AddScoped<
+    AircraftAccessService>();
+
+builder.Services.AddScoped<
+    Microsoft.AspNetCore.Authorization.IAuthorizationHandler,
+    AccountPermissionHandler>();
 
 builder.Services.AddScoped<
     AuthenticationStateProvider,
@@ -82,16 +102,18 @@ builder.Services
 // SQLITE AND ENTITY FRAMEWORK
 // =========================================================
 
-// SQLite is used by ASP.NET Core Identity and the
-// Entity Framework application repositories.
 var connectionString =
-    builder.Configuration.GetConnectionString(
-        "DefaultConnection")
+    builder.Configuration
+        .GetConnectionString(
+            "DefaultConnection")
     ?? throw new InvalidOperationException(
         "Connection string 'DefaultConnection' was not found.");
 
-builder.Services.AddDbContext<ApplicationDbContext>(
-    options => options.UseSqlite(connectionString));
+builder.Services
+    .AddDbContext<ApplicationDbContext>(
+        options =>
+            options.UseSqlite(
+                connectionString));
 
 builder.Services
     .AddDatabaseDeveloperPageExceptionFilter();
@@ -103,8 +125,9 @@ builder.Services
 builder.Services
     .AddOptions<MongoDbSettings>()
     .Bind(
-        builder.Configuration.GetSection(
-            MongoDbSettings.SectionName))
+        builder.Configuration
+            .GetSection(
+                MongoDbSettings.SectionName))
     .Validate(
         settings =>
             !string.IsNullOrWhiteSpace(
@@ -117,8 +140,6 @@ builder.Services
         "MongoDb:DatabaseName is required.")
     .ValidateOnStart();
 
-// MongoClient is thread-safe and should be reused for
-// the lifetime of the application.
 builder.Services.AddSingleton<IMongoClient>(
     serviceProvider =>
     {
@@ -129,58 +150,57 @@ builder.Services.AddSingleton<IMongoClient>(
                 .Value;
 
         var clientSettings =
-            MongoClientSettings.FromConnectionString(
-                settings.ConnectionString);
+            MongoClientSettings
+                .FromConnectionString(
+                    settings.ConnectionString);
 
-        // Prevent MongoDB connection attempts from
-        // waiting indefinitely when MongoDB is unavailable.
         clientSettings.ServerSelectionTimeout =
             TimeSpan.FromSeconds(5);
 
         clientSettings.ConnectTimeout =
             TimeSpan.FromSeconds(5);
 
-        return new MongoClient(clientSettings);
+        return new MongoClient(
+            clientSettings);
     });
 
-// Shared MongoDB context.
-builder.Services.AddSingleton<MongoDbContext>(
-    serviceProvider =>
-    {
-        var settings =
-            serviceProvider
-                .GetRequiredService<
-                    IOptions<MongoDbSettings>>()
-                .Value;
+builder.Services.AddSingleton<
+    MongoDbContext>(
+        serviceProvider =>
+        {
+            var settings =
+                serviceProvider
+                    .GetRequiredService<
+                        IOptions<MongoDbSettings>>()
+                    .Value;
 
-        var client =
-            serviceProvider
-                .GetRequiredService<IMongoClient>();
+            var client =
+                serviceProvider
+                    .GetRequiredService<
+                        IMongoClient>();
 
-        return new MongoDbContext(
-            client,
-            settings);
-    });
+            return new MongoDbContext(
+                client,
+                settings);
+        });
 
-// MongoDB connection diagnostics.
 builder.Services.AddSingleton<
     MongoConnectionProbe>();
 
-// MongoDB account repository.
 builder.Services.AddSingleton<
     MongoUserAccountRepository>();
 
-// MongoDB saved payment-method repository.
 builder.Services.AddSingleton<
     MongoSavedPaymentMethodRepository>();
 
-// MongoDB membership timeline repository.
 builder.Services.AddSingleton<
     MongoMemberTimelineRepository>();
 
-// MongoDB owner referral-code repository.
 builder.Services.AddSingleton<
     MongoOwnerReferralCodeRepository>();
+
+builder.Services.AddSingleton<
+    MongoPilotReportRepository>();
 
 // =========================================================
 // ASP.NET CORE IDENTITY
@@ -190,15 +210,15 @@ builder.Services
     .AddIdentityCore<ApplicationUser>(
         options =>
         {
-            // Registered users can sign in immediately
-            // without confirming an email address.
-            options.SignIn.RequireConfirmedAccount =
+            options.SignIn
+                .RequireConfirmedAccount =
                 false;
 
             options.Stores.SchemaVersion =
                 IdentitySchemaVersions.Version3;
         })
-    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddEntityFrameworkStores<
+        ApplicationDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
@@ -210,7 +230,6 @@ builder.Services.AddSingleton<
 // REPOSITORIES
 // =========================================================
 
-// Generic Entity Framework repository.
 builder.Services.AddScoped(
     typeof(IGenericRepository<>),
     typeof(EfGenericRepository<>));
@@ -252,13 +271,9 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     PerformanceScoringEngine>();
 
-// Provides dashboards for trainers and company owners.
-// Results are restricted to pilots linked to their company.
 builder.Services.AddScoped<
     InstructorDashboardService>();
 
-// Provides the system-wide Administration Dashboard.
-// Access is restricted by the admin permission policy.
 builder.Services.AddScoped<
     AdminDashboardService>();
 
@@ -297,7 +312,6 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     AiInstructorService>();
 
-// Creates, rotates and resolves owner invitation codes.
 builder.Services.AddSingleton<
     OwnerReferralCodeService>();
 
@@ -305,17 +319,17 @@ builder.Services.AddSingleton<
 // BUILD APPLICATION
 // =========================================================
 
-// Create required MongoDB indexes.
 var app = builder.Build();
 
-// Apply Entity Framework migrations and seed the
-// initial application data.
 await SeedData.InitializeAsync(
     app.Services);
 
-// Create MongoDB indexes and initialise the existing
-// company-member counters.
-using (var scope = app.Services.CreateScope())
+// =========================================================
+// MONGODB INITIALISATION
+// =========================================================
+
+using (var scope =
+       app.Services.CreateScope())
 {
     var userAccountRepository =
         scope.ServiceProvider
@@ -327,10 +341,18 @@ using (var scope = app.Services.CreateScope())
             .GetRequiredService<
                 MongoOwnerReferralCodeRepository>();
 
+    var pilotReportRepository =
+        scope.ServiceProvider
+            .GetRequiredService<
+                MongoPilotReportRepository>();
+
     await userAccountRepository
         .EnsureIndexesAsync();
 
     await referralCodeRepository
+        .EnsureIndexesAsync();
+
+    await pilotReportRepository
         .EnsureIndexesAsync();
 
     await userAccountRepository
@@ -360,11 +382,13 @@ app.UseStatusCodePagesWithReExecute(
 
 app.UseHttpsRedirection();
 
-// Authentication must run before authorization.
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.UseAntiforgery();
+
+app.UseStaticFiles();
 
 app.MapStaticAssets();
 
@@ -375,11 +399,8 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// ASP.NET Core Identity endpoints, including login,
-// logout, registration and account management.
 app.MapAdditionalIdentityEndpoints();
 
-// SignalR cockpit simulation hub.
 app.MapHub<CockpitHub>(
     "/cockpithub");
 
@@ -401,19 +422,28 @@ app.MapGet(
             return Results.Ok(
                 new
                 {
-                    status = "healthy",
-                    database = "mongodb"
+                    status =
+                        "healthy",
+
+                    database =
+                        "mongodb"
                 });
         }
         catch (Exception exception)
         {
             return Results.Problem(
-                detail: app.Environment.IsDevelopment()
-                    ? exception.Message
-                    : null,
-                statusCode: StatusCodes
-                    .Status503ServiceUnavailable,
-                title: "MongoDB connection failed");
+                detail:
+                    app.Environment
+                        .IsDevelopment()
+                        ? exception.Message
+                        : null,
+
+                statusCode:
+                    StatusCodes
+                        .Status503ServiceUnavailable,
+
+                title:
+                    "MongoDB connection failed");
         }
     });
 

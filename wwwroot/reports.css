@@ -813,7 +813,7 @@
 }
 
 .admin-chip strong {
-    color: #2d69da;
+    color: #2dda55;
     font-size: 1.25rem;
 }
 
@@ -1662,6 +1662,13 @@
     font-weight: 700;
 }
 
+.dashboard-footer {
+    color: #1fe768;
+    font-weight: 800;
+    font-size: 1rem;
+    text-align: right;
+    justify-content: flex-end;
+}
 
 /* =========================================================
     PERFORMANCE TREND

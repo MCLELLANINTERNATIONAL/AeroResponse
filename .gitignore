@@ -483,11 +483,16 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# SQLite Database Files that change every run
-Data/app.db
+# SQLite Database Files
+
+# Ignore SQLite temporary runtime files
 Data/app.db-shm
 Data/app.db-wal
 
+# Ignore database files generally
 *.db
 *.db-shm
 *.db-wal
+
+# Include the main AeroResponse database
+!Data/app.db

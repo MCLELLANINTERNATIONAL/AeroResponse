@@ -9,136 +9,401 @@ public sealed class PerformanceDashboardService(
     ApplicationDbContext context,
     MongoPilotReportRepository mongoReports)
 {
-    public async Task<PerformanceDashboardVm> GetDashboardAsync(string userId)
+    public async Task<PerformanceDashboardVm>
+        GetDashboardAsync(
+            string userId)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            userId);
 
         // MongoDB is the primary read source. SQL remains the secondary copy and
         // is only consulted to detect/backfill historical rows that pre-date the
         // MongoDB report store. The view model is always built from MongoDB.
-        var reports = (await mongoReports.GetReportsForUserAsync(userId)).ToList();
-        var sqlReportCount = await context.SimulationReports.AsNoTracking()
-            .CountAsync(x => x.UserId == userId);
+        var reports =
+            (await mongoReports
+                .GetReportsForUserAsync(
+                    userId))
+            .ToList();
+
+        var sqlReportCount =
+            await context
+                .SimulationReports
+                .AsNoTracking()
+                .CountAsync(
+                    x =>
+                        x.UserId == userId);
 
         if (sqlReportCount > reports.Count)
         {
-            var sqlReports = await context.SimulationReports.AsNoTracking()
-                .Where(x => x.UserId == userId)
-                .OrderBy(x => x.CreatedAt)
-                .ToListAsync();
+            var sqlReports =
+                await context
+                    .SimulationReports
+                    .AsNoTracking()
+                    .Where(
+                        x =>
+                            x.UserId == userId)
+                    .OrderBy(
+                        x =>
+                            x.CreatedAt)
+                    .ToListAsync();
 
-            await mongoReports.UpsertReportsAsync(sqlReports);
-            reports = (await mongoReports.GetReportsForUserAsync(userId)).ToList();
+            await mongoReports
+                .UpsertReportsAsync(
+                    sqlReports);
+
+            reports =
+                (await mongoReports
+                    .GetReportsForUserAsync(
+                        userId))
+                .ToList();
         }
 
-        var achievements = (await mongoReports.GetAchievementsForUserAsync(userId)).ToList();
-        var sqlAchievementCount = await context.PilotAchievements.AsNoTracking()
-            .CountAsync(x => x.UserId == userId);
+        var achievements =
+            (await mongoReports
+                .GetAchievementsForUserAsync(
+                    userId))
+            .ToList();
 
-        if (sqlAchievementCount > achievements.Count)
+        var sqlAchievementCount =
+            await context
+                .PilotAchievements
+                .AsNoTracking()
+                .CountAsync(
+                    x =>
+                        x.UserId == userId);
+
+        if (sqlAchievementCount >
+            achievements.Count)
         {
-            var sqlAchievements = await context.PilotAchievements.AsNoTracking()
-                .Where(x => x.UserId == userId)
-                .OrderBy(x => x.EarnedAt)
-                .ToListAsync();
+            var sqlAchievements =
+                await context
+                    .PilotAchievements
+                    .AsNoTracking()
+                    .Where(
+                        x =>
+                            x.UserId == userId)
+                    .OrderBy(
+                        x =>
+                            x.EarnedAt)
+                    .ToListAsync();
 
-            await mongoReports.UpsertAchievementsAsync(sqlAchievements);
-            achievements = (await mongoReports.GetAchievementsForUserAsync(userId)).ToList();
+            await mongoReports
+                .UpsertAchievementsAsync(
+                    sqlAchievements);
+
+            achievements =
+                (await mongoReports
+                    .GetAchievementsForUserAsync(
+                        userId))
+                .ToList();
         }
 
-        var latest = reports.LastOrDefault();
-        var recent = reports.TakeLast(10).ToList();
-        var average = reports.Count == 0 ? 0 : (int)Math.Round(reports.Average(x => x.OverallScore));
-        var best = reports.Count == 0 ? 0 : reports.Max(x => x.OverallScore);
-        var improvement = recent.Count < 2 ? 0 : recent[^1].OverallScore - recent[0].OverallScore;
+        var latest =
+            reports.LastOrDefault();
+
+        var recent =
+            reports
+                .TakeLast(10)
+                .ToList();
+
+        var average =
+            reports.Count == 0
+                ? 0
+                : (int)Math.Round(
+                    reports.Average(
+                        x =>
+                            x.OverallScore));
+
+        var best =
+            reports.Count == 0
+                ? 0
+                : reports.Max(
+                    x =>
+                        x.OverallScore);
+
+        var improvement =
+            recent.Count < 2
+                ? 0
+                : recent[^1].OverallScore
+                  - recent[0].OverallScore;
 
         return new PerformanceDashboardVm
         {
-            Latest = latest,
-            Reports = reports.OrderByDescending(x => x.CreatedAt).ToList(),
-            ChartReports = recent,
-            Achievements = achievements,
-            AverageScore = average,
-            BestScore = best,
-            Improvement = improvement
+            Latest =
+                latest,
+
+            Reports =
+                reports
+                    .OrderByDescending(
+                        x =>
+                            x.CreatedAt)
+                    .ToList(),
+
+            ChartReports =
+                recent,
+
+            Achievements =
+                achievements,
+
+            AverageScore =
+                average,
+
+            BestScore =
+                best,
+
+            Improvement =
+                improvement
         };
     }
 
-    public async Task<SimulationReport> SaveCompletedPracticeAsync(
-    SimulationReport report)
+    public async Task<SimulationReport>
+        SaveCompletedPracticeAsync(
+            SimulationReport report)
     {
-        ArgumentNullException.ThrowIfNull(report);
+        ArgumentNullException.ThrowIfNull(
+            report);
 
-        report.CreatedAt = DateTime.UtcNow;
+        report.CreatedAt =
+            DateTime.UtcNow;
 
         // Preserve the detailed AI feedback generated by
         // AiInstructorService at the end of the simulation.
         // Only generate fallback feedback if none already exists.
-        if (string.IsNullOrWhiteSpace(report.AiFeedback))
+        if (string.IsNullOrWhiteSpace(
+                report.AiFeedback))
         {
             report.AiFeedback =
-                GenerateAiStyleFeedback(report);
+                GenerateAiStyleFeedback(
+                    report);
         }
 
-        context.SimulationReports.Add(report);
+        // MongoDB is the primary report store. Save the completed simulation
+        // before touching the relational copy so a Render/SQLite reset cannot
+        // make report history depend on a recyclable SQL identity value.
+        // The Mongo repository uses UserId + StartedAt + CompletedAt as its
+        // retry key and generates its own ObjectId for brand-new documents.
+        await mongoReports
+            .UpsertReportAsync(
+                report);
+
+        // Keep SQL only as a secondary compatibility copy for older parts of
+        // the application. Its generated integer Id is never used as Mongo's
+        // _id, so resetting SQL cannot overwrite an existing Mongo report.
+        context.SimulationReports.Add(
+            report);
 
         await context.SaveChangesAsync();
 
-        await UnlockAchievementsAsync(report);
+        // Refresh the same Mongo document with the optional legacy SQL Id.
+        // This is metadata only; it is not the MongoDB document identity.
+        await mongoReports
+            .UpsertReportAsync(
+                report);
 
-        // Keep the relational record as the durable secondary copy, while all
-        // report reads use MongoDB first. Upserts make retries safe.
-        await mongoReports.UpsertReportAsync(report);
+        await UnlockAchievementsAsync(
+            report);
 
-        var achievements = await context.PilotAchievements.AsNoTracking()
-            .Where(x => x.UserId == report.UserId)
-            .OrderBy(x => x.EarnedAt)
-            .ToListAsync();
+        var achievements =
+            await context
+                .PilotAchievements
+                .AsNoTracking()
+                .Where(
+                    x =>
+                        x.UserId ==
+                        report.UserId)
+                .OrderBy(
+                    x =>
+                        x.EarnedAt)
+                .ToListAsync();
 
-        await mongoReports.UpsertAchievementsAsync(achievements);
+        await mongoReports
+            .UpsertAchievementsAsync(
+                achievements);
 
-        PerformanceFeed.Notify(report.UserId);
+        PerformanceFeed.Notify(
+            report.UserId);
 
         return report;
     }
 
-    private async Task UnlockAchievementsAsync(SimulationReport report)
+    private async Task UnlockAchievementsAsync(
+        SimulationReport report)
     {
-        var candidates = new List<PilotAchievement>();
-        if (report.ReactionTimeSeconds <= 10) candidates.Add(New("quick-thinker", "Quick Thinker", "Responded to an emergency within ten seconds.", "⚡"));
-        if (report.ChecklistAccuracyScore >= 90) candidates.Add(New("checklist-master", "Checklist Master", "Achieved at least 90% procedural accuracy.", "✓"));
-        if (report.DecisionMakingScore >= 90) candidates.Add(New("calm-pressure", "Calm Under Pressure", "Achieved at least 90% decision-making performance.", "✈"));
-        if (report.SafetyCriticalErrors == 0) candidates.Add(New("protocol-pro", "Protocol Pro", "Completed a scenario without a safety-critical error.", "⚓"));
-        if (report.CommunicationScore >= 90) candidates.Add(New("communication-star", "Communication Star", "Demonstrated excellent emergency communication.", "★"));
-        if (report.OverallScore == 100) candidates.Add(New("perfect-score", "Perfect Score", "Achieved 100% in a training scenario.", "🏆"));
+        var candidates =
+            new List<PilotAchievement>();
 
-        var existing = await context.PilotAchievements.Where(x => x.UserId == report.UserId).Select(x => x.Code).ToListAsync();
-        foreach (var achievement in candidates.Where(x => !existing.Contains(x.Code)))
+        if (report.ReactionTimeSeconds <= 10)
         {
-            achievement.UserId = report.UserId;
-            context.PilotAchievements.Add(achievement);
+            candidates.Add(
+                New(
+                    "quick-thinker",
+                    "Quick Thinker",
+                    "Responded to an emergency within ten seconds.",
+                    "⚡"));
         }
+
+        if (report.ChecklistAccuracyScore >= 90)
+        {
+            candidates.Add(
+                New(
+                    "checklist-master",
+                    "Checklist Master",
+                    "Achieved at least 90% procedural accuracy.",
+                    "✓"));
+        }
+
+        if (report.DecisionMakingScore >= 90)
+        {
+            candidates.Add(
+                New(
+                    "calm-pressure",
+                    "Calm Under Pressure",
+                    "Achieved at least 90% decision-making performance.",
+                    "✈"));
+        }
+
+        if (report.SafetyCriticalErrors == 0)
+        {
+            candidates.Add(
+                New(
+                    "protocol-pro",
+                    "Protocol Pro",
+                    "Completed a scenario without a safety-critical error.",
+                    "⚓"));
+        }
+
+        if (report.CommunicationScore >= 90)
+        {
+            candidates.Add(
+                New(
+                    "communication-star",
+                    "Communication Star",
+                    "Demonstrated excellent emergency communication.",
+                    "★"));
+        }
+
+        if (report.OverallScore == 100)
+        {
+            candidates.Add(
+                New(
+                    "perfect-score",
+                    "Perfect Score",
+                    "Achieved 100% in a training scenario.",
+                    "🏆"));
+        }
+
+        var existing =
+            await context
+                .PilotAchievements
+                .Where(
+                    x =>
+                        x.UserId ==
+                        report.UserId)
+                .Select(
+                    x =>
+                        x.Code)
+                .ToListAsync();
+
+        foreach (
+            var achievement
+            in candidates.Where(
+                x =>
+                    !existing.Contains(
+                        x.Code)))
+        {
+            achievement.UserId =
+                report.UserId;
+
+            context
+                .PilotAchievements
+                .Add(
+                    achievement);
+        }
+
         await context.SaveChangesAsync();
     }
 
-    private static PilotAchievement New(string code, string name, string description, string icon) => new()
-    { Code = code, Name = name, Description = description, Icon = icon, EarnedAt = DateTime.UtcNow };
+    private static PilotAchievement New(
+        string code,
+        string name,
+        string description,
+        string icon) =>
+        new()
+        {
+            Code =
+                code,
 
-    public static string GenerateAiStyleFeedback(SimulationReport report)
+            Name =
+                name,
+
+            Description =
+                description,
+
+            Icon =
+                icon,
+
+            EarnedAt =
+                DateTime.UtcNow
+        };
+
+    public static string GenerateAiStyleFeedback(
+        SimulationReport report)
     {
-        var strengths = new List<string>();
-        var improvements = new List<string>();
-        if (report.ChecklistAccuracyScore >= 85) strengths.Add("strong procedural discipline"); else improvements.Add("review the checklist sequence");
-        if (report.DecisionMakingScore >= 85) strengths.Add("sound decision-making under pressure"); else improvements.Add("pause briefly to confirm safety-critical decisions");
-        if (report.ReactionTimeSeconds <= 12) strengths.Add("a prompt initial response"); else improvements.Add("identify and respond to the primary warning faster");
-        if (report.CommunicationScore < 85) improvements.Add("declare the emergency and communicate intentions earlier");
+        var strengths =
+            new List<string>();
 
-        var lead = strengths.Count > 0
-            ? $"You demonstrated {string.Join(" and ", strengths)}."
-            : "This attempt provides a useful baseline for improvement.";
-        var next = improvements.Count > 0
-            ? $"For the next attempt, {string.Join(", and ", improvements)}."
-            : "Continue practising at a higher difficulty while maintaining the same disciplined response.";
+        var improvements =
+            new List<string>();
+
+        if (report.ChecklistAccuracyScore >= 85)
+        {
+            strengths.Add(
+                "strong procedural discipline");
+        }
+        else
+        {
+            improvements.Add(
+                "review the checklist sequence");
+        }
+
+        if (report.DecisionMakingScore >= 85)
+        {
+            strengths.Add(
+                "sound decision-making under pressure");
+        }
+        else
+        {
+            improvements.Add(
+                "pause briefly to confirm safety-critical decisions");
+        }
+
+        if (report.ReactionTimeSeconds <= 12)
+        {
+            strengths.Add(
+                "a prompt initial response");
+        }
+        else
+        {
+            improvements.Add(
+                "identify and respond to the primary warning faster");
+        }
+
+        if (report.CommunicationScore < 85)
+        {
+            improvements.Add(
+                "declare the emergency and communicate intentions earlier");
+        }
+
+        var lead =
+            strengths.Count > 0
+                ? $"You demonstrated {string.Join(" and ", strengths)}."
+                : "This attempt provides a useful baseline for improvement.";
+
+        var next =
+            improvements.Count > 0
+                ? $"For the next attempt, {string.Join(", and ", improvements)}."
+                : "Continue practising at a higher difficulty while maintaining the same disciplined response.";
+
         return $"{lead} {next}";
     }
 }
@@ -146,16 +411,30 @@ public sealed class PerformanceDashboardService(
 public sealed class PerformanceDashboardVm
 {
     public SimulationReport? Latest { get; init; }
-    public IReadOnlyList<SimulationReport> Reports { get; init; } = [];
-    public IReadOnlyList<SimulationReport> ChartReports { get; init; } = [];
-    public IReadOnlyList<PilotAchievement> Achievements { get; init; } = [];
+
+    public IReadOnlyList<SimulationReport>
+        Reports { get; init; } = [];
+
+    public IReadOnlyList<SimulationReport>
+        ChartReports { get; init; } = [];
+
+    public IReadOnlyList<PilotAchievement>
+        Achievements { get; init; } = [];
+
     public int AverageScore { get; init; }
+
     public int BestScore { get; init; }
+
     public int Improvement { get; init; }
 }
 
 public static class PerformanceFeed
 {
-    public static event Action<string>? ReportSaved;
-    public static void Notify(string userId) => ReportSaved?.Invoke(userId);
+    public static event Action<string>?
+        ReportSaved;
+
+    public static void Notify(
+        string userId) =>
+        ReportSaved?.Invoke(
+            userId);
 }

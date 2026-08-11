@@ -205,7 +205,8 @@ public sealed class MongoPilotReportRepository
             userIds
                 .Where(userId =>
                     !string.IsNullOrWhiteSpace(userId))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Distinct(
+                    StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
         if (ids.Length == 0)
@@ -217,7 +218,8 @@ public sealed class MongoPilotReportRepository
             Builders<MongoSimulationReport>
                 .Filter
                 .In(
-                    report => report.UserId,
+                    report =>
+                        report.UserId,
                     ids);
 
         if (fromUtc.HasValue)
@@ -245,14 +247,16 @@ public sealed class MongoPilotReportRepository
         var documents =
             await _reports
                 .Find(filter)
-                .SortBy(report =>
-                    report.CompletedAt)
+                .SortBy(
+                    report =>
+                        report.CompletedAt)
                 .ToListAsync(
                     cancellationToken);
 
         return documents
-            .Select(document =>
-                document.ToModel())
+            .Select(
+                document =>
+                    document.ToModel())
             .ToArray();
     }
 
@@ -312,6 +316,13 @@ public sealed class MongoPilotReportRepository
             .ToArray();
     }
 
+    /// <summary>
+    /// Saves or refreshes a simulation report without ever using the SQL
+    /// integer identity as MongoDB's _id. The report fingerprint is based on
+    /// the pilot plus the simulation start/completion timestamps, so resetting
+    /// the relational database cannot cause an unrelated Mongo document to be
+    /// overwritten when SQL IDs start again from 1.
+    /// </summary>
     public async Task UpsertReportAsync(
         SimulationReport report,
         CancellationToken cancellationToken = default)
@@ -322,41 +333,49 @@ public sealed class MongoPilotReportRepository
             MongoSimulationReport.FromModel(
                 report);
 
-        await _reports.ReplaceOneAsync(
-            storedReport =>
-                storedReport.Id == document.Id,
-            document,
-            new ReplaceOptions
+        await _reports.UpdateOneAsync(
+            BuildReportIdentityFilter(
+                report),
+            BuildReportUpdate(
+                document),
+            new UpdateOptions
             {
                 IsUpsert = true
             },
             cancellationToken);
     }
 
+    /// <summary>
+    /// Backfills historical SQL reports safely. Existing legacy Mongo records
+    /// keep their original integer _id, while genuinely new records receive a
+    /// Mongo ObjectId. SQL ID reuse can therefore never replace another report.
+    /// </summary>
     public async Task UpsertReportsAsync(
         IEnumerable<SimulationReport> reports,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(reports);
+        ArgumentNullException.ThrowIfNull(
+            reports);
 
         var writes =
             reports
-                .Select(
-                    MongoSimulationReport.FromModel)
-                .Select(
-                    document =>
+                .Select(report =>
+                {
+                    var document =
+                        MongoSimulationReport.FromModel(
+                            report);
+
+                    return
                         (WriteModel<MongoSimulationReport>)
-                        new ReplaceOneModel<MongoSimulationReport>(
-                            Builders<MongoSimulationReport>
-                                .Filter
-                                .Eq(
-                                    storedReport =>
-                                        storedReport.Id,
-                                    document.Id),
-                            document)
+                        new UpdateOneModel<MongoSimulationReport>(
+                            BuildReportIdentityFilter(
+                                report),
+                            BuildReportUpdate(
+                                document))
                         {
                             IsUpsert = true
-                        })
+                        };
+                })
                 .ToList();
 
         if (writes.Count == 0)
@@ -366,34 +385,93 @@ public sealed class MongoPilotReportRepository
 
         await _reports.BulkWriteAsync(
             writes,
-            cancellationToken:
-                cancellationToken);
+            new BulkWriteOptions
+            {
+                IsOrdered = false
+            },
+            cancellationToken);
     }
 
+    /// <summary>
+    /// Upserts achievements by their real logical identity: user + achievement
+    /// code. SQL-generated integer IDs are retained only as optional legacy
+    /// metadata and can safely repeat after a relational database reset.
+    /// </summary>
     public async Task UpsertAchievementsAsync(
         IEnumerable<PilotAchievement> achievements,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(achievements);
+        ArgumentNullException.ThrowIfNull(
+            achievements);
 
         var writes =
             achievements
-                .Select(
-                    MongoPilotAchievement.FromModel)
-                .Select(
-                    document =>
+                .Select(achievement =>
+                {
+                    var document =
+                        MongoPilotAchievement.FromModel(
+                            achievement);
+
+                    var filter =
+                        Builders<MongoPilotAchievement>
+                            .Filter
+                            .Eq(
+                                stored =>
+                                    stored.UserId,
+                                document.UserId)
+                        &
+                        Builders<MongoPilotAchievement>
+                            .Filter
+                            .Eq(
+                                stored =>
+                                    stored.Code,
+                                document.Code);
+
+                    var update =
+                        Builders<MongoPilotAchievement>
+                            .Update
+                            .SetOnInsert(
+                                stored =>
+                                    stored.Id,
+                                document.Id)
+                            .Set(
+                                stored =>
+                                    stored.LegacySqlAchievementId,
+                                document.LegacySqlAchievementId)
+                            .Set(
+                                stored =>
+                                    stored.UserId,
+                                document.UserId)
+                            .Set(
+                                stored =>
+                                    stored.Code,
+                                document.Code)
+                            .Set(
+                                stored =>
+                                    stored.Name,
+                                document.Name)
+                            .Set(
+                                stored =>
+                                    stored.Description,
+                                document.Description)
+                            .Set(
+                                stored =>
+                                    stored.Icon,
+                                document.Icon)
+                            .Set(
+                                stored =>
+                                    stored.EarnedAt,
+                                document.EarnedAt);
+
+                    return
                         (WriteModel<MongoPilotAchievement>)
-                        new ReplaceOneModel<MongoPilotAchievement>(
-                            Builders<MongoPilotAchievement>
-                                .Filter
-                                .Eq(
-                                    storedAchievement =>
-                                        storedAchievement.Id,
-                                    document.Id),
-                            document)
+                        new UpdateOneModel<MongoPilotAchievement>(
+                            filter,
+                            update)
                         {
                             IsUpsert = true
-                        })
+                        };
+                })
                 .ToList();
 
         if (writes.Count == 0)
@@ -403,7 +481,155 @@ public sealed class MongoPilotReportRepository
 
         await _achievements.BulkWriteAsync(
             writes,
-            cancellationToken:
-                cancellationToken);
+            new BulkWriteOptions
+            {
+                IsOrdered = false
+            },
+            cancellationToken);
+    }
+
+    private static FilterDefinition<MongoSimulationReport>
+        BuildReportIdentityFilter(
+            SimulationReport report)
+    {
+        // StartedAt and CompletedAt are generated by the simulation itself and
+        // do not reset when SQLite/SQL is recreated. Combining them with UserId
+        // gives a stable retry key without coupling MongoDB to SQL identities.
+        return
+            Builders<MongoSimulationReport>
+                .Filter
+                .Eq(
+                    stored =>
+                        stored.UserId,
+                    report.UserId)
+            &
+            Builders<MongoSimulationReport>
+                .Filter
+                .Eq(
+                    stored =>
+                        stored.StartedAt,
+                    report.StartedAt)
+            &
+            Builders<MongoSimulationReport>
+                .Filter
+                .Eq(
+                    stored =>
+                        stored.CompletedAt,
+                    report.CompletedAt);
+    }
+
+    private static UpdateDefinition<MongoSimulationReport>
+        BuildReportUpdate(
+            MongoSimulationReport document)
+    {
+        return
+            Builders<MongoSimulationReport>
+                .Update
+                // _id is written only when Mongo inserts a brand-new document.
+                // Existing legacy integer IDs are intentionally preserved.
+                .SetOnInsert(
+                    stored =>
+                        stored.Id,
+                    document.Id)
+                .Set(
+                    stored =>
+                        stored.LegacySqlReportId,
+                    document.LegacySqlReportId)
+                .Set(
+                    stored =>
+                        stored.ScenarioRunId,
+                    document.ScenarioRunId)
+                .Set(
+                    stored =>
+                        stored.UserId,
+                    document.UserId)
+                .Set(
+                    stored =>
+                        stored.PilotName,
+                    document.PilotName)
+                .Set(
+                    stored =>
+                        stored.AircraftName,
+                    document.AircraftName)
+                .Set(
+                    stored =>
+                        stored.ScenarioName,
+                    document.ScenarioName)
+                .Set(
+                    stored =>
+                        stored.Difficulty,
+                    document.Difficulty)
+                .Set(
+                    stored =>
+                        stored.StartedAt,
+                    document.StartedAt)
+                .Set(
+                    stored =>
+                        stored.CompletedAt,
+                    document.CompletedAt)
+                .Set(
+                    stored =>
+                        stored.TotalTimeSeconds,
+                    document.TotalTimeSeconds)
+                .Set(
+                    stored =>
+                        stored.ActionsTaken,
+                    document.ActionsTaken)
+                .Set(
+                    stored =>
+                        stored.ReactionTimeSeconds,
+                    document.ReactionTimeSeconds)
+                .Set(
+                    stored =>
+                        stored.ProcedureAccuracyScore,
+                    document.ProcedureAccuracyScore)
+                .Set(
+                    stored =>
+                        stored.DecisionMakingScore,
+                    document.DecisionMakingScore)
+                .Set(
+                    stored =>
+                        stored.ChecklistAccuracyScore,
+                    document.ChecklistAccuracyScore)
+                .Set(
+                    stored =>
+                        stored.ChecklistUsageScore,
+                    document.ChecklistUsageScore)
+                .Set(
+                    stored =>
+                        stored.TimeManagementScore,
+                    document.TimeManagementScore)
+                .Set(
+                    stored =>
+                        stored.CommunicationScore,
+                    document.CommunicationScore)
+                .Set(
+                    stored =>
+                        stored.OverallScore,
+                    document.OverallScore)
+                .Set(
+                    stored =>
+                        stored.SafetyCriticalErrors,
+                    document.SafetyCriticalErrors)
+                .Set(
+                    stored =>
+                        stored.Passed,
+                    document.Passed)
+                .Set(
+                    stored =>
+                        stored.Outcome,
+                    document.Outcome)
+                .Set(
+                    stored =>
+                        stored.Feedback,
+                    document.Feedback)
+                .Set(
+                    stored =>
+                        stored.AiFeedback,
+                    document.AiFeedback)
+                .Set(
+                    stored =>
+                        stored.CreatedAt,
+                    document.CreatedAt);
     }
 }

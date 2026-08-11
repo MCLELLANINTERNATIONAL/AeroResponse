@@ -63,6 +63,22 @@ public sealed class MongoPilotReportRepository
                         "ix_simulationReports_completedAt"
                 });
 
+        var reportUserCompletedAtIndex =
+            new CreateIndexModel<MongoSimulationReport>(
+                Builders<MongoSimulationReport>
+                    .IndexKeys
+                    .Ascending(
+                        report =>
+                            report.UserId)
+                    .Descending(
+                        report =>
+                            report.CompletedAt),
+                new CreateIndexOptions
+                {
+                    Name =
+                        "ix_simulationReports_userId_completedAt"
+                });
+
         var achievementUserEarnedIndex =
             new CreateIndexModel<MongoPilotAchievement>(
                 Builders<MongoPilotAchievement>
@@ -100,7 +116,8 @@ public sealed class MongoPilotReportRepository
             new[]
             {
                 reportUserCreatedIndex,
-                reportCompletedAtIndex
+                reportCompletedAtIndex,
+                reportUserCompletedAtIndex
             },
             cancellationToken);
 
@@ -167,6 +184,75 @@ public sealed class MongoPilotReportRepository
             .Select(
                 document =>
                     document.ToModel())
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Returns reports for a specific set of pilot user IDs
+    /// directly from MongoDB, optionally constrained by
+    /// completion date. Used by trainer/instructor reporting.
+    /// </summary>
+    public async Task<IReadOnlyList<SimulationReport>>
+        GetReportsForUsersAsync(
+            IEnumerable<string> userIds,
+            DateTime? fromUtc = null,
+            DateTime? toUtc = null,
+            CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(userIds);
+
+        var ids =
+            userIds
+                .Where(userId =>
+                    !string.IsNullOrWhiteSpace(userId))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+        if (ids.Length == 0)
+        {
+            return Array.Empty<SimulationReport>();
+        }
+
+        var filter =
+            Builders<MongoSimulationReport>
+                .Filter
+                .In(
+                    report => report.UserId,
+                    ids);
+
+        if (fromUtc.HasValue)
+        {
+            filter &=
+                Builders<MongoSimulationReport>
+                    .Filter
+                    .Gte(
+                        report =>
+                            report.CompletedAt,
+                        fromUtc.Value);
+        }
+
+        if (toUtc.HasValue)
+        {
+            filter &=
+                Builders<MongoSimulationReport>
+                    .Filter
+                    .Lte(
+                        report =>
+                            report.CompletedAt,
+                        toUtc.Value);
+        }
+
+        var documents =
+            await _reports
+                .Find(filter)
+                .SortBy(report =>
+                    report.CompletedAt)
+                .ToListAsync(
+                    cancellationToken);
+
+        return documents
+            .Select(document =>
+                document.ToModel())
             .ToArray();
     }
 

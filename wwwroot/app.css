@@ -11,6 +11,7 @@ p {
     font-size: 0.77rem;
     line-height: 1.55;
 }
+
 a,
 .btn-link {
     color: #006bb7;
@@ -79,13 +80,12 @@ h1:focus {
    Cockpit 
 ====================================================== */
 
-.testing-center
-{
+.testing-center {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
 }
-.testing-center div
-{
+
+.testing-center div {
     border: #07111f;
     border-style: dashed;
     border-radius: 2em;
@@ -535,16 +535,24 @@ h1:focus {
 .scenario-bottom-actions .btn-outline-light:hover,
 .delete-card .btn-outline-light:hover {
     color: #168cff;
-    ;
     font-weight: 800;
     background: rgba(22, 140, 255, 0.18);
     border-color: #168cff;
 }
 
-.delete-card .btn-danger {
-    min-height: 44px;
-    padding: 0.65rem 1.35rem;
+/* Delete page - make both buttons identical size and level */
+.delete-card .scenario-form-actions .btn {
+    width: 210px;
+    height: 52px;
+    margin: 0 !important;
 
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+.delete-card .btn-danger {
     color: #ffffff;
     background: #c92f42;
 
@@ -557,6 +565,17 @@ h1:focus {
 .delete-card .btn-danger:hover {
     background: #e03c50;
     border-color: #fca5a5;
+}
+
+.delete-card .scenario-form-actions .btn {
+    width: 210px;
+    height: 52px;
+    margin: 0 !important;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
 }
 
 /* ======================================================

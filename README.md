@@ -22,7 +22,7 @@ https://aeroresponse.onrender.com
 
 ### Demo Video
 
-Video Coming Soon
+https://youtu.be/8YpR12w458w
 
 ### Purpose of AeroResponse is to develop an accessible, web-based emergency response simulator that allows users to:
 
@@ -71,7 +71,7 @@ Video Coming Soon
 
 Sprint 1 focus on establishing the foundation of AeroResponse and developing the initial user-facing and simulation components.
 
-Key development included:
+*** Key development included:***
 
 - GitHub repository and Trello project setup
 - Project architecture and application structure
@@ -95,9 +95,9 @@ Key development included:
 
 * ### Sprint 2 – Management, Membership and Pilot Reporting
 
-Sprint 2 expanded AeroResponse from the initial simulation foundation into a broader training-management platform.
+Sprint 2 expand AeroResponse from the initial simulation foundation into a broader training-management platform.
 
-Key development included:
+*** Key development included:***
 
 - Emergency Scenario CRUD functionality
 - Reusable Scenario Form component
@@ -126,9 +126,9 @@ Key development included:
 
 * ### Sprint 3 – Authentication, Scenario Triggers and Simulation Integration
 
-Sprint 3 focused on connecting the major AeroResponse systems and strengthening authentication, access control, emergency logic and platform reporting.
+Sprint 3 focus on connecting the major AeroResponse systems and strengthening authentication, access control, emergency logic and platform reporting.
 
-Key development included:
+*** Key development included:***
 
 - Administrator Reports Dashboard
 - Platform-wide usage reporting
@@ -156,9 +156,9 @@ Key development included:
 
 * ### Sprint 4 – AI, Voice, Instructor Reporting and Final Integration
 
-Sprint 4 focused on advanced platform functionality, final simulation integration and the development of several AeroResponse stretch features.
+Sprint 4 focus on advanced platform functionality, final simulation integration and the development of several AeroResponse stretch features.
 
-Key development included:
+*** Key development included:***
 
 - Additional aircraft cockpit layouts
 - Full cockpit instrument integration
@@ -184,9 +184,9 @@ Key development included:
 
 ## Current Implementation Highlights
 
-The completed AeroResponse project extends beyond the original minimum project scope and integrates multiple systems into a single aviation emergency training platform.
+AeroResponse project extends beyond the original minimum project scope and integrates multiple systems into a single aviation emergency training platform.
 
-Current implementation includes:
+*** Current implementation includes:***
 
 * Six seeded aircraft with aircraft-specific configuration
 * Ten built-in emergency training scenarios
@@ -242,7 +242,7 @@ Current implementation includes:
 
 ### Supported Aircraft
 
-The current seeded AeroResponse fleet includes:
+*** Current seeded AeroResponse fleet includes:***
 
 * Cessna 172
 * Gulfstream G700
@@ -251,7 +251,7 @@ The current seeded AeroResponse fleet includes:
 * Boeing 747-8 Intercontinental
 * Airbus A320-200
 
-These aircraft represent multiple aviation categories including general aviation, business aviation, regional turboprops, narrow-body commercial aircraft, and wide-body commercial aircraft.
+Aircrafts represent multiple aviation categories including general aviation, business aviation, regional turboprops, narrow-body commercial aircraft, and wide-body commercial aircraft.
 
 ### Emergency Scenario Management (CRUD)
 
@@ -266,9 +266,9 @@ These aircraft represent multiple aviation categories including general aviation
 * Support scenario-specific activation conditions
 * Integrate scenarios with the simulation and scoring systems
 
-#### Example Emergency Scenarios
+#### Emergency Scenarios
 
-AeroResponse currently includes ten built-in emergency scenarios:
+*** AeroResponse currently includes ten built-in emergency scenarios:***
 
 * Engine Fire
 * Engine Failure
@@ -285,9 +285,9 @@ Scenarios range from Intermediate to Expert difficulty and contain scenario-spec
 
 ## Interactive Cockpit Simulation
 
-The AeroResponse simulation environment combines aircraft configuration, cockpit state, emergency scenario logic, interactive controls, and pilot actions.
+AeroResponse simulation environment combines aircraft configuration, cockpit state, emergency scenario logic, interactive controls, and pilot actions.
 
-Current simulation capabilities include:
+*** Current simulation capabilities include:***
 
 * Real-time cockpit instrument displays
 * Aircraft-specific cockpit layouts
@@ -315,13 +315,13 @@ Current simulation capabilities include:
 * Configurable emergency trigger conditions
 * Real-time simulation state updates
 
-The simulator uses aircraft configuration data to determine characteristics such as engine count, fuel-tank configuration, landing gear, cockpit layout, cruise speed, and maximum operating altitude.
+Simulator uses aircraft configuration data to determine characteristics such as engine count, fuel-tank configuration, landing gear, cockpit layout, cruise speed, and maximum operating altitude.
 
 ## Pilot Emergency Response
 
 Pilots respond to simulated emergencies using interactive cockpit controls and, where supported, voice commands.
 
-Depending on the selected aircraft and emergency scenario, pilot actions can include:
+*** Depending on the selected aircraft and emergency scenario, pilot actions can include:***
 
 * Operate throttle controls
 * Reduce engine thrust
@@ -347,7 +347,7 @@ Pilot actions are recorded during the simulation and can be evaluated against th
 
 AeroResponse includes a performance assessment and reporting system designed to evaluate how the pilot responded during each emergency simulation.
 
-Assessment and reporting capabilities include:
+*** Assessment and reporting capabilities include:***
 
 * Reaction time tracking
 * Procedure accuracy scoring
@@ -369,7 +369,7 @@ Assessment and reporting capabilities include:
 
 Completed simulation data is used throughout the reporting system so pilots can review individual attempts and monitor their progression across multiple training sessions.
 
-Instructor reporting provides additional visibility across linked pilots, including:
+*** Instructor reporting provides additional visibility across linked pilots, including:***
 
 * Pilot performance trends
 * Average scores
@@ -381,7 +381,7 @@ Instructor reporting provides additional visibility across linked pilots, includ
 * Training priorities
 * Downloadable performance reports
 
-Administrator reporting provides broader platform-level visibility including:
+*** Administrator reporting provides broader platform-level visibility including:***
 
 * Platform training activity
 * Active pilots
@@ -397,13 +397,13 @@ Administrator reporting provides broader platform-level visibility including:
 
 AeroResponse includes a membership and account-access system designed to support individual pilots, smaller aviation organisations, and larger commercial organisations.
 
-Current membership plans include:
+*** Current membership plans include:***
 
 * Private
 * Small Commercial
 * Large Commercial
 
-Membership functionality includes:
+*** Membership functionality includes:***
 
 * User membership registration
 * Membership plan selection
@@ -421,13 +421,13 @@ Membership functionality includes:
 * Company member limits
 * Owner referral-code functionality
 
-The membership model is designed to demonstrate how AeroResponse could evolve from an academic software project into a scalable aviation training platform serving individual pilots, flight schools, charter operators, and larger aviation organisations.
+Membership model is designed to demonstrate how AeroResponse could evolve from an academic software project into a scalable aviation training platform serving individual pilots, flight schools, charter operators, and larger aviation organisations.
 
 ## Stretch Features
 
 Several features originally identified as stretch objectives were developed as part of the current AeroResponse implementation.
 
-Implemented stretch functionality includes:
+*** Implement stretch functionality includes:***
 
 * Voice command interaction
 * Web Speech API integration
@@ -442,7 +442,7 @@ Implemented stretch functionality includes:
 * Administrator analytics
 * Downloadable reporting
 
-Additional stretch concepts remain available for future development, including:
+*** Additional stretch concepts remain available for future development, including:***
 
 * Flight replay
 * Expanded real-time telemetry visualisation
@@ -543,7 +543,7 @@ Additional stretch concepts remain available for future development, including:
 * Cockpit Command Service
 * Voice-controlled simulator actions
 
-The AI instructor monitors pilot actions against the expected emergency procedure and provides training feedback based on the pilot's response during the simulation.
+AI instructor monitors pilot actions against the expected emergency procedure and provides training feedback based on the pilot's response during the simulation.
 
 # Project Architecture
 
@@ -704,7 +704,7 @@ AeroResponse
 
 # Future Enhancements
 
-Potential future enhancements include:
+*** Potential future enhancements include:***
 
 * More advanced AI-powered instructor assistance
 * Expanded voice-controlled cockpit interaction
